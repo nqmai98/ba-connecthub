@@ -28,7 +28,7 @@ function Notifs() {
   const navigate = useNavigate();
   const markAll = async () => {
     const { error } = await supabase.from("notifications").update({ is_read: true }).eq("user_id", userId!).eq("is_read", false);
-    if (error) return toast.error("Không cập nhật được thông báo");
+    if (error) { toast.error("Không cập nhật được thông báo"); return; }
     toast.success("Đã đánh dấu tất cả là đã đọc");
     qc.invalidateQueries({ queryKey: ["notifications"] });
   };
