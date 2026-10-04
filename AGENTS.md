@@ -8,3 +8,6 @@
 > Commits you push to the connected branch sync back to Lovable and show up in
 > the editor, so keep the branch in a working state.
 <!-- LOVABLE:END -->
+
+- Data access goes through the browser client with RLS + DB triggers (roles, notifications, status forcing) as the security boundary; UI hiding is cosmetic.
+- Uploaded images live in a private storage bucket and are stored as long-lived signed URLs, because public buckets are blocked in this workspace.
