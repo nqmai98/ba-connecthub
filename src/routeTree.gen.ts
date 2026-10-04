@@ -10,33 +10,128 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as DangNhapRouteImport } from './routes/dang-nhap'
+import { Route as DangTheoDoiRouteImport } from './routes/dang-theo-doi'
+import { Route as LichCaNhanRouteImport } from './routes/lich-ca-nhan'
+import { Route as SuKienRouteImport } from './routes/su-kien'
+import { Route as ThongBaoRouteImport } from './routes/thong-bao'
+import { Route as CauLacBoIndexRouteImport } from './routes/cau-lac-bo.index'
+import { Route as CauLacBoIdRouteImport } from './routes/cau-lac-bo.$id'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DangNhapRoute = DangNhapRouteImport.update({
+  id: '/dang-nhap',
+  path: '/dang-nhap',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DangTheoDoiRoute = DangTheoDoiRouteImport.update({
+  id: '/dang-theo-doi',
+  path: '/dang-theo-doi',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LichCaNhanRoute = LichCaNhanRouteImport.update({
+  id: '/lich-ca-nhan',
+  path: '/lich-ca-nhan',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SuKienRoute = SuKienRouteImport.update({
+  id: '/su-kien',
+  path: '/su-kien',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ThongBaoRoute = ThongBaoRouteImport.update({
+  id: '/thong-bao',
+  path: '/thong-bao',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CauLacBoIndexRoute = CauLacBoIndexRouteImport.update({
+  id: '/cau-lac-bo/',
+  path: '/cau-lac-bo/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CauLacBoIdRoute = CauLacBoIdRouteImport.update({
+  id: '/cau-lac-bo/$id',
+  path: '/cau-lac-bo/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/dang-nhap': typeof DangNhapRoute
+  '/dang-theo-doi': typeof DangTheoDoiRoute
+  '/lich-ca-nhan': typeof LichCaNhanRoute
+  '/su-kien': typeof SuKienRoute
+  '/thong-bao': typeof ThongBaoRoute
+  '/cau-lac-bo/$id': typeof CauLacBoIdRoute
+  '/cau-lac-bo/': typeof CauLacBoIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/dang-nhap': typeof DangNhapRoute
+  '/dang-theo-doi': typeof DangTheoDoiRoute
+  '/lich-ca-nhan': typeof LichCaNhanRoute
+  '/su-kien': typeof SuKienRoute
+  '/thong-bao': typeof ThongBaoRoute
+  '/cau-lac-bo/$id': typeof CauLacBoIdRoute
+  '/cau-lac-bo': typeof CauLacBoIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/dang-nhap': typeof DangNhapRoute
+  '/dang-theo-doi': typeof DangTheoDoiRoute
+  '/lich-ca-nhan': typeof LichCaNhanRoute
+  '/su-kien': typeof SuKienRoute
+  '/thong-bao': typeof ThongBaoRoute
+  '/cau-lac-bo/$id': typeof CauLacBoIdRoute
+  '/cau-lac-bo/': typeof CauLacBoIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/dang-nhap'
+    | '/dang-theo-doi'
+    | '/lich-ca-nhan'
+    | '/su-kien'
+    | '/thong-bao'
+    | '/cau-lac-bo/$id'
+    | '/cau-lac-bo/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/dang-nhap'
+    | '/dang-theo-doi'
+    | '/lich-ca-nhan'
+    | '/su-kien'
+    | '/thong-bao'
+    | '/cau-lac-bo/$id'
+    | '/cau-lac-bo'
+  id:
+    | '__root__'
+    | '/'
+    | '/dang-nhap'
+    | '/dang-theo-doi'
+    | '/lich-ca-nhan'
+    | '/su-kien'
+    | '/thong-bao'
+    | '/cau-lac-bo/$id'
+    | '/cau-lac-bo/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  DangNhapRoute: typeof DangNhapRoute
+  DangTheoDoiRoute: typeof DangTheoDoiRoute
+  LichCaNhanRoute: typeof LichCaNhanRoute
+  SuKienRoute: typeof SuKienRoute
+  ThongBaoRoute: typeof ThongBaoRoute
+  CauLacBoIdRoute: typeof CauLacBoIdRoute
+  CauLacBoIndexRoute: typeof CauLacBoIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -48,11 +143,67 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/dang-nhap': {
+      id: '/dang-nhap'
+      path: '/dang-nhap'
+      fullPath: '/dang-nhap'
+      preLoaderRoute: typeof DangNhapRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/dang-theo-doi': {
+      id: '/dang-theo-doi'
+      path: '/dang-theo-doi'
+      fullPath: '/dang-theo-doi'
+      preLoaderRoute: typeof DangTheoDoiRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/lich-ca-nhan': {
+      id: '/lich-ca-nhan'
+      path: '/lich-ca-nhan'
+      fullPath: '/lich-ca-nhan'
+      preLoaderRoute: typeof LichCaNhanRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/su-kien': {
+      id: '/su-kien'
+      path: '/su-kien'
+      fullPath: '/su-kien'
+      preLoaderRoute: typeof SuKienRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/thong-bao': {
+      id: '/thong-bao'
+      path: '/thong-bao'
+      fullPath: '/thong-bao'
+      preLoaderRoute: typeof ThongBaoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/cau-lac-bo/': {
+      id: '/cau-lac-bo/'
+      path: '/cau-lac-bo'
+      fullPath: '/cau-lac-bo/'
+      preLoaderRoute: typeof CauLacBoIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/cau-lac-bo/$id': {
+      id: '/cau-lac-bo/$id'
+      path: '/cau-lac-bo/$id'
+      fullPath: '/cau-lac-bo/$id'
+      preLoaderRoute: typeof CauLacBoIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  DangNhapRoute: DangNhapRoute,
+  DangTheoDoiRoute: DangTheoDoiRoute,
+  LichCaNhanRoute: LichCaNhanRoute,
+  SuKienRoute: SuKienRoute,
+  ThongBaoRoute: ThongBaoRoute,
+  CauLacBoIdRoute: CauLacBoIdRoute,
+  CauLacBoIndexRoute: CauLacBoIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
