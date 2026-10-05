@@ -56,7 +56,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [roles, setRoles] = useState<Role[]>([]);
   const [clubIds, setClubIds] = useState<string[]>([]);
-  const [infoLoaded, setInfoLoaded] = useState(false);
+  const [infoFor, setInfoFor] = useState<string | null | undefined>(undefined);
   const [askLogin, setAskLogin] = useState(false);
 
   useEffect(() => {
@@ -83,7 +83,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setProfile((p.data as Profile) ?? null);
     setRoles(((r.data ?? []) as { role: Role }[]).map((x) => x.role));
     setClubIds((c.data ?? []).map((x) => x.club_id));
-    setInfoLoaded(true);
+    setInfoFor(id);
   };
 
   useEffect(() => {
@@ -91,10 +91,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setProfile(null);
       setRoles([]);
       setClubIds([]);
-      setInfoLoaded(true);
+      setInfoFor(null);
       return;
     }
-    setInfoLoaded(false);
     loadInfo(uid);
   }, [uid]);
 
@@ -111,7 +110,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     roles,
     role: uid ? primaryRole(roles) : null,
     clubIds,
-    ready: sessionLoaded && infoLoaded,
+    ready: sessionLoaded && infoFor === uid,
     requireLogin: () => setAskLogin(true),
     signOut,
     refresh: async () => {
