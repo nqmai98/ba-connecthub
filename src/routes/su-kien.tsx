@@ -32,7 +32,7 @@ function EventsPage() {
       }
     >
       {isLoading ? <GridSkeleton /> : data?.length ? (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">{data.map((e) => <EventCard key={e.id} post={e} />)}</div>
+        <div className="grid gap-4 lg:grid-cols-2">{data.map((e) => <EventCard key={e.id} post={e} />)}</div>
       ) : <Empty text="Chưa có sự kiện nào" />}
     </Page>
   );
