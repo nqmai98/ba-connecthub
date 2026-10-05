@@ -76,7 +76,7 @@ function Home() {
             <Link to="/su-kien" className="text-sm font-bold text-primary hover:underline">Xem tất cả</Link>
           </div>
           {evLoading ? <GridSkeleton n={3} /> : events?.length ? (
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">{events.slice(0, 6).map((e) => <EventCard key={e.id} post={e} />)}</div>
+            <div className="grid gap-4 lg:grid-cols-2">{events.slice(0, 6).map((e) => <EventCard key={e.id} post={e} />)}</div>
           ) : <Empty text="Chưa có sự kiện sắp diễn ra" />}
         </section>
       </div>

@@ -160,9 +160,8 @@ export function FavoriteButton({ postId }: { postId: string }) {
     <>
       <Button
         size="sm"
-        variant="outline"
         aria-label={fav ? "Bỏ yêu thích" : "Yêu thích"}
-        className={cn("font-bold", fav && "border-accent bg-accent/15")}
+        className={cn("rounded-xl bg-accent font-bold text-accent-foreground hover:bg-accent/90", fav && "ring-2 ring-primary")}
         disabled={toggle.isPending}
         onClick={() => {
           if (!userId) return requireLogin();
@@ -170,7 +169,7 @@ export function FavoriteButton({ postId }: { postId: string }) {
           else toggle.mutate({ postId, fav: true });
         }}
       >
-        <Star className={cn("h-4 w-4", fav && "fill-accent text-accent")} />
+        <Star className={cn("h-4 w-4", fav && "fill-current")} />
         {fav ? "Đã yêu thích" : "Yêu thích"}
       </Button>
       <ConfirmDialog
@@ -188,45 +187,55 @@ export function FavoriteButton({ postId }: { postId: string }) {
 
 export function ClubCard({ club }: { club: Club }) {
   return (
-    <Card className="flex flex-col gap-3">
-      <div className="flex min-w-0 items-center gap-3">
-        <ClubLogo club={club} />
-        <div className="min-w-0">
-          <h3 className="line-clamp-2 text-base leading-snug">{club.name}</h3>
-          <span className="mt-1 inline-block rounded-full bg-secondary px-2 py-0.5 text-xs font-bold text-secondary-foreground">
-            {club.categories?.name ?? "Khác"}
-          </span>
+    <div className="flex flex-col overflow-hidden rounded-2xl border bg-card shadow-[var(--shadow-soft)]">
+      <div className="relative h-28 bg-gradient-to-br from-primary to-primary-dark">
+        {club.cover_url && <img src={club.cover_url} alt="" className="h-full w-full object-cover" loading="lazy" />}
+        <div className="absolute -bottom-7 left-4 rounded-full border-4 border-card bg-card">
+          <ClubLogo club={club} size={56} />
         </div>
       </div>
-      <p className="line-clamp-2 flex-1 text-sm text-muted-foreground">{club.short_intro || club.description}</p>
-      <div className="flex flex-wrap gap-2">
-        <Button asChild size="sm" variant="outline" className="font-bold">
-          <Link to="/cau-lac-bo/$id" params={{ id: club.id }}>Xem chi tiết</Link>
-        </Button>
-        <FollowButton clubId={club.id} />
+      <div className="flex flex-1 flex-col gap-2 px-4 pb-4 pt-9">
+        <h3 className="line-clamp-2 text-base leading-snug text-primary">{club.name}</h3>
+        <span className="w-fit rounded-full bg-secondary px-2.5 py-0.5 text-xs font-bold text-secondary-foreground">
+          {club.categories?.name ?? "Khác"}
+        </span>
+        <p className="line-clamp-2 flex-1 text-sm text-muted-foreground">{club.short_intro || club.description}</p>
+        <div className="mt-1 grid grid-cols-2 gap-2">
+          <FollowButton clubId={club.id} className="w-full rounded-xl" />
+          <Button asChild size="sm" variant="outline" className="rounded-xl border-primary font-bold text-primary">
+            <Link to="/cau-lac-bo/$id" params={{ id: club.id }}>Xem chi tiết</Link>
+          </Button>
+        </div>
       </div>
-    </Card>
+    </div>
   );
 }
 
 export function EventCard({ post }: { post: Post }) {
   return (
-    <Card className="flex flex-col gap-3 p-0 overflow-hidden">
-      {post.image_url && <img src={post.image_url} alt={post.title} className="h-40 w-full object-cover" loading="lazy" />}
-      <div className="flex flex-1 flex-col gap-2 p-5 pt-4">
-        {post.clubs && (
-          <Link to="/cau-lac-bo/$id" params={{ id: post.clubs.id }} className="text-xs font-bold text-primary hover:underline">
-            {post.clubs.name}
-          </Link>
+    <div className="flex flex-col overflow-hidden rounded-2xl border bg-card shadow-[var(--shadow-soft)] sm:flex-row">
+      <div className="h-40 shrink-0 bg-gradient-to-br from-primary to-primary-dark sm:h-auto sm:w-2/5">
+        {post.image_url ? (
+          <img src={post.image_url} alt={post.title} className="h-full w-full object-cover" loading="lazy" />
+        ) : (
+          <div className="grid h-full place-items-center p-4 text-center text-lg font-extrabold text-primary-foreground">{post.clubs?.name}</div>
         )}
-        <h3 className="text-base leading-snug">{post.title}</h3>
-        <div className="space-y-1 text-sm font-semibold text-muted-foreground">
-          <div className="flex items-center gap-2"><Calendar className="h-4 w-4 shrink-0 text-accent" />{formatDateTime(post.event_time)}</div>
-          {post.location && <div className="flex items-center gap-2"><MapPin className="h-4 w-4 shrink-0 text-accent" />{post.location}</div>}
-        </div>
-        <div className="mt-auto pt-2"><FavoriteButton postId={post.id} /></div>
       </div>
-    </Card>
+      <div className="flex min-w-0 flex-1 flex-col gap-2 border-l-0 p-4 sm:border-l-4 sm:border-l-primary">
+        <h3 className="text-lg leading-snug text-primary">{post.title}</h3>
+        <p className="line-clamp-2 text-sm italic text-muted-foreground">{post.content}</p>
+        <div className="space-y-1 text-sm font-semibold text-muted-foreground">
+          <div className="flex items-center gap-2"><Calendar className="h-4 w-4 shrink-0 text-primary" />{formatDateTime(post.event_time)}</div>
+          {post.location && <div className="flex items-center gap-2"><MapPin className="h-4 w-4 shrink-0 text-primary" />{post.location}</div>}
+          {post.clubs && (
+            <Link to="/cau-lac-bo/$id" params={{ id: post.clubs.id }} className="flex items-center gap-2 hover:text-primary">
+              <Users className="h-4 w-4 shrink-0 text-primary" />Đơn vị tổ chức: {post.clubs.name}
+            </Link>
+          )}
+        </div>
+        <div className="mt-auto flex justify-end pt-2"><FavoriteButton postId={post.id} /></div>
+      </div>
+    </div>
   );
 }
 
