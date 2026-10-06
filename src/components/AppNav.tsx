@@ -95,8 +95,9 @@ export function AppNav() {
                 variant="outline"
                 size="sm"
                 onClick={async () => {
+                  const wasStaff = role === "club_rep" || role === "admin";
                   await signOut();
-                  navigate({ to: "/dang-nhap", replace: true });
+                  navigate({ to: wasStaff ? "/dang-nhap-clb" : "/dang-nhap", replace: true });
                 }}
               >
                 <LogOut className="h-4 w-4" />
@@ -104,11 +105,16 @@ export function AppNav() {
               </Button>
             </>
           ) : (
-            <Button asChild size="sm" className="bg-accent font-bold text-accent-foreground hover:bg-accent/90">
-              <Link to="/dang-nhap">
-                <LogIn className="h-4 w-4" /> Đăng nhập
+            <>
+              <Link to="/dang-nhap-clb" className="hidden rounded-lg px-2 py-2 text-sm font-bold text-primary hover:bg-secondary sm:inline">
+                Dành cho CLB
               </Link>
-            </Button>
+              <Button asChild size="sm" className="bg-accent font-bold text-accent-foreground hover:bg-accent/90">
+                <Link to="/dang-nhap">
+                  <LogIn className="h-4 w-4" /> Đăng nhập
+                </Link>
+              </Button>
+            </>
           )}
         </div>
       </div>
