@@ -5,6 +5,7 @@ import logo from "@/assets/bav-logo.png.asset.json";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable/index";
 import { homePath, isSchoolEmail, useAuth } from "@/lib/auth";
+import { loginIdToEmail } from "@/lib/club-account";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -59,13 +60,13 @@ function LoginPage() {
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email.trim() || !password) {
-      setEmailErr("Vui lòng nhập email và mật khẩu");
+      setEmailErr("Vui lòng nhập tên đăng nhập và mật khẩu");
       return;
     }
     setBusy(true);
-    const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
+    const { error } = await supabase.auth.signInWithPassword({ email: loginIdToEmail(email), password });
     setBusy(false);
-    if (error) toast.error("Email hoặc mật khẩu không đúng");
+    if (error) toast.error("Tên đăng nhập hoặc mật khẩu không đúng");
     else toast.success("Đăng nhập thành công");
   };
 
@@ -109,8 +110,8 @@ function LoginPage() {
         ) : (
           <form onSubmit={submit} className="space-y-4" noValidate>
             <div className="space-y-1.5">
-              <Label htmlFor="email" className="font-bold">Email tài khoản</Label>
-              <Input id="email" type="email" value={email} maxLength={255} onChange={(e) => { setEmail(e.target.value); setEmailErr(""); }} placeholder="Email do Quản trị viên cấp" />
+              <Label htmlFor="email" className="font-bold">Tên đăng nhập</Label>
+              <Input id="email" type="text" autoCapitalize="none" autoComplete="username" value={email} maxLength={255} onChange={(e) => { setEmail(e.target.value); setEmailErr(""); }} placeholder="Username do Quản trị viên cấp" />
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="pw" className="font-bold">Mật khẩu</Label>

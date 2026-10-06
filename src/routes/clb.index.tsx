@@ -47,7 +47,7 @@ function Overview() {
         </div>
       )}
       <div className="mt-6 flex flex-wrap gap-3">
-        <Button asChild className="bg-accent font-bold text-accent-foreground hover:bg-accent/90"><Link to="/clb/dang-bai"><Plus className="h-4 w-4" /> Đăng bài mới</Link></Button>
+        <Button asChild className="bg-accent font-bold text-accent-foreground hover:bg-accent/90"><Link to="/clb/dang-bai"><Plus className="h-4 w-4" /> Tạo bài đăng / sự kiện</Link></Button>
         <Button asChild variant="outline"><Link to="/clb/bai-dang"><FileText className="h-4 w-4" /> Bài đăng của tôi</Link></Button>
         <Button asChild variant="outline"><Link to="/clb/thong-tin"><Settings className="h-4 w-4" /> Thông tin CLB</Link></Button>
       </div>

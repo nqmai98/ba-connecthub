@@ -1,5 +1,5 @@
 import { Link, useNavigate } from "@tanstack/react-router";
-import { LogOut, LogIn } from "lucide-react";
+import { LogOut, LogIn, Plus } from "lucide-react";
 import logo from "@/assets/bav-logo.png.asset.json";
 import { ROLE_LABEL, useAuth, type Role } from "@/lib/auth";
 import { useNotifications } from "@/lib/data";
@@ -22,7 +22,7 @@ const MENUS: Record<Role | "guest", Item[]> = {
   ],
   club_rep: [
     { to: "/clb", label: "Tổng quan", exact: true },
-    { to: "/clb/dang-bai", label: "Đăng bài" },
+    { to: "/clb/dang-bai", label: "Tạo bài đăng" },
     { to: "/clb/bai-dang", label: "Bài đăng của tôi" },
     { to: "/clb/thong-tin", label: "Thông tin CLB" },
     { to: "/thong-bao", label: "Thông báo", notif: true },
@@ -78,6 +78,15 @@ export function AppNav() {
         <div className="order-2 ml-auto flex shrink-0 items-center gap-2 lg:order-3">
           {userId ? (
             <>
+              {role === "club_rep" && (
+                <Button asChild size="sm" className="bg-accent font-bold text-accent-foreground hover:bg-accent/90">
+                  <Link to="/clb/dang-bai">
+                    <Plus className="h-4 w-4" />
+                    <span className="hidden md:inline">Tạo bài đăng / sự kiện</span>
+                    <span className="md:hidden">Đăng bài</span>
+                  </Link>
+                </Button>
+              )}
               <div className="hidden text-right leading-tight sm:block">
                 <div className="max-w-[160px] truncate text-sm font-bold">{profile?.full_name || profile?.email}</div>
                 <div className="text-xs font-semibold text-accent-foreground/70">{role && ROLE_LABEL[role]}</div>

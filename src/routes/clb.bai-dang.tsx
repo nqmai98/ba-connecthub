@@ -33,7 +33,7 @@ function MyPosts() {
     },
   });
   return (
-    <Page title="Bài đăng của tôi" actions={<Button asChild className="bg-accent font-bold text-accent-foreground hover:bg-accent/90"><Link to="/clb/dang-bai"><Plus className="h-4 w-4" /> Đăng bài</Link></Button>}>
+    <Page title="Bài đăng của tôi" actions={<Button asChild className="bg-accent font-bold text-accent-foreground hover:bg-accent/90"><Link to="/clb/dang-bai"><Plus className="h-4 w-4" /> Tạo bài đăng / sự kiện</Link></Button>}>
       {q.isLoading ? <GridSkeleton n={3} /> : !q.data?.length ? <Empty text="Chưa có bài đăng nào" /> : (
         <div className="overflow-x-auto rounded-2xl border bg-card">
           <table className="w-full min-w-[640px] text-sm">
