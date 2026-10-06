@@ -56,7 +56,7 @@ function ManageClubs() {
                 <div className="min-w-0">
                   <div className="truncate font-bold text-primary">{c.name}</div>
                   <div className="truncate text-sm text-muted-foreground">
-                    {reps.data?.[c.id]?.length ? "Tài khoản: " + reps.data[c.id].join(", ") : "Chưa có tài khoản"}
+                    {reps.data?.[c.id]?.length ? "Tài khoản: " + reps.data[c.id]!.join(", ") : "Chưa có tài khoản"}
                   </div>
                 </div>
               </div>
@@ -79,8 +79,8 @@ function CreateDialog({ club, onClose }: { club: Club | null; onClose: () => voi
   const [busy, setBusy] = useState(false);
   const submit = async () => {
     if (!club) return;
-    if (!form.fullName.trim() || !form.email.trim()) return toast.error("Vui lòng nhập đủ họ tên và email");
-    if (form.password.length < 8) return toast.error("Mật khẩu tối thiểu 8 ký tự");
+    if (!form.fullName.trim() || !form.email.trim()) { toast.error("Vui lòng nhập đủ họ tên và email"); return; }
+    if (form.password.length < 8) { toast.error("Mật khẩu tối thiểu 8 ký tự"); return; }
     setBusy(true);
     try {
       await create({ data: { clubId: club.id, ...form } });
