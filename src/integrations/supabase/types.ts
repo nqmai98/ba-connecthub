@@ -14,328 +14,555 @@ export type Database = {
   }
   public: {
     Tables: {
-      categories: {
+      bai_dang: {
         Row: {
-          created_at: string
-          id: string
-          name: string
+          AnhBia: string | null
+          LoaiBaiDang: string
+          MaBaiDang: number
+          MaCLB: number
+          MaNguoiTao: string | null
+          NgayDang: string | null
+          NgayTao: string
+          NoiDung: string
+          TieuDe: string
+          TrangThaiKiemDuyet: string
         }
         Insert: {
-          created_at?: string
-          id?: string
-          name: string
+          AnhBia?: string | null
+          LoaiBaiDang: string
+          MaBaiDang?: never
+          MaCLB: number
+          MaNguoiTao?: string | null
+          NgayDang?: string | null
+          NgayTao?: string
+          NoiDung: string
+          TieuDe: string
+          TrangThaiKiemDuyet?: string
         }
         Update: {
-          created_at?: string
-          id?: string
-          name?: string
-        }
-        Relationships: []
-      }
-      club_reps: {
-        Row: {
-          club_id: string
-          user_id: string
-        }
-        Insert: {
-          club_id: string
-          user_id: string
-        }
-        Update: {
-          club_id?: string
-          user_id?: string
+          AnhBia?: string | null
+          LoaiBaiDang?: string
+          MaBaiDang?: never
+          MaCLB?: number
+          MaNguoiTao?: string | null
+          NgayDang?: string | null
+          NgayTao?: string
+          NoiDung?: string
+          TieuDe?: string
+          TrangThaiKiemDuyet?: string
         }
         Relationships: [
           {
-            foreignKeyName: "club_reps_club_id_fkey"
-            columns: ["club_id"]
+            foreignKeyName: "bai_dang_MaCLB_fkey"
+            columns: ["MaCLB"]
             isOneToOne: false
-            referencedRelation: "clubs"
-            referencedColumns: ["id"]
+            referencedRelation: "cau_lac_bo"
+            referencedColumns: ["MaCLB"]
+          },
+          {
+            foreignKeyName: "bai_dang_MaNguoiTao_fkey"
+            columns: ["MaNguoiTao"]
+            isOneToOne: false
+            referencedRelation: "nguoi_dung"
+            referencedColumns: ["MaNguoiDung"]
           },
         ]
       }
-      clubs: {
+      cau_lac_bo: {
         Row: {
-          achievements: string
-          category_id: string | null
-          contact_email: string
-          contact_info: string
-          cover_url: string | null
-          created_at: string
-          departments: string
-          description: string
-          founded_year: number | null
-          id: string
-          is_active: boolean
-          is_featured: boolean
-          logo_url: string | null
-          name: string
-          short_intro: string
+          AnhBia: string | null
+          BanChuyenMon: string | null
+          DonViTrucThuoc: string | null
+          Fanpage: string | null
+          GioiThieuNgan: string | null
+          LogoCLB: string | null
+          MaCLB: number
+          MaLinhVuc: number
+          MoTa: string | null
+          NamThanhLap: number | null
+          NgayCapNhat: string
+          NoiBat: boolean
+          ThanhTich: string | null
+          ThongTinLienHe: string | null
+          TenCLB: string
+          TrangThaiHoatDong: string
         }
         Insert: {
-          achievements?: string
-          category_id?: string | null
-          contact_email?: string
-          contact_info?: string
-          cover_url?: string | null
-          created_at?: string
-          departments?: string
-          description?: string
-          founded_year?: number | null
-          id?: string
-          is_active?: boolean
-          is_featured?: boolean
-          logo_url?: string | null
-          name: string
-          short_intro?: string
+          AnhBia?: string | null
+          BanChuyenMon?: string | null
+          DonViTrucThuoc?: string | null
+          Fanpage?: string | null
+          GioiThieuNgan?: string | null
+          LogoCLB?: string | null
+          MaCLB?: never
+          MaLinhVuc: number
+          MoTa?: string | null
+          NamThanhLap?: number | null
+          NgayCapNhat?: string
+          NoiBat?: boolean
+          ThanhTich?: string | null
+          ThongTinLienHe?: string | null
+          TenCLB: string
+          TrangThaiHoatDong?: string
         }
         Update: {
-          achievements?: string
-          category_id?: string | null
-          contact_email?: string
-          contact_info?: string
-          cover_url?: string | null
-          created_at?: string
-          departments?: string
-          description?: string
-          founded_year?: number | null
-          id?: string
-          is_active?: boolean
-          is_featured?: boolean
-          logo_url?: string | null
-          name?: string
-          short_intro?: string
+          AnhBia?: string | null
+          BanChuyenMon?: string | null
+          DonViTrucThuoc?: string | null
+          Fanpage?: string | null
+          GioiThieuNgan?: string | null
+          LogoCLB?: string | null
+          MaCLB?: never
+          MaLinhVuc?: number
+          MoTa?: string | null
+          NamThanhLap?: number | null
+          NgayCapNhat?: string
+          NoiBat?: boolean
+          ThanhTich?: string | null
+          ThongTinLienHe?: string | null
+          TenCLB?: string
+          TrangThaiHoatDong?: string
         }
         Relationships: [
           {
-            foreignKeyName: "clubs_category_id_fkey"
-            columns: ["category_id"]
+            foreignKeyName: "cau_lac_bo_MaLinhVuc_fkey"
+            columns: ["MaLinhVuc"]
             isOneToOne: false
-            referencedRelation: "categories"
-            referencedColumns: ["id"]
+            referencedRelation: "linh_vuc"
+            referencedColumns: ["MaLinhVuc"]
           },
         ]
       }
-      favorite_events: {
+      kiem_duyet: {
         Row: {
-          created_at: string
-          post_id: string
-          user_id: string
+          KetQuaKiemDuyet: string
+          LyDoTuChoi: string | null
+          MaBaiDang: number
+          MaKiemDuyet: number
+          MaQuanTriVien: string
+          ThoiGianKiemDuyet: string
         }
         Insert: {
-          created_at?: string
-          post_id: string
-          user_id: string
+          KetQuaKiemDuyet: string
+          LyDoTuChoi?: string | null
+          MaBaiDang: number
+          MaKiemDuyet?: never
+          MaQuanTriVien: string
+          ThoiGianKiemDuyet?: string
         }
         Update: {
-          created_at?: string
-          post_id?: string
-          user_id?: string
+          KetQuaKiemDuyet?: string
+          LyDoTuChoi?: string | null
+          MaBaiDang?: number
+          MaKiemDuyet?: never
+          MaQuanTriVien?: string
+          ThoiGianKiemDuyet?: string
         }
         Relationships: [
           {
-            foreignKeyName: "favorite_events_post_id_fkey"
-            columns: ["post_id"]
+            foreignKeyName: "kiem_duyet_MaBaiDang_fkey"
+            columns: ["MaBaiDang"]
             isOneToOne: false
-            referencedRelation: "posts"
-            referencedColumns: ["id"]
+            referencedRelation: "bai_dang"
+            referencedColumns: ["MaBaiDang"]
+          },
+          {
+            foreignKeyName: "kiem_duyet_MaQuanTriVien_fkey"
+            columns: ["MaQuanTriVien"]
+            isOneToOne: false
+            referencedRelation: "nguoi_dung"
+            referencedColumns: ["MaNguoiDung"]
           },
         ]
       }
-      follows: {
+      linh_vuc: {
         Row: {
-          club_id: string
-          created_at: string
-          user_id: string
+          MaLinhVuc: number
+          MoTa: string | null
+          TenLinhVuc: string
         }
         Insert: {
-          club_id: string
-          created_at?: string
-          user_id: string
+          MaLinhVuc?: never
+          MoTa?: string | null
+          TenLinhVuc: string
         }
         Update: {
-          club_id?: string
-          created_at?: string
-          user_id?: string
+          MaLinhVuc?: never
+          MoTa?: string | null
+          TenLinhVuc?: string
+        }
+        Relationships: []
+      }
+      nguoi_dung: {
+        Row: {
+          EmailTruong: string
+          HoTen: string
+          MaCLB: number | null
+          MaNguoiDung: string
+          MaVaiTro: number
+          NgayCapTaiKhoan: string
+          SoDienThoai: string | null
+          TenDangNhap: string | null
+          TrangThaiTaiKhoan: string
+        }
+        Insert: {
+          EmailTruong: string
+          HoTen?: string
+          MaCLB?: number | null
+          MaNguoiDung: string
+          MaVaiTro: number
+          NgayCapTaiKhoan?: string
+          SoDienThoai?: string | null
+          TenDangNhap?: string | null
+          TrangThaiTaiKhoan?: string
+        }
+        Update: {
+          EmailTruong?: string
+          HoTen?: string
+          MaCLB?: number | null
+          MaNguoiDung?: string
+          MaVaiTro?: number
+          NgayCapTaiKhoan?: string
+          SoDienThoai?: string | null
+          TenDangNhap?: string | null
+          TrangThaiTaiKhoan?: string
         }
         Relationships: [
           {
-            foreignKeyName: "follows_club_id_fkey"
-            columns: ["club_id"]
+            foreignKeyName: "nguoi_dung_MaCLB_fkey"
+            columns: ["MaCLB"]
+            isOneToOne: true
+            referencedRelation: "cau_lac_bo"
+            referencedColumns: ["MaCLB"]
+          },
+          {
+            foreignKeyName: "nguoi_dung_MaVaiTro_fkey"
+            columns: ["MaVaiTro"]
             isOneToOne: false
-            referencedRelation: "clubs"
-            referencedColumns: ["id"]
+            referencedRelation: "vai_tro"
+            referencedColumns: ["MaVaiTro"]
           },
         ]
       }
-      notifications: {
+      nguoi_nhan_thong_bao: {
         Row: {
-          content: string
-          created_at: string
-          id: string
-          is_read: boolean
-          link: string | null
-          user_id: string
+          DaDoc: boolean
+          MaNguoiDung: string
+          MaThongBao: number
+          ThoiGianDoc: string | null
         }
         Insert: {
-          content: string
-          created_at?: string
-          id?: string
-          is_read?: boolean
-          link?: string | null
-          user_id: string
+          DaDoc?: boolean
+          MaNguoiDung: string
+          MaThongBao: number
+          ThoiGianDoc?: string | null
         }
         Update: {
-          content?: string
-          created_at?: string
-          id?: string
-          is_read?: boolean
-          link?: string | null
-          user_id?: string
-        }
-        Relationships: []
-      }
-      posts: {
-        Row: {
-          author_id: string | null
-          club_id: string
-          content: string
-          created_at: string
-          event_time: string | null
-          id: string
-          image_url: string | null
-          location: string | null
-          reject_reason: string | null
-          status: Database["public"]["Enums"]["post_status"]
-          title: string
-          type: Database["public"]["Enums"]["post_type"]
-          updated_at: string
-        }
-        Insert: {
-          author_id?: string | null
-          club_id: string
-          content: string
-          created_at?: string
-          event_time?: string | null
-          id?: string
-          image_url?: string | null
-          location?: string | null
-          reject_reason?: string | null
-          status?: Database["public"]["Enums"]["post_status"]
-          title: string
-          type: Database["public"]["Enums"]["post_type"]
-          updated_at?: string
-        }
-        Update: {
-          author_id?: string | null
-          club_id?: string
-          content?: string
-          created_at?: string
-          event_time?: string | null
-          id?: string
-          image_url?: string | null
-          location?: string | null
-          reject_reason?: string | null
-          status?: Database["public"]["Enums"]["post_status"]
-          title?: string
-          type?: Database["public"]["Enums"]["post_type"]
-          updated_at?: string
+          DaDoc?: boolean
+          MaNguoiDung?: string
+          MaThongBao?: number
+          ThoiGianDoc?: string | null
         }
         Relationships: [
           {
-            foreignKeyName: "posts_club_id_fkey"
-            columns: ["club_id"]
+            foreignKeyName: "nguoi_nhan_thong_bao_MaNguoiDung_fkey"
+            columns: ["MaNguoiDung"]
             isOneToOne: false
-            referencedRelation: "clubs"
-            referencedColumns: ["id"]
+            referencedRelation: "nguoi_dung"
+            referencedColumns: ["MaNguoiDung"]
+          },
+          {
+            foreignKeyName: "nguoi_nhan_thong_bao_MaThongBao_fkey"
+            columns: ["MaThongBao"]
+            isOneToOne: false
+            referencedRelation: "thong_bao"
+            referencedColumns: ["MaThongBao"]
           },
         ]
       }
-      profiles: {
+      nhat_ky_hoat_dong: {
         Row: {
-          created_at: string
-          email: string
-          full_name: string
-          id: string
-          is_locked: boolean
-          username: string | null
+          DoiTuongTacDong: string | null
+          GiaTriCu: string | null
+          GiaTriMoi: string | null
+          HanhDong: string
+          MaDoiTuong: number | null
+          MaNguoiDung: string
+          MaNhatKy: number
+          ThoiGian: string
         }
         Insert: {
-          created_at?: string
-          email: string
-          full_name?: string
-          id: string
-          is_locked?: boolean
-          username?: string | null
+          DoiTuongTacDong?: string | null
+          GiaTriCu?: string | null
+          GiaTriMoi?: string | null
+          HanhDong: string
+          MaDoiTuong?: number | null
+          MaNguoiDung: string
+          MaNhatKy?: never
+          ThoiGian?: string
         }
         Update: {
-          created_at?: string
-          email?: string
-          full_name?: string
-          id?: string
-          is_locked?: boolean
-          username?: string | null
+          DoiTuongTacDong?: string | null
+          GiaTriCu?: string | null
+          GiaTriMoi?: string | null
+          HanhDong?: string
+          MaDoiTuong?: number | null
+          MaNguoiDung?: string
+          MaNhatKy?: never
+          ThoiGian?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nhat_ky_hoat_dong_MaNguoiDung_fkey"
+            columns: ["MaNguoiDung"]
+            isOneToOne: false
+            referencedRelation: "nguoi_dung"
+            referencedColumns: ["MaNguoiDung"]
+          },
+        ]
+      }
+      su_kien: {
+        Row: {
+          DiaDiem: string | null
+          LoaiSuKien: string
+          MaBaiDang: number
+          ThoiGianBatDau: string
+          ThoiGianKetThuc: string
+          TrangThaiDienRa: string
+        }
+        Insert: {
+          DiaDiem?: string | null
+          LoaiSuKien: string
+          MaBaiDang: number
+          ThoiGianBatDau: string
+          ThoiGianKetThuc: string
+          TrangThaiDienRa?: string
+        }
+        Update: {
+          DiaDiem?: string | null
+          LoaiSuKien?: string
+          MaBaiDang?: number
+          ThoiGianBatDau?: string
+          ThoiGianKetThuc?: string
+          TrangThaiDienRa?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "su_kien_MaBaiDang_fkey"
+            columns: ["MaBaiDang"]
+            isOneToOne: true
+            referencedRelation: "bai_dang"
+            referencedColumns: ["MaBaiDang"]
+          },
+        ]
+      }
+      theo_doi_clb: {
+        Row: {
+          BatThongBao: boolean
+          MaCLB: number
+          MaNguoiDung: string
+          NgayTheoDoi: string
+        }
+        Insert: {
+          BatThongBao?: boolean
+          MaCLB: number
+          MaNguoiDung: string
+          NgayTheoDoi?: string
+        }
+        Update: {
+          BatThongBao?: boolean
+          MaCLB?: number
+          MaNguoiDung?: string
+          NgayTheoDoi?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "theo_doi_clb_MaCLB_fkey"
+            columns: ["MaCLB"]
+            isOneToOne: false
+            referencedRelation: "cau_lac_bo"
+            referencedColumns: ["MaCLB"]
+          },
+          {
+            foreignKeyName: "theo_doi_clb_MaNguoiDung_fkey"
+            columns: ["MaNguoiDung"]
+            isOneToOne: false
+            referencedRelation: "nguoi_dung"
+            referencedColumns: ["MaNguoiDung"]
+          },
+        ]
+      }
+      thong_bao: {
+        Row: {
+          DuongDan: string | null
+          LoaiThongBao: string
+          MaThongBao: number
+          NoiDung: string
+          ThoiGianTao: string
+          TieuDe: string
+        }
+        Insert: {
+          DuongDan?: string | null
+          LoaiThongBao: string
+          MaThongBao?: never
+          NoiDung: string
+          ThoiGianTao?: string
+          TieuDe: string
+        }
+        Update: {
+          DuongDan?: string | null
+          LoaiThongBao?: string
+          MaThongBao?: never
+          NoiDung?: string
+          ThoiGianTao?: string
+          TieuDe?: string
         }
         Relationships: []
       }
-      site_stats: {
+      thong_ke_truy_cap: {
         Row: {
-          id: number
-          visits: number
+          LuotTruyCap: number
+          MaThongKe: number
         }
         Insert: {
-          id?: number
-          visits?: number
+          LuotTruyCap?: number
+          MaThongKe?: number
         }
         Update: {
-          id?: number
-          visits?: number
+          LuotTruyCap?: number
+          MaThongKe?: number
         }
         Relationships: []
       }
-      user_roles: {
+      vai_tro: {
         Row: {
-          id: string
-          role: Database["public"]["Enums"]["app_role"]
-          user_id: string
+          MaVaiTro: number
+          MoTaQuyen: string | null
+          TenVaiTro: string
         }
         Insert: {
-          id?: string
-          role: Database["public"]["Enums"]["app_role"]
-          user_id: string
+          MaVaiTro?: never
+          MoTaQuyen?: string | null
+          TenVaiTro: string
         }
         Update: {
-          id?: string
-          role?: Database["public"]["Enums"]["app_role"]
-          user_id?: string
+          MaVaiTro?: never
+          MoTaQuyen?: string | null
+          TenVaiTro?: string
         }
         Relationships: []
+      }
+      yeu_cau_cap_nhat: {
+        Row: {
+          LyDoTuChoi: string | null
+          MaCLB: number
+          MaQuanTriVien: string | null
+          MaYeuCau: number
+          NoiDungThayDoi: string
+          ThoiGianGui: string
+          ThoiGianXuLy: string | null
+          TrangThaiXuLy: string
+        }
+        Insert: {
+          LyDoTuChoi?: string | null
+          MaCLB: number
+          MaQuanTriVien?: string | null
+          MaYeuCau?: never
+          NoiDungThayDoi: string
+          ThoiGianGui?: string
+          ThoiGianXuLy?: string | null
+          TrangThaiXuLy?: string
+        }
+        Update: {
+          LyDoTuChoi?: string | null
+          MaCLB?: number
+          MaQuanTriVien?: string | null
+          MaYeuCau?: never
+          NoiDungThayDoi?: string
+          ThoiGianGui?: string
+          ThoiGianXuLy?: string | null
+          TrangThaiXuLy?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "yeu_cau_cap_nhat_MaCLB_fkey"
+            columns: ["MaCLB"]
+            isOneToOne: false
+            referencedRelation: "cau_lac_bo"
+            referencedColumns: ["MaCLB"]
+          },
+          {
+            foreignKeyName: "yeu_cau_cap_nhat_MaQuanTriVien_fkey"
+            columns: ["MaQuanTriVien"]
+            isOneToOne: false
+            referencedRelation: "nguoi_dung"
+            referencedColumns: ["MaNguoiDung"]
+          },
+        ]
+      }
+      yeu_thich_su_kien: {
+        Row: {
+          MaBaiDang: number
+          MaNguoiDung: string
+          NgayYeuThich: string
+        }
+        Insert: {
+          MaBaiDang: number
+          MaNguoiDung: string
+          NgayYeuThich?: string
+        }
+        Update: {
+          MaBaiDang?: number
+          MaNguoiDung?: string
+          NgayYeuThich?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "yeu_thich_su_kien_MaBaiDang_fkey"
+            columns: ["MaBaiDang"]
+            isOneToOne: false
+            referencedRelation: "su_kien"
+            referencedColumns: ["MaBaiDang"]
+          },
+          {
+            foreignKeyName: "yeu_thich_su_kien_MaNguoiDung_fkey"
+            columns: ["MaNguoiDung"]
+            isOneToOne: false
+            referencedRelation: "nguoi_dung"
+            referencedColumns: ["MaNguoiDung"]
+          },
+        ]
       }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      club_follower_count: { Args: { _club_id: string }; Returns: number }
-      has_role: {
-        Args: {
-          _role: Database["public"]["Enums"]["app_role"]
-          _user_id: string
-        }
+      bai_dang_xem_duoc: {
+        Args: { _ma_bai_dang: number; _ma_nguoi_dung: string }
         Returns: boolean
       }
-      is_active_user: { Args: { _user_id: string }; Returns: boolean }
-      is_club_rep: {
-        Args: { _club_id: string; _user_id: string }
+      clb_phu_trach: { Args: { _ma_nguoi_dung: string }; Returns: number }
+      co_vai_tro: {
+        Args: { _ma_nguoi_dung: string; _ten_vai_tro: string }
         Returns: boolean
       }
-      track_visit: { Args: never; Returns: undefined }
+      dem_nguoi_theo_doi: { Args: { _ma_clb: number }; Returns: number }
+      ghi_nhan_truy_cap: { Args: never; Returns: undefined }
+      la_dai_dien_clb: {
+        Args: { _ma_clb: number; _ma_nguoi_dung: string }
+        Returns: boolean
+      }
+      la_quan_tri_vien: { Args: { _ma_nguoi_dung: string }; Returns: boolean }
+      lam_moi_trang_thai_su_kien: { Args: never; Returns: undefined }
+      tai_khoan_hoat_dong: { Args: { _ma_nguoi_dung: string }; Returns: boolean }
+      tu_choi_bai_dang: {
+        Args: { _ly_do: string; _ma_bai_dang: number }
+        Returns: undefined
+      }
     }
     Enums: {
-      app_role: "student" | "club_rep" | "admin"
-      post_status: "pending" | "approved" | "rejected"
-      post_type: "news" | "event"
+      [_ in never]: never
     }
     CompositeTypes: {
       [_ in never]: never
@@ -462,10 +689,6 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {
-      app_role: ["student", "club_rep", "admin"],
-      post_status: ["pending", "approved", "rejected"],
-      post_type: ["news", "event"],
-    },
+    Enums: {},
   },
 } as const

@@ -14,24 +14,44 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
-export type Role = "student" | "club_rep" | "admin";
-export const ROLE_LABEL: Record<Role, string> = {
-  student: "Sinh viên",
-  club_rep: "Đại diện CLB",
-  admin: "Quản trị viên",
+/**
+ * Vai trò lấy từ bảng vai_tro. Theo thiết kế, quan hệ VAI_TRO – NGUOI_DUNG là 1–n:
+ * mỗi tài khoản có đúng MỘT vai trò (khoá ngoại MaVaiTro), không phải danh sách vai trò.
+ */
+export type TenVaiTro = "SinhVien" | "DaiDienCLB" | "QuanTriVien";
+
+export const NHAN_VAI_TRO: Record<TenVaiTro, string> = {
+  SinhVien: "Sinh viên",
+  DaiDienCLB: "Đại diện CLB",
+  QuanTriVien: "Quản trị viên",
 };
+
+export type TrangThaiTaiKhoan = "HoatDong" | "BiKhoa";
+
 export const SCHOOL_DOMAIN = "@hvnh.edu.vn";
 export const isSchoolEmail = (e: string) => e.trim().toLowerCase().endsWith(SCHOOL_DOMAIN);
 
-type Profile = { id: string; full_name: string; email: string; is_locked: boolean };
+export type NguoiDung = {
+  MaNguoiDung: string;
+  HoTen: string;
+  EmailTruong: string;
+  SoDienThoai: string | null;
+  MaVaiTro: number;
+  MaCLB: number | null;
+  TrangThaiTaiKhoan: TrangThaiTaiKhoan;
+  NgayCapTaiKhoan: string;
+  TenDangNhap: string | null;
+  vai_tro?: { TenVaiTro: string } | null;
+};
 
 type AuthCtx = {
   session: Session | null;
-  userId: string | null;
-  profile: Profile | null;
-  roles: Role[];
-  role: Role | null;
-  clubIds: string[];
+  maNguoiDung: string | null;
+  nguoiDung: NguoiDung | null;
+  vaiTro: TenVaiTro | null;
+  /** Mã CLB mà tài khoản phụ trách – chỉ có giá trị với vai trò Đại diện CLB. */
+  maCLB: number | null;
+  biKhoa: boolean;
   ready: boolean;
   requireLogin: () => void;
   signOut: () => Promise<void>;
@@ -40,22 +60,16 @@ type AuthCtx = {
 
 const Ctx = createContext<AuthCtx | null>(null);
 
-export function primaryRole(roles: Role[]): Role {
-  if (roles.includes("admin")) return "admin";
-  if (roles.includes("club_rep")) return "club_rep";
-  return "student";
-}
-export function homePath(role: Role | null) {
-  return role === "admin" ? "/admin" : role === "club_rep" ? "/clb" : "/";
+export function homePath(vaiTro: TenVaiTro | null) {
+  return vaiTro === "QuanTriVien" ? "/admin" : vaiTro === "DaiDienCLB" ? "/clb" : "/";
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const qc = useQueryClient();
   const [session, setSession] = useState<Session | null>(null);
   const [sessionLoaded, setSessionLoaded] = useState(false);
-  const [profile, setProfile] = useState<Profile | null>(null);
-  const [roles, setRoles] = useState<Role[]>([]);
-  const [clubIds, setClubIds] = useState<string[]>([]);
+  const [nguoiDung, setNguoiDung] = useState<NguoiDung | null>(null);
+  const [vaiTro, setVaiTro] = useState<TenVaiTro | null>(null);
   const [infoFor, setInfoFor] = useState<string | null | undefined>(undefined);
   const [askLogin, setAskLogin] = useState(false);
 
@@ -75,27 +89,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const uid = session?.user.id ?? null;
 
   const loadInfo = async (id: string) => {
-    const [p, r, c] = await Promise.all([
-      supabase.from("profiles").select("id, full_name, email, is_locked").eq("id", id).maybeSingle(),
-      supabase.from("user_roles").select("role").eq("user_id", id),
-      supabase.from("club_reps").select("club_id").eq("user_id", id),
-    ]);
-    setProfile((p.data as Profile) ?? null);
-    setRoles(((r.data ?? []) as { role: Role }[]).map((x) => x.role));
-    setClubIds((c.data ?? []).map((x) => x.club_id));
+    const { data } = await supabase
+      .from("nguoi_dung")
+      .select("*, vai_tro(TenVaiTro)")
+      .eq("MaNguoiDung", id)
+      .maybeSingle();
+    const row = (data as unknown as NguoiDung | null) ?? null;
+    setNguoiDung(row);
+    setVaiTro((row?.vai_tro?.TenVaiTro as TenVaiTro | undefined) ?? null);
     setInfoFor(id);
   };
-
-  useEffect(() => {
-    if (!uid) {
-      setProfile(null);
-      setRoles([]);
-      setClubIds([]);
-      setInfoFor(null);
-      return;
-    }
-    loadInfo(uid);
-  }, [uid]);
 
   const signOut = async () => {
     await qc.cancelQueries();
@@ -103,13 +106,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await supabase.auth.signOut();
   };
 
+  useEffect(() => {
+    if (!uid) {
+      setNguoiDung(null);
+      setVaiTro(null);
+      setInfoFor(null);
+      return;
+    }
+    loadInfo(uid);
+  }, [uid]);
+
   const value: AuthCtx = {
     session,
-    userId: uid,
-    profile,
-    roles,
-    role: uid ? primaryRole(roles) : null,
-    clubIds,
+    maNguoiDung: uid,
+    nguoiDung,
+    vaiTro: uid ? vaiTro : null,
+    maCLB: vaiTro === "DaiDienCLB" ? (nguoiDung?.MaCLB ?? null) : null,
+    biKhoa: nguoiDung?.TrangThaiTaiKhoan === "BiKhoa",
     ready: sessionLoaded && infoFor === uid,
     requireLogin: () => setAskLogin(true),
     signOut,
@@ -126,7 +139,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           <AlertDialogHeader>
             <AlertDialogTitle>Bạn cần đăng nhập</AlertDialogTitle>
             <AlertDialogDescription>
-              Vui lòng đăng nhập bằng email trường (@hvnh.edu.vn) để theo dõi câu lạc bộ và lưu sự kiện yêu thích.
+              Vui lòng đăng nhập bằng email trường (@hvnh.edu.vn) để theo dõi câu lạc bộ và lưu sự
+              kiện yêu thích.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
