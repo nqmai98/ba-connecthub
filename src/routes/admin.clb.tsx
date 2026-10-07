@@ -3,10 +3,10 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Copy, Dices, KeyRound, Plus } from "lucide-react";
+import { Copy, Dices, KeyRound, Plus, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useClubs, type Club } from "@/lib/data";
-import { createClubAccount } from "@/lib/admin.functions";
+import { createClubAccount, deleteClub } from "@/lib/admin.functions";
 import { USERNAME_HINT, USERNAME_REGEX } from "@/lib/club-account";
 import { ClubLogo, Empty, GridSkeleton, Page, RoleGate } from "@/components/common";
 import { Button } from "@/components/ui/button";
@@ -46,6 +46,13 @@ function ManageClubs() {
   });
   // undefined: đóng · null: tạo CLB mới · Club: cấp tài khoản cho CLB có sẵn
   const [target, setTarget] = useState<Club | null | undefined>(undefined);
+  const [fresh, setFresh] = useState<string | null>(null); // CLB vừa tạo: đưa lên đầu, tô nổi bật
+  const [toDelete, setToDelete] = useState<Club | null>(null);
+  const list = clubs && fresh ? [...clubs.filter((c) => c.id === fresh), ...clubs.filter((c) => c.id !== fresh)] : clubs;
+
+  useEffect(() => {
+    if (fresh) document.getElementById("club-" + fresh)?.scrollIntoView({ behavior: "smooth", block: "center" });
+  }, [fresh, clubs]);
 
   return (
     <Page
@@ -55,25 +62,31 @@ function ManageClubs() {
     >
       {isLoading ? <GridSkeleton n={3} /> : !clubs?.length ? <Empty text="Chưa có câu lạc bộ" /> : (
         <div className="space-y-3">
-          {clubs.map((c) => (
-            <div key={c.id} className="flex flex-col gap-3 rounded-2xl border bg-card p-4 sm:flex-row sm:items-center">
+          {list!.map((c) => (
+            <div key={c.id} id={"club-" + c.id} className={"flex flex-col gap-3 rounded-2xl border bg-card p-4 sm:flex-row sm:items-center " + (c.id === fresh ? "border-accent ring-2 ring-accent/60" : "")}>
               <div className="flex min-w-0 flex-1 items-center gap-3">
                 <ClubLogo club={c} size={48} />
                 <div className="min-w-0">
-                  <div className="truncate font-bold text-primary">{c.name}</div>
+                  <div className="flex items-center gap-2"><span className="truncate font-bold text-primary">{c.name}</span>{c.id === fresh && <span className="shrink-0 rounded-full bg-accent px-2 py-0.5 text-xs font-extrabold text-accent-foreground">Vừa tạo</span>}</div>
                   <div className="truncate text-sm text-muted-foreground">
                     {reps.data?.[c.id]?.length ? "Tài khoản (username): " + reps.data[c.id]!.join(", ") : "Chưa có tài khoản"}
                   </div>
                 </div>
               </div>
-              <Button onClick={() => setTarget(c)} className="shrink-0 rounded-xl bg-accent font-bold text-accent-foreground hover:bg-accent/90">
-                <KeyRound className="h-4 w-4" /> Cấp tài khoản
-              </Button>
+              <div className="flex shrink-0 gap-2">
+                <Button onClick={() => setTarget(c)} className="rounded-xl bg-accent font-bold text-accent-foreground hover:bg-accent/90">
+                  <KeyRound className="h-4 w-4" /> Cấp tài khoản
+                </Button>
+                <Button variant="outline" onClick={() => setToDelete(c)} className="rounded-xl border-destructive/40 font-bold text-destructive hover:bg-destructive/10 hover:text-destructive">
+                  <Trash2 className="h-4 w-4" /> Xóa
+                </Button>
+              </div>
             </div>
           ))}
         </div>
       )}
-      <CreateDialog target={target} onClose={() => setTarget(undefined)} />
+      <CreateDialog target={target} onClose={() => setTarget(undefined)} onCreated={setFresh} />
+      <DeleteDialog club={toDelete} accounts={toDelete ? reps.data?.[toDelete.id] ?? [] : []} onClose={() => setToDelete(null)} onDeleted={(id) => setFresh((f) => (f === id ? null : f))} />
     </Page>
   );
 }
@@ -84,7 +97,7 @@ const randomPassword = () => {
   return Array.from(buf, (n) => chars[n % chars.length]).join("");
 };
 
-function CreateDialog({ target, onClose }: { target: Club | null | undefined; onClose: () => void }) {
+function CreateDialog({ target, onClose, onCreated }: { target: Club | null | undefined; onClose: () => void; onCreated: (clubId: string) => void }) {
   const create = useServerFn(createClubAccount);
   const qc = useQueryClient();
   const open = target !== undefined;
@@ -104,11 +117,15 @@ function CreateDialog({ target, onClose }: { target: Club | null | undefined; on
     if (form.password.length < 8) { toast.error("Mật khẩu tối thiểu 8 ký tự"); return; }
     setBusy(true);
     try {
-      await create({ data: { clubId: existing?.id, clubName: form.clubName.trim(), username, password: form.password } });
+      const res = await create({ data: { clubId: existing?.id, clubName: form.clubName.trim(), username, password: form.password } });
       toast.success("Đã tạo tài khoản cho " + form.clubName.trim());
-      qc.invalidateQueries({ queryKey: ["club-reps-admin"] });
-      qc.invalidateQueries({ queryKey: ["clubs"] });
-      qc.invalidateQueries({ queryKey: ["admin-accounts"] });
+      // Làm mới danh sách ngay để CLB vừa tạo (kèm tài khoản) hiện sẵn trong trang Quản lý CLB
+      await Promise.all([
+        qc.refetchQueries({ queryKey: ["clubs"] }),
+        qc.refetchQueries({ queryKey: ["club-reps-admin"] }),
+        qc.invalidateQueries({ queryKey: ["admin-accounts"] }),
+      ]);
+      onCreated(res.clubId);
       setDone({ clubName: form.clubName.trim(), username, password: form.password });
     } catch (e) {
       toast.error((e as Error).message);
@@ -170,6 +187,52 @@ function CreateDialog({ target, onClose }: { target: Club | null | undefined; on
             </DialogFooter>
           </>
         )}
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function DeleteDialog({ club, accounts, onClose, onDeleted }: { club: Club | null; accounts: string[]; onClose: () => void; onDeleted: (clubId: string) => void }) {
+  const remove = useServerFn(deleteClub);
+  const qc = useQueryClient();
+  const [busy, setBusy] = useState(false);
+
+  const confirm = async () => {
+    if (!club) return;
+    setBusy(true);
+    try {
+      await remove({ data: { clubId: club.id } });
+      toast.success("Đã xóa hồ sơ " + club.name);
+      onDeleted(club.id);
+      await qc.invalidateQueries(); // làm mới mọi danh sách (CLB, bài đăng, sự kiện, tài khoản...)
+      onClose();
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <Dialog open={!!club} onOpenChange={(o) => !o && !busy && onClose()}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Xóa hồ sơ {club?.name}?</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-2 text-sm font-medium">
+          <p>Thao tác này <b className="text-destructive">không thể hoàn tác</b>. Sẽ xóa vĩnh viễn:</p>
+          <ul className="list-disc space-y-1 pl-5">
+            <li>Hồ sơ CLB và toàn bộ bài đăng, sự kiện của CLB</li>
+            <li>Lượt theo dõi CLB và lượt yêu thích sự kiện của CLB</li>
+            <li>{accounts.length ? "Tài khoản đăng nhập: " + accounts.join(", ") : "Tài khoản đăng nhập của CLB (nếu có)"}</li>
+          </ul>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" disabled={busy} onClick={onClose}>Hủy</Button>
+          <Button disabled={busy} onClick={confirm} className="bg-destructive font-bold text-destructive-foreground hover:bg-destructive/90">
+            <Trash2 className="h-4 w-4" /> {busy ? "Đang xóa..." : "Xóa vĩnh viễn"}
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

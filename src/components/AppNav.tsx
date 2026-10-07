@@ -105,16 +105,11 @@ export function AppNav() {
               </Button>
             </>
           ) : (
-            <>
-              <Link to="/dang-nhap-clb" className="hidden rounded-lg px-2 py-2 text-sm font-bold text-primary hover:bg-secondary sm:inline">
-                Dành cho CLB
+            <Button asChild size="sm" className="bg-accent font-bold text-accent-foreground hover:bg-accent/90">
+              <Link to="/dang-nhap">
+                <LogIn className="h-4 w-4" /> Đăng nhập
               </Link>
-              <Button asChild size="sm" className="bg-accent font-bold text-accent-foreground hover:bg-accent/90">
-                <Link to="/dang-nhap">
-                  <LogIn className="h-4 w-4" /> Đăng nhập
-                </Link>
-              </Button>
-            </>
+            </Button>
           )}
         </div>
       </div>

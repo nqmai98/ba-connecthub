@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as DangNhapRouteImport } from './routes/dang-nhap'
 import { Route as DangNhapClbRouteImport } from './routes/dang-nhap-clb'
+import { Route as DangNhapSinhVienRouteImport } from './routes/dang-nhap-sinh-vien'
 import { Route as DangTheoDoiRouteImport } from './routes/dang-theo-doi'
 import { Route as LichCaNhanRouteImport } from './routes/lich-ca-nhan'
 import { Route as SuKienRouteImport } from './routes/su-kien'
@@ -40,6 +41,11 @@ const DangNhapRoute = DangNhapRouteImport.update({
 const DangNhapClbRoute = DangNhapClbRouteImport.update({
   id: '/dang-nhap-clb',
   path: '/dang-nhap-clb',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DangNhapSinhVienRoute = DangNhapSinhVienRouteImport.update({
+  id: '/dang-nhap-sinh-vien',
+  path: '/dang-nhap-sinh-vien',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DangTheoDoiRoute = DangTheoDoiRouteImport.update({
@@ -117,6 +123,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/dang-nhap': typeof DangNhapRoute
   '/dang-nhap-clb': typeof DangNhapClbRoute
+  '/dang-nhap-sinh-vien': typeof DangNhapSinhVienRoute
   '/dang-theo-doi': typeof DangTheoDoiRoute
   '/lich-ca-nhan': typeof LichCaNhanRoute
   '/su-kien': typeof SuKienRoute
@@ -136,6 +143,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/dang-nhap': typeof DangNhapRoute
   '/dang-nhap-clb': typeof DangNhapClbRoute
+  '/dang-nhap-sinh-vien': typeof DangNhapSinhVienRoute
   '/dang-theo-doi': typeof DangTheoDoiRoute
   '/lich-ca-nhan': typeof LichCaNhanRoute
   '/su-kien': typeof SuKienRoute
@@ -156,6 +164,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/dang-nhap': typeof DangNhapRoute
   '/dang-nhap-clb': typeof DangNhapClbRoute
+  '/dang-nhap-sinh-vien': typeof DangNhapSinhVienRoute
   '/dang-theo-doi': typeof DangTheoDoiRoute
   '/lich-ca-nhan': typeof LichCaNhanRoute
   '/su-kien': typeof SuKienRoute
@@ -177,6 +186,7 @@ export interface FileRouteTypes {
     | '/'
     | '/dang-nhap'
     | '/dang-nhap-clb'
+    | '/dang-nhap-sinh-vien'
     | '/dang-theo-doi'
     | '/lich-ca-nhan'
     | '/su-kien'
@@ -196,6 +206,7 @@ export interface FileRouteTypes {
     | '/'
     | '/dang-nhap'
     | '/dang-nhap-clb'
+    | '/dang-nhap-sinh-vien'
     | '/dang-theo-doi'
     | '/lich-ca-nhan'
     | '/su-kien'
@@ -215,6 +226,7 @@ export interface FileRouteTypes {
     | '/'
     | '/dang-nhap'
     | '/dang-nhap-clb'
+    | '/dang-nhap-sinh-vien'
     | '/dang-theo-doi'
     | '/lich-ca-nhan'
     | '/su-kien'
@@ -235,6 +247,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   DangNhapRoute: typeof DangNhapRoute
   DangNhapClbRoute: typeof DangNhapClbRoute
+  DangNhapSinhVienRoute: typeof DangNhapSinhVienRoute
   DangTheoDoiRoute: typeof DangTheoDoiRoute
   LichCaNhanRoute: typeof LichCaNhanRoute
   SuKienRoute: typeof SuKienRoute
@@ -272,6 +285,13 @@ declare module '@tanstack/react-router' {
       path: '/dang-nhap-clb'
       fullPath: '/dang-nhap-clb'
       preLoaderRoute: typeof DangNhapClbRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/dang-nhap-sinh-vien': {
+      id: '/dang-nhap-sinh-vien'
+      path: '/dang-nhap-sinh-vien'
+      fullPath: '/dang-nhap-sinh-vien'
+      preLoaderRoute: typeof DangNhapSinhVienRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/dang-theo-doi': {
@@ -379,6 +399,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   DangNhapRoute: DangNhapRoute,
   DangNhapClbRoute: DangNhapClbRoute,
+  DangNhapSinhVienRoute: DangNhapSinhVienRoute,
   DangTheoDoiRoute: DangTheoDoiRoute,
   LichCaNhanRoute: LichCaNhanRoute,
   SuKienRoute: SuKienRoute,

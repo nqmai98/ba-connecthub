@@ -36,21 +36,77 @@ export const createClubAccount = createServerFn({ method: "POST" })
       createdClub = true;
     }
 
-    const { error } = await supabaseAdmin.auth.admin.createUser({
+    const { data: created, error } = await supabaseAdmin.auth.admin.createUser({
       email: usernameToEmail(data.username),
       password: data.password,
       email_confirm: true,
-      user_metadata: { full_name: data.clubName, username: data.username },
-      app_metadata: { created_by_admin: true, club_id: clubId },
+      user_metadata: { full_name: data.clubName },
     });
-    if (error) {
-      // Không để lại CLB "mồ côi" nếu tạo tài khoản thất bại
+    const removeClubIfNew = async () => {
       if (createdClub && clubId) await supabaseAdmin.from("clubs").delete().eq("id", clubId);
-      const m = error.message.toLowerCase();
+    };
+    if (error || !created?.user) {
+      await removeClubIfNew();
+      const m = (error?.message ?? "").toLowerCase();
       if (m.includes("registered") || m.includes("already")) throw new Error("Username này đã tồn tại");
-      if (m.includes("invalid") && m.includes("email"))
-        throw new Error("Hệ thống từ chối email nội bộ của username. Hãy đổi CLUB_EMAIL_DOMAIN trong src/lib/club-account.ts sang tên miền hợp lệ");
-      throw new Error("Tạo tài khoản thất bại: " + error.message);
+      throw new Error("Tạo tài khoản thất bại: " + (error?.message ?? "không rõ nguyên nhân"));
+    }
+
+    // Gán vai trò CLB sau khi user đã tồn tại (trigger chỉ tạo profile + vai trò student)
+    const uid = created.user.id;
+    const steps = [
+      await supabaseAdmin.from("profiles").update({ username: data.username, full_name: data.clubName }).eq("id", uid),
+      await supabaseAdmin.from("user_roles").insert({ user_id: uid, role: "club_rep" }),
+      await supabaseAdmin.from("club_reps").insert({ user_id: uid, club_id: clubId! }),
+      await supabaseAdmin.from("user_roles").delete().eq("user_id", uid).eq("role", "student"),
+    ];
+    const failed = steps.find((s) => s.error);
+    if (failed?.error) {
+      // Hoàn tác để không để lại tài khoản dở dang
+      await supabaseAdmin.from("club_reps").delete().eq("user_id", uid);
+      await supabaseAdmin.from("user_roles").delete().eq("user_id", uid);
+      await supabaseAdmin.from("profiles").delete().eq("id", uid);
+      await supabaseAdmin.auth.admin.deleteUser(uid);
+      await removeClubIfNew();
+      throw new Error("Gán quyền cho tài khoản CLB thất bại: " + failed.error.message);
     }
     return { ok: true as const, clubId: clubId! };
+  });
+
+// Xóa hồ sơ CLB: xóa CLB (kéo theo bài đăng, lượt theo dõi, yêu thích sự kiện nhờ ON DELETE CASCADE)
+// và xóa luôn tài khoản đăng nhập của CLB (trừ tài khoản admin hoặc tài khoản còn phụ trách CLB khác).
+export const deleteClub = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ clubId: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { data: isAdmin } = await context.supabase.rpc("has_role", { _user_id: context.userId, _role: "admin" });
+    if (!isAdmin) throw new Error("Bạn không có quyền thực hiện thao tác này");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const club = await supabaseAdmin.from("clubs").select("id").eq("id", data.clubId).maybeSingle();
+    if (!club.data) throw new Error("Không tìm thấy câu lạc bộ (có thể đã được xóa)");
+
+    const reps = await supabaseAdmin.from("club_reps").select("user_id").eq("club_id", data.clubId);
+    const removable: string[] = [];
+    for (const r of reps.data ?? []) {
+      const [others, roles] = await Promise.all([
+        supabaseAdmin.from("club_reps").select("club_id").eq("user_id", r.user_id).neq("club_id", data.clubId),
+        supabaseAdmin.from("user_roles").select("role").eq("user_id", r.user_id),
+      ]);
+      const isAdminUser = (roles.data ?? []).some((x) => x.role === "admin");
+      if (!isAdminUser && !(others.data ?? []).length) removable.push(r.user_id);
+    }
+
+    const del = await supabaseAdmin.from("clubs").delete().eq("id", data.clubId);
+    if (del.error) throw new Error("Xóa CLB thất bại: " + del.error.message);
+
+    for (const uid of removable) {
+      await supabaseAdmin.from("notifications").delete().eq("user_id", uid);
+      await supabaseAdmin.from("follows").delete().eq("user_id", uid);
+      await supabaseAdmin.from("favorite_events").delete().eq("user_id", uid);
+      await supabaseAdmin.from("user_roles").delete().eq("user_id", uid);
+      await supabaseAdmin.from("profiles").delete().eq("id", uid);
+      await supabaseAdmin.auth.admin.deleteUser(uid);
+    }
+    return { ok: true as const, removedAccounts: removable.length };
   });

@@ -84,9 +84,12 @@ function ClubLoginPage() {
             {busy ? "Đang xử lý..." : "Đăng nhập"}
           </Button>
         </form>
-        <div className="mt-6 border-t pt-4 text-center text-sm font-semibold text-muted-foreground">
-          Bạn là sinh viên?{" "}
-          <Link to="/dang-nhap" className="font-extrabold text-primary underline-offset-2 hover:underline">Đăng nhập tại đây</Link>
+        <div className="mt-6 flex flex-col items-center gap-1 border-t pt-4 text-center text-sm font-semibold text-muted-foreground">
+          <span>
+            Bạn là sinh viên?{" "}
+            <Link to="/dang-nhap-sinh-vien" className="font-extrabold text-primary underline-offset-2 hover:underline">Đăng nhập tại đây</Link>
+          </span>
+          <Link to="/dang-nhap" className="text-xs font-bold text-primary underline-offset-2 hover:underline">← Quay lại chọn đối tượng</Link>
         </div>
       </div>
     </main>
