@@ -3,7 +3,9 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { toast } from "sonner";
-import { KeyRound } from "lucide-react";
+import { KeyRound, Pencil, Plus, Trash2 } from "lucide-react";
+import { ClubForm, emptyClub, type ClubDraft } from "@/components/forms";
+import { ConfirmDialog } from "@/components/common";
 import { supabase } from "@/integrations/supabase/client";
 import { useClubs, type Club } from "@/lib/data";
 import { createClubAccount } from "@/lib/admin.functions";
@@ -44,9 +46,17 @@ function ManageClubs() {
     },
   });
   const [target, setTarget] = useState<Club | null>(null);
+  const [editing, setEditing] = useState<ClubDraft | null>(null);
+  const [del, setDel] = useState<Club | null>(null);
+  const qc = useQueryClient();
+  const remove = async (c: Club) => {
+    const { error } = await supabase.from("clubs").delete().eq("id", c.id);
+    if (error) { toast.error("Xóa thất bại (CLB còn bài đăng/người theo dõi, hãy ẩn thay vì xóa)"); return; }
+    toast.success("Đã xóa CLB"); qc.invalidateQueries({ queryKey: ["clubs"] });
+  };
 
   return (
-    <Page title="Quản lý CLB" subtitle="Cấp tài khoản đăng nhập cho từng câu lạc bộ">
+    <Page title="Quản lý CLB" subtitle="Thêm, sửa, ẩn/xóa CLB và cấp tài khoản cho đại diện" actions={<Button onClick={() => setEditing(emptyClub)} className="bg-primary font-bold"><Plus className="h-4 w-4" /> Thêm CLB</Button>}>
       {isLoading ? <GridSkeleton n={3} /> : !clubs?.length ? <Empty text="Chưa có câu lạc bộ" /> : (
         <div className="space-y-3">
           {clubs.map((c) => (
@@ -60,6 +70,9 @@ function ManageClubs() {
                   </div>
                 </div>
               </div>
+              {!c.is_active && <span className="rounded-full bg-muted px-2 py-1 text-xs font-bold">Đang ẩn</span>}
+              <Button variant="outline" onClick={() => setEditing((({ categories: _x, ...r }) => r)(c))}><Pencil className="h-4 w-4" /> Sửa</Button>
+              <Button variant="outline" className="text-destructive" onClick={() => setDel(c)}><Trash2 className="h-4 w-4" /></Button>
               <Button onClick={() => setTarget(c)} className="shrink-0 rounded-xl bg-accent font-bold text-accent-foreground hover:bg-accent/90">
                 <KeyRound className="h-4 w-4" /> Tạo tài khoản
               </Button>
@@ -67,6 +80,13 @@ function ManageClubs() {
           ))}
         </div>
       )}
+      <Dialog open={!!editing} onOpenChange={(o) => !o && setEditing(null)}>
+        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
+          <DialogHeader><DialogTitle>{editing?.id ? "Sửa CLB" : "Thêm CLB"}</DialogTitle></DialogHeader>
+          {editing && <ClubForm admin initial={editing} onSaved={() => { setEditing(null); qc.invalidateQueries({ queryKey: ["clubs"] }); }} />}
+        </DialogContent>
+      </Dialog>
+      <ConfirmDialog open={!!del} onOpenChange={(o) => !o && setDel(null)} title="Xóa CLB này?" description="Thao tác không thể hoàn tác." confirmText="Xóa" destructive onConfirm={() => del && remove(del)} />
       <CreateDialog club={target} onClose={() => setTarget(null)} />
     </Page>
   );
