@@ -1,72 +1,197 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Empty, GridSkeleton, Page, RoleGate } from "@/components/common";
-import { ROLE_LABEL, primaryRole, useAuth, type Role } from "@/lib/auth";
+import { NHAN_VAI_TRO, useAuth, type TenVaiTro } from "@/lib/auth";
+import { formatDateTime } from "@/lib/data";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
 export const Route = createFileRoute("/admin/tai-khoan")({
-  head: () => ({ meta: [{ title: "Quản lý tài khoản – BA CLUBS" }, { name: "description", content: "Quản lý vai trò và trạng thái tài khoản người dùng." }, { property: "og:title", content: "Quản lý tài khoản – BA CLUBS" }, { property: "og:description", content: "Quản lý vai trò và trạng thái tài khoản người dùng." }] }),
+  head: () => ({
+    meta: [
+      { title: "Quản lý tài khoản – BA CLUBS" },
+      { name: "description", content: "Quản lý vai trò và trạng thái tài khoản người dùng." },
+      { property: "og:title", content: "Quản lý tài khoản – BA CLUBS" },
+      {
+        property: "og:description",
+        content: "Quản lý vai trò và trạng thái tài khoản người dùng.",
+      },
+    ],
+  }),
   component: () => (
-    <RoleGate roles={["admin"]}>
+    <RoleGate vaiTro={["QuanTriVien"]}>
       <Accounts />
     </RoleGate>
   ),
 });
 
+type DongTaiKhoan = {
+  MaNguoiDung: string;
+  HoTen: string;
+  EmailTruong: string;
+  TenDangNhap: string | null;
+  SoDienThoai: string | null;
+  MaVaiTro: number;
+  MaCLB: number | null;
+  TrangThaiTaiKhoan: string;
+  NgayCapTaiKhoan: string;
+  vai_tro: { TenVaiTro: string } | null;
+  cau_lac_bo: { TenCLB: string } | null;
+};
+
 function Accounts() {
-  const { userId } = useAuth();
+  const { maNguoiDung } = useAuth();
   const qc = useQueryClient();
   const [search, setSearch] = useState("");
-  const q = useQuery({
-    queryKey: ["admin-accounts"],
+
+  const vaiTroList = useQuery({
+    queryKey: ["vai_tro"],
+    staleTime: 5 * 60_000,
     queryFn: async () => {
-      const [p, r] = await Promise.all([
-        supabase.from("profiles").select("id, full_name, email, is_locked").order("created_at", { ascending: false }),
-        supabase.from("user_roles").select("user_id, role"),
-      ]);
-      if (p.error) throw p.error;
-      return (p.data ?? []).map((u) => ({ ...u, role: primaryRole((r.data ?? []).filter((x) => x.user_id === u.id).map((x) => x.role as Role)) }));
+      const { data, error } = await supabase
+        .from("vai_tro")
+        .select("MaVaiTro, TenVaiTro, MoTaQuyen")
+        .order("MaVaiTro");
+      if (error) throw error;
+      return data;
     },
   });
 
-  const changeRole = async (id: string, role: Role) => {
-    const ins = await supabase.from("user_roles").insert({ user_id: id, role });
-    if (ins.error && !ins.error.message.includes("duplicate")) { toast.error("Đổi vai trò thất bại: " + ins.error.message); return; }
-    const del = await supabase.from("user_roles").delete().eq("user_id", id).neq("role", role);
-    if (del.error) { toast.error("Đổi vai trò thất bại: " + del.error.message); return; }
-    toast.success("Đã đổi vai trò thành " + ROLE_LABEL[role]);
-    qc.invalidateQueries({ queryKey: ["admin-accounts"] });
-  };
-  const toggleLock = async (id: string, lock: boolean) => {
-    const { error } = await supabase.from("profiles").update({ is_locked: lock }).eq("id", id);
-    if (error) { toast.error("Thao tác thất bại: " + error.message); return; }
-    toast.success(lock ? "Đã khóa tài khoản" : "Đã mở khóa tài khoản");
+  const q = useQuery({
+    queryKey: ["admin-accounts"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("nguoi_dung")
+        // cau_lac_bo phải chỉ rõ khoá ngoại: giữa nguoi_dung và cau_lac_bo còn một
+        // đường quan hệ nhiều-nhiều qua theo_doi_clb nên PostgREST không tự chọn được
+        .select("*, vai_tro(TenVaiTro), cau_lac_bo!nguoi_dung_MaCLB_fkey(TenCLB)")
+        .order("NgayCapTaiKhoan", { ascending: false });
+      if (error) throw error;
+      return data as unknown as DongTaiKhoan[];
+    },
+  });
+
+  const doiVaiTro = async (id: string, maVaiTro: number) => {
+    const { error } = await supabase
+      .from("nguoi_dung")
+      .update({ MaVaiTro: maVaiTro })
+      .eq("MaNguoiDung", id);
+    if (error) {
+      toast.error("Đổi vai trò thất bại: " + error.message);
+      return;
+    }
+    const ten = vaiTroList.data?.find((v) => v.MaVaiTro === maVaiTro)?.TenVaiTro as
+      TenVaiTro | undefined;
+    toast.success("Đã đổi vai trò thành " + (ten ? NHAN_VAI_TRO[ten] : "vai trò mới"));
     qc.invalidateQueries({ queryKey: ["admin-accounts"] });
   };
 
-  const rows = q.data?.filter((u) => (u.full_name + u.email).toLowerCase().includes(search.toLowerCase()));
+  const doiTrangThai = async (id: string, khoa: boolean) => {
+    const { error } = await supabase
+      .from("nguoi_dung")
+      .update({ TrangThaiTaiKhoan: khoa ? "BiKhoa" : "HoatDong" })
+      .eq("MaNguoiDung", id);
+    if (error) {
+      toast.error("Thao tác thất bại: " + error.message);
+      return;
+    }
+    toast.success(khoa ? "Đã khóa tài khoản" : "Đã mở khóa tài khoản");
+    qc.invalidateQueries({ queryKey: ["admin-accounts"] });
+  };
+
+  const rows = useMemo(() => {
+    const k = search.trim().toLowerCase();
+    if (!k) return q.data ?? [];
+    return (q.data ?? []).filter((u) =>
+      [u.HoTen, u.EmailTruong, u.TenDangNhap ?? "", u.cau_lac_bo?.TenCLB ?? ""]
+        .join(" ")
+        .toLowerCase()
+        .includes(k),
+    );
+  }, [q.data, search]);
+
   return (
-    <Page title="Quản lý tài khoản" actions={<Input className="w-64" placeholder="Tìm theo tên hoặc email" value={search} onChange={(e) => setSearch(e.target.value)} />}>
-      {q.isLoading ? <GridSkeleton n={3} /> : !rows?.length ? <Empty text="Không có tài khoản" /> : (
+    <Page
+      title="Quản lý tài khoản"
+      subtitle="Mỗi tài khoản có đúng một vai trò theo thiết kế phân quyền"
+      actions={
+        <Input
+          className="w-72"
+          placeholder="Tìm theo tên, email, username hoặc CLB"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
+      }
+    >
+      {q.isLoading ? (
+        <GridSkeleton n={3} />
+      ) : !rows.length ? (
+        <Empty text="Không có tài khoản" />
+      ) : (
         <div className="overflow-x-auto rounded-2xl border bg-card">
-          <table className="w-full min-w-[680px] text-sm">
-            <thead className="bg-muted text-left font-bold"><tr><th className="p-3">Họ tên</th><th className="p-3">Email</th><th className="p-3">Vai trò</th><th className="p-3">Trạng thái</th><th className="p-3"></th></tr></thead>
+          <table className="w-full min-w-[900px] text-sm">
+            <thead className="bg-muted text-left font-bold">
+              <tr>
+                <th className="p-3">Họ tên</th>
+                <th className="p-3">Email / Tên đăng nhập</th>
+                <th className="p-3">CLB phụ trách</th>
+                <th className="p-3">Ngày cấp</th>
+                <th className="p-3">Vai trò</th>
+                <th className="p-3">Trạng thái</th>
+                <th className="p-3"></th>
+              </tr>
+            </thead>
             <tbody>
               {rows.map((u) => (
-                <tr key={u.id} className="border-t">
-                  <td className="p-3 font-semibold">{u.full_name || "—"}</td>
-                  <td className="p-3">{u.email}</td>
+                <tr key={u.MaNguoiDung} className="border-t">
+                  <td className="p-3 font-semibold">{u.HoTen || "—"}</td>
                   <td className="p-3">
-                    <select disabled={u.id === userId} className="h-9 rounded-md border bg-background px-2" value={u.role} onChange={(e) => changeRole(u.id, e.target.value as Role)}>
-                      {(Object.keys(ROLE_LABEL) as Role[]).map((r) => <option key={r} value={r}>{ROLE_LABEL[r]}</option>)}
+                    {u.TenDangNhap ?? u.EmailTruong}
+                    {u.TenDangNhap && (
+                      <div className="text-xs text-muted-foreground">{u.EmailTruong}</div>
+                    )}
+                  </td>
+                  <td className="p-3 text-muted-foreground">{u.cau_lac_bo?.TenCLB ?? "—"}</td>
+                  <td className="whitespace-nowrap p-3 text-muted-foreground">
+                    {formatDateTime(u.NgayCapTaiKhoan)}
+                  </td>
+                  <td className="p-3">
+                    <select
+                      disabled={u.MaNguoiDung === maNguoiDung}
+                      className="h-9 rounded-md border bg-background px-2"
+                      value={u.MaVaiTro}
+                      onChange={(e) => doiVaiTro(u.MaNguoiDung, Number(e.target.value))}
+                    >
+                      {vaiTroList.data?.map((v) => (
+                        <option key={v.MaVaiTro} value={v.MaVaiTro}>
+                          {NHAN_VAI_TRO[v.TenVaiTro as TenVaiTro] ?? v.TenVaiTro}
+                        </option>
+                      ))}
                     </select>
                   </td>
-                  <td className="p-3">{u.is_locked ? <span className="font-bold text-destructive">Đã khóa</span> : <span className="font-bold text-success">Hoạt động</span>}</td>
-                  <td className="p-3 text-right">{u.id !== userId && <Button size="sm" variant="outline" onClick={() => toggleLock(u.id, !u.is_locked)}>{u.is_locked ? "Mở khóa" : "Khóa"}</Button>}</td>
+                  <td className="p-3">
+                    {u.TrangThaiTaiKhoan === "BiKhoa" ? (
+                      <span className="font-bold text-destructive">Đã khóa</span>
+                    ) : (
+                      <span className="font-bold text-success">Hoạt động</span>
+                    )}
+                  </td>
+                  <td className="p-3 text-right">
+                    {u.MaNguoiDung !== maNguoiDung && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() =>
+                          doiTrangThai(u.MaNguoiDung, u.TrangThaiTaiKhoan !== "BiKhoa")
+                        }
+                      >
+                        {u.TrangThaiTaiKhoan === "BiKhoa" ? "Mở khóa" : "Khóa"}
+                      </Button>
+                    )}
+                  </td>
                 </tr>
               ))}
             </tbody>

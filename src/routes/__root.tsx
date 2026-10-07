@@ -107,7 +107,7 @@ function RootComponent() {
   useEffect(() => {
     if (!sessionStorage.getItem("bav_visit")) {
       sessionStorage.setItem("bav_visit", "1");
-      supabase.rpc("track_visit");
+      supabase.rpc("ghi_nhan_truy_cap");
     }
   }, []);
   return (

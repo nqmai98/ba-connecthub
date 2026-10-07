@@ -7,15 +7,17 @@ export const DOMAIN_ERR = "Chỉ chấp nhận email trường có đuôi @hvnh.
 
 /**
  * Xử lý sau khi sinh viên đăng nhập Google (Google quay về /dang-nhap):
- * báo lỗi nếu bị từ chối, chặn email ngoài trường, chặn tài khoản bị khóa,
- * rồi chuyển về trang chủ đúng vai trò.
+ * báo lỗi nếu bị từ chối, chặn email ngoài trường, chặn tài khoản bị khóa
+ * (TrangThaiTaiKhoan = 'BiKhoa'), rồi chuyển về trang chủ đúng vai trò.
  */
 export function useStudentLoginRedirect() {
   const navigate = useNavigate();
-  const { ready, userId, role, profile, signOut, session } = useAuth();
+  const { ready, maNguoiDung, vaiTro, biKhoa, signOut, session } = useAuth();
 
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search + "&" + window.location.hash.slice(1));
+    const params = new URLSearchParams(
+      window.location.search + "&" + window.location.hash.slice(1),
+    );
     if (params.get("error_description") || params.get("error")) {
       toast.error(DOMAIN_ERR + ". Tài khoản Google bạn chọn không được phép truy cập.");
       window.history.replaceState(null, "", window.location.pathname);
@@ -23,18 +25,18 @@ export function useStudentLoginRedirect() {
   }, []);
 
   useEffect(() => {
-    if (!ready || !userId) return;
+    if (!ready || !maNguoiDung) return;
     const mail = session?.user.email ?? "";
-    if (!isSchoolEmail(mail) && role === "student") {
+    if (!isSchoolEmail(mail) && vaiTro === "SinhVien") {
       toast.error(DOMAIN_ERR + ". Tài khoản " + (mail || "này") + " không thể đăng nhập.");
       signOut();
       return;
     }
-    if (profile?.is_locked) {
+    if (biKhoa) {
       toast.error("Tài khoản của bạn đã bị khóa. Vui lòng liên hệ Quản trị viên.");
       signOut();
       return;
     }
-    navigate({ to: homePath(role), replace: true });
-  }, [ready, userId, role, profile]);
+    navigate({ to: homePath(vaiTro), replace: true });
+  }, [ready, maNguoiDung, vaiTro, biKhoa]);
 }

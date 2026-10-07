@@ -1,12 +1,30 @@
-import { type ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { Link, Navigate } from "@tanstack/react-router";
-import { Calendar, MapPin, Star, Users, Inbox } from "lucide-react";
-import { useAuth, type Role } from "@/lib/auth";
-import { STATUS_LABEL, formatDateTime, type Club, type Post, useFavorites, useFollows, useToggleFavorite, useToggleFollow } from "@/lib/data";
+import { Bell, BellOff, Calendar, Inbox, MapPin, Star, Users } from "lucide-react";
+import { useAuth, type TenVaiTro } from "@/lib/auth";
+import {
+  NHAN_LOAI_BAI_DANG,
+  NHAN_LOAI_SU_KIEN,
+  NHAN_TRANG_THAI_DIEN_RA,
+  NHAN_TRANG_THAI_KIEM_DUYET,
+  NHAN_TRANG_THAI_XU_LY,
+  formatKhoangThoiGian,
+  useTheoDoi,
+  useToggleTheoDoi,
+  useToggleThongBaoTheoDoi,
+  useToggleYeuThich,
+  useYeuThich,
+  type CauLacBo,
+  type LoaiBaiDang,
+  type LoaiSuKien,
+  type SuKien,
+  type TrangThaiDienRa,
+  type TrangThaiKiemDuyet,
+  type TrangThaiXuLy,
+} from "@/lib/data";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
-import { useState } from "react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -18,7 +36,17 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
-export function Page({ title, subtitle, actions, children }: { title: string; subtitle?: string; actions?: ReactNode; children: ReactNode }) {
+export function Page({
+  title,
+  subtitle,
+  actions,
+  children,
+}: {
+  title: string;
+  subtitle?: string;
+  actions?: ReactNode;
+  children: ReactNode;
+}) {
   return (
     <main className="mx-auto max-w-7xl px-3 py-6 sm:px-6 sm:py-8">
       <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
@@ -34,7 +62,11 @@ export function Page({ title, subtitle, actions, children }: { title: string; su
 }
 
 export function Card({ className, children }: { className?: string; children: ReactNode }) {
-  return <div className={cn("rounded-2xl border bg-card p-5 shadow-[var(--shadow-soft)]", className)}>{children}</div>;
+  return (
+    <div className={cn("rounded-2xl border bg-card p-5 shadow-[var(--shadow-soft)]", className)}>
+      {children}
+    </div>
+  );
 }
 
 export function Empty({ text, action }: { text: string; action?: ReactNode }) {
@@ -57,21 +89,88 @@ export function GridSkeleton({ n = 6 }: { n?: number }) {
   );
 }
 
-export function StatusBadge({ status }: { status: Post["status"] }) {
-  const cls = {
-    pending: "bg-warning text-warning-foreground",
-    approved: "bg-success text-success-foreground",
-    rejected: "bg-destructive text-destructive-foreground",
-  }[status];
-  return <span className={cn("inline-flex rounded-full px-2.5 py-1 text-xs font-bold", cls)}>{STATUS_LABEL[status]}</span>;
+const CHIP = "inline-flex rounded-full px-2.5 py-1 text-xs font-bold";
+
+/** Trạng thái kiểm duyệt của bài đăng (ChoDuyet / DaDuyet / TuChoi). */
+export function TrangThaiKiemDuyetBadge({ trangThai }: { trangThai: TrangThaiKiemDuyet }) {
+  const cls: Record<TrangThaiKiemDuyet, string> = {
+    ChoDuyet: "bg-warning text-warning-foreground",
+    DaDuyet: "bg-success text-success-foreground",
+    TuChoi: "bg-destructive text-destructive-foreground",
+  };
+  return <span className={cn(CHIP, cls[trangThai])}>{NHAN_TRANG_THAI_KIEM_DUYET[trangThai]}</span>;
 }
 
-export function ClubLogo({ club, size = 56 }: { club: Pick<Club, "name" | "logo_url">; size?: number }) {
-  if (club.logo_url)
-    return <img src={club.logo_url} alt={club.name} style={{ width: size, height: size }} className="shrink-0 rounded-xl border object-cover" />;
-  const initials = club.name.replace(/^CLB\s*/i, "").split(" ").slice(0, 2).map((w) => w[0]).join("").toUpperCase();
+/** Trạng thái xử lý của yêu cầu cập nhật thông tin CLB. */
+export function TrangThaiXuLyBadge({ trangThai }: { trangThai: TrangThaiXuLy }) {
+  const cls: Record<TrangThaiXuLy, string> = {
+    ChoDuyet: "bg-warning text-warning-foreground",
+    DaDuyet: "bg-success text-success-foreground",
+    TuChoi: "bg-destructive text-destructive-foreground",
+  };
+  return <span className={cn(CHIP, cls[trangThai])}>{NHAN_TRANG_THAI_XU_LY[trangThai]}</span>;
+}
+
+/** Trạng thái diễn ra của sự kiện (SapDienRa / DangDienRa / DaDienRa). */
+export function TrangThaiDienRaBadge({ trangThai }: { trangThai: TrangThaiDienRa }) {
+  const cls: Record<TrangThaiDienRa, string> = {
+    SapDienRa: "bg-secondary text-secondary-foreground",
+    DangDienRa: "bg-success text-success-foreground",
+    DaDienRa: "bg-muted text-muted-foreground",
+  };
+  return <span className={cn(CHIP, cls[trangThai])}>{NHAN_TRANG_THAI_DIEN_RA[trangThai]}</span>;
+}
+
+export function LoaiBaiDangBadge({ loai }: { loai: LoaiBaiDang }) {
   return (
-    <div style={{ width: size, height: size }} className="grid shrink-0 place-items-center rounded-xl bg-primary text-lg font-extrabold text-primary-foreground">
+    <span className={cn(CHIP, "bg-secondary text-secondary-foreground")}>
+      {NHAN_LOAI_BAI_DANG[loai]}
+    </span>
+  );
+}
+
+export function LoaiSuKienBadge({ loai }: { loai: LoaiSuKien }) {
+  return (
+    <span
+      className={cn(
+        CHIP,
+        loai === "HocThuat"
+          ? "bg-primary text-primary-foreground"
+          : "bg-accent text-accent-foreground",
+      )}
+    >
+      {NHAN_LOAI_SU_KIEN[loai]}
+    </span>
+  );
+}
+
+export function ClubLogo({
+  club,
+  size = 56,
+}: {
+  club: Pick<CauLacBo, "TenCLB" | "LogoCLB">;
+  size?: number;
+}) {
+  if (club.LogoCLB)
+    return (
+      <img
+        src={club.LogoCLB}
+        alt={club.TenCLB}
+        style={{ width: size, height: size }}
+        className="shrink-0 rounded-xl border object-cover"
+      />
+    );
+  const initials = club.TenCLB.replace(/^CLB\s*/i, "")
+    .split(" ")
+    .slice(0, 2)
+    .map((w: string) => w[0])
+    .join("")
+    .toUpperCase();
+  return (
+    <div
+      style={{ width: size, height: size }}
+      className="grid shrink-0 place-items-center rounded-xl bg-primary text-lg font-extrabold text-primary-foreground"
+    >
       {initials}
     </div>
   );
@@ -104,7 +203,11 @@ export function ConfirmDialog({
         <AlertDialogFooter>
           <AlertDialogCancel>Hủy</AlertDialogCancel>
           <AlertDialogAction
-            className={destructive ? "bg-destructive text-destructive-foreground hover:bg-destructive/90" : ""}
+            className={
+              destructive
+                ? "bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                : ""
+            }
             onClick={onConfirm}
           >
             {confirmText}
@@ -115,27 +218,31 @@ export function ConfirmDialog({
   );
 }
 
-export function FollowButton({ clubId, className }: { clubId: string; className?: string }) {
-  const { userId, requireLogin } = useAuth();
-  const { data: follows } = useFollows();
-  const toggle = useToggleFollow();
+export function FollowButton({ maCLB, className }: { maCLB: number; className?: string }) {
+  const { maNguoiDung, requireLogin } = useAuth();
+  const { data: theoDoi } = useTheoDoi();
+  const toggle = useToggleTheoDoi();
   const [confirm, setConfirm] = useState(false);
-  const following = follows?.has(clubId);
+  const dangTheoDoi = theoDoi?.has(maCLB);
   return (
     <>
       <Button
         size="sm"
-        variant={following ? "outline" : "default"}
-        className={cn(!following && "bg-accent font-bold text-accent-foreground hover:bg-accent/90", "font-bold", className)}
+        variant={dangTheoDoi ? "outline" : "default"}
+        className={cn(
+          !dangTheoDoi && "bg-accent font-bold text-accent-foreground hover:bg-accent/90",
+          "font-bold",
+          className,
+        )}
         disabled={toggle.isPending}
         onClick={() => {
-          if (!userId) return requireLogin();
-          if (following) setConfirm(true);
-          else toggle.mutate({ clubId, follow: true });
+          if (!maNguoiDung) return requireLogin();
+          if (dangTheoDoi) setConfirm(true);
+          else toggle.mutate({ maCLB, theoDoi: true });
         }}
       >
         <Users className="h-4 w-4" />
-        {following ? "Đang theo dõi" : "Theo dõi"}
+        {dangTheoDoi ? "Đang theo dõi" : "Theo dõi"}
       </Button>
       <ConfirmDialog
         open={confirm}
@@ -144,33 +251,58 @@ export function FollowButton({ clubId, className }: { clubId: string; className?
         description="Bạn có chắc chắn muốn bỏ theo dõi câu lạc bộ này?"
         confirmText="Bỏ theo dõi"
         destructive
-        onConfirm={() => toggle.mutate({ clubId, follow: false })}
+        onConfirm={() => toggle.mutate({ maCLB, theoDoi: false })}
       />
     </>
   );
 }
 
-export function FavoriteButton({ postId }: { postId: string }) {
-  const { userId, requireLogin } = useAuth();
-  const { data: favs } = useFavorites();
-  const toggle = useToggleFavorite();
+/** Bật/tắt thuộc tính BatThongBao của bảng theo_doi_clb. */
+export function NotifyToggle({ maCLB }: { maCLB: number }) {
+  const { data: theoDoi } = useTheoDoi();
+  const toggle = useToggleThongBaoTheoDoi();
+  const row = theoDoi?.get(maCLB);
+  if (!row) return null;
+  const bat = row.BatThongBao;
+  return (
+    <Button
+      size="sm"
+      variant="outline"
+      className={cn("font-bold", bat ? "border-primary text-primary" : "text-muted-foreground")}
+      disabled={toggle.isPending}
+      aria-label={bat ? "Tắt thông báo từ câu lạc bộ này" : "Bật thông báo từ câu lạc bộ này"}
+      onClick={() => toggle.mutate({ maCLB, bat: !bat })}
+    >
+      {bat ? <Bell className="h-4 w-4" /> : <BellOff className="h-4 w-4" />}
+      {bat ? "Đang bật thông báo" : "Đã tắt thông báo"}
+    </Button>
+  );
+}
+
+export function FavoriteButton({ maBaiDang }: { maBaiDang: number }) {
+  const { maNguoiDung, requireLogin } = useAuth();
+  const { data: yeuThich } = useYeuThich();
+  const toggle = useToggleYeuThich();
   const [confirm, setConfirm] = useState(false);
-  const fav = favs?.some((p) => p.id === postId);
+  const daLuu = yeuThich?.some((e) => e.MaBaiDang === maBaiDang);
   return (
     <>
       <Button
         size="sm"
-        aria-label={fav ? "Bỏ yêu thích" : "Yêu thích"}
-        className={cn("rounded-xl bg-accent font-bold text-accent-foreground hover:bg-accent/90", fav && "ring-2 ring-primary")}
+        aria-label={daLuu ? "Bỏ yêu thích" : "Yêu thích"}
+        className={cn(
+          "rounded-xl bg-accent font-bold text-accent-foreground hover:bg-accent/90",
+          daLuu && "ring-2 ring-primary",
+        )}
         disabled={toggle.isPending}
         onClick={() => {
-          if (!userId) return requireLogin();
-          if (fav) setConfirm(true);
-          else toggle.mutate({ postId, fav: true });
+          if (!maNguoiDung) return requireLogin();
+          if (daLuu) setConfirm(true);
+          else toggle.mutate({ maBaiDang, yeuThich: true });
         }}
       >
-        <Star className={cn("h-4 w-4", fav && "fill-current")} />
-        {fav ? "Đã yêu thích" : "Yêu thích"}
+        <Star className={cn("h-4 w-4", daLuu && "fill-current")} />
+        {daLuu ? "Đã yêu thích" : "Yêu thích"}
       </Button>
       <ConfirmDialog
         open={confirm}
@@ -179,31 +311,49 @@ export function FavoriteButton({ postId }: { postId: string }) {
         description="Sự kiện sẽ bị xóa khỏi lịch cá nhân của bạn. Bạn có chắc chắn?"
         confirmText="Bỏ yêu thích"
         destructive
-        onConfirm={() => toggle.mutate({ postId, fav: false })}
+        onConfirm={() => toggle.mutate({ maBaiDang, yeuThich: false })}
       />
     </>
   );
 }
 
-export function ClubCard({ club }: { club: Club }) {
+export function ClubCard({ club }: { club: CauLacBo }) {
   return (
     <div className="flex flex-col overflow-hidden rounded-2xl border bg-card shadow-[var(--shadow-soft)]">
       <div className="relative h-28 bg-gradient-to-br from-primary to-primary-dark">
-        {club.cover_url && <img src={club.cover_url} alt="" className="h-full w-full object-cover" loading="lazy" />}
+        {club.AnhBia && (
+          <img src={club.AnhBia} alt="" className="h-full w-full object-cover" loading="lazy" />
+        )}
         <div className="absolute -bottom-7 left-4 rounded-full border-4 border-card bg-card">
           <ClubLogo club={club} size={56} />
         </div>
       </div>
       <div className="flex flex-1 flex-col gap-2 px-4 pb-4 pt-9">
-        <h3 className="line-clamp-2 text-base leading-snug text-primary">{club.name}</h3>
-        <span className="w-fit rounded-full bg-secondary px-2.5 py-0.5 text-xs font-bold text-secondary-foreground">
-          {club.categories?.name ?? "Khác"}
-        </span>
-        <p className="line-clamp-2 flex-1 text-sm text-muted-foreground">{club.short_intro || club.description}</p>
+        <h3 className="line-clamp-2 text-base leading-snug text-primary">{club.TenCLB}</h3>
+        <div className="flex flex-wrap items-center gap-1.5">
+          <span className="w-fit rounded-full bg-secondary px-2.5 py-0.5 text-xs font-bold text-secondary-foreground">
+            {club.linh_vuc?.TenLinhVuc ?? "Khác"}
+          </span>
+          {club.TrangThaiHoatDong === "TamNgung" && (
+            <span className="w-fit rounded-full bg-warning px-2.5 py-0.5 text-xs font-bold text-warning-foreground">
+              Tạm ngưng
+            </span>
+          )}
+        </div>
+        <p className="line-clamp-2 flex-1 text-sm text-muted-foreground">
+          {club.GioiThieuNgan || club.MoTa}
+        </p>
         <div className="mt-1 grid grid-cols-2 gap-2">
-          <FollowButton clubId={club.id} className="w-full rounded-xl" />
-          <Button asChild size="sm" variant="outline" className="rounded-xl border-primary font-bold text-primary">
-            <Link to="/cau-lac-bo/$id" params={{ id: club.id }}>Xem chi tiết</Link>
+          <FollowButton maCLB={club.MaCLB} className="w-full rounded-xl" />
+          <Button
+            asChild
+            size="sm"
+            variant="outline"
+            className="rounded-xl border-primary font-bold text-primary"
+          >
+            <Link to="/cau-lac-bo/$id" params={{ id: String(club.MaCLB) }}>
+              Xem chi tiết
+            </Link>
           </Button>
         </div>
       </div>
@@ -211,36 +361,68 @@ export function ClubCard({ club }: { club: Club }) {
   );
 }
 
-export function EventCard({ post }: { post: Post }) {
+export function EventCard({ suKien }: { suKien: SuKien }) {
   return (
     <div className="flex flex-col overflow-hidden rounded-2xl border bg-card shadow-[var(--shadow-soft)] sm:flex-row">
       <div className="h-40 shrink-0 bg-gradient-to-br from-primary to-primary-dark sm:h-auto sm:w-2/5">
-        {post.image_url ? (
-          <img src={post.image_url} alt={post.title} className="h-full w-full object-cover" loading="lazy" />
+        {suKien.AnhBia ? (
+          <img
+            src={suKien.AnhBia}
+            alt={suKien.TieuDe}
+            className="h-full w-full object-cover"
+            loading="lazy"
+          />
         ) : (
-          <div className="grid h-full place-items-center p-4 text-center text-lg font-extrabold text-primary-foreground">{post.clubs?.name}</div>
+          <div className="grid h-full place-items-center p-4 text-center text-lg font-extrabold text-primary-foreground">
+            {suKien.cau_lac_bo?.TenCLB}
+          </div>
         )}
       </div>
       <div className="flex min-w-0 flex-1 flex-col gap-2 border-l-0 p-4 sm:border-l-4 sm:border-l-primary">
-        <h3 className="text-lg leading-snug text-primary">{post.title}</h3>
-        <p className="line-clamp-2 text-sm italic text-muted-foreground">{post.content}</p>
+        <div className="flex flex-wrap gap-1.5">
+          <LoaiSuKienBadge loai={suKien.LoaiSuKien} />
+          <TrangThaiDienRaBadge trangThai={suKien.TrangThaiDienRa} />
+        </div>
+        <h3 className="text-lg leading-snug text-primary">{suKien.TieuDe}</h3>
+        <p className="line-clamp-2 text-sm italic text-muted-foreground">{suKien.NoiDung}</p>
         <div className="space-y-1 text-sm font-semibold text-muted-foreground">
-          <div className="flex items-center gap-2"><Calendar className="h-4 w-4 shrink-0 text-primary" />{formatDateTime(post.event_time)}</div>
-          {post.location && <div className="flex items-center gap-2"><MapPin className="h-4 w-4 shrink-0 text-primary" />{post.location}</div>}
-          {post.clubs && (
-            <Link to="/cau-lac-bo/$id" params={{ id: post.clubs.id }} className="flex items-center gap-2 hover:text-primary">
-              <Users className="h-4 w-4 shrink-0 text-primary" />Đơn vị tổ chức: {post.clubs.name}
+          <div className="flex items-center gap-2">
+            <Calendar className="h-4 w-4 shrink-0 text-primary" />
+            {formatKhoangThoiGian(suKien.ThoiGianBatDau, suKien.ThoiGianKetThuc)}
+          </div>
+          {suKien.DiaDiem && (
+            <div className="flex items-center gap-2">
+              <MapPin className="h-4 w-4 shrink-0 text-primary" />
+              {suKien.DiaDiem}
+            </div>
+          )}
+          {suKien.cau_lac_bo && (
+            <Link
+              to="/cau-lac-bo/$id"
+              params={{ id: String(suKien.cau_lac_bo.MaCLB) }}
+              className="flex items-center gap-2 hover:text-primary"
+            >
+              <Users className="h-4 w-4 shrink-0 text-primary" />
+              Đơn vị tổ chức: {suKien.cau_lac_bo.TenCLB}
             </Link>
           )}
         </div>
-        <div className="mt-auto flex justify-end pt-2"><FavoriteButton postId={post.id} /></div>
+        <div className="mt-auto flex justify-end pt-2">
+          <FavoriteButton maBaiDang={suKien.MaBaiDang} />
+        </div>
       </div>
     </div>
   );
 }
 
-export function RoleGate({ roles, children }: { roles?: Role[]; children: ReactNode }) {
-  const { ready, userId, roles: mine } = useAuth();
+export function RoleGate({
+  vaiTro: canThiet,
+  children,
+}: {
+  vaiTro?: TenVaiTro[];
+  children: ReactNode;
+}) {
+  const { ready, maNguoiDung, vaiTro } = useAuth();
   if (!ready)
     return (
       <main className="mx-auto max-w-7xl space-y-4 px-3 py-8 sm:px-6">
@@ -248,11 +430,18 @@ export function RoleGate({ roles, children }: { roles?: Role[]; children: ReactN
         <GridSkeleton n={3} />
       </main>
     );
-  if (!userId) return <Navigate to="/dang-nhap" />;
-  if (roles && !roles.some((r) => mine.includes(r)))
+  if (!maNguoiDung) return <Navigate to="/dang-nhap" />;
+  if (canThiet && (!vaiTro || !canThiet.includes(vaiTro)))
     return (
       <main className="mx-auto max-w-xl px-4 py-16">
-        <Empty text="Bạn không có quyền truy cập trang này." action={<Button asChild><Link to="/">Về trang chủ</Link></Button>} />
+        <Empty
+          text="Bạn không có quyền truy cập trang này."
+          action={
+            <Button asChild>
+              <Link to="/">Về trang chủ</Link>
+            </Button>
+          }
+        />
       </main>
     );
   return <>{children}</>;

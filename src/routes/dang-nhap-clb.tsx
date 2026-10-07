@@ -14,9 +14,15 @@ export const Route = createFileRoute("/dang-nhap-clb")({
   head: () => ({
     meta: [
       { title: "Đăng nhập CLB / Quản trị – BA CLUBS" },
-      { name: "description", content: "Cổng đăng nhập dành cho Đại diện câu lạc bộ và Quản trị viên BA CLUBS." },
+      {
+        name: "description",
+        content: "Cổng đăng nhập dành cho Đại diện câu lạc bộ và Quản trị viên BA CLUBS.",
+      },
       { property: "og:title", content: "Đăng nhập CLB / Quản trị – BA CLUBS" },
-      { property: "og:description", content: "Cổng đăng nhập dành cho Đại diện câu lạc bộ và Quản trị viên BA CLUBS." },
+      {
+        property: "og:description",
+        content: "Cổng đăng nhập dành cho Đại diện câu lạc bộ và Quản trị viên BA CLUBS.",
+      },
     ],
   }),
   component: ClubLoginPage,
@@ -24,7 +30,7 @@ export const Route = createFileRoute("/dang-nhap-clb")({
 
 function ClubLoginPage() {
   const navigate = useNavigate();
-  const { ready, userId, role, profile, signOut } = useAuth();
+  const { ready, maNguoiDung, vaiTro, biKhoa, signOut } = useAuth();
   const [loginId, setLoginId] = useState("");
   const [password, setPassword] = useState("");
   const [err, setErr] = useState("");
@@ -32,19 +38,21 @@ function ClubLoginPage() {
 
   // Tài khoản CLB do Quản trị viên cấp nên KHÔNG kiểm tra đuôi email trường ở đây.
   useEffect(() => {
-    if (!ready || !userId) return;
-    if (profile?.is_locked) {
+    if (!ready || !maNguoiDung) return;
+    if (biKhoa) {
       toast.error("Tài khoản của bạn đã bị khóa. Vui lòng liên hệ Quản trị viên.");
       signOut();
       return;
     }
-    if (role !== "club_rep" && role !== "admin") {
-      toast.error("Đây không phải tài khoản CLB hoặc Quản trị viên. Sinh viên vui lòng đăng nhập ở trang Sinh viên.");
+    if (vaiTro !== "DaiDienCLB" && vaiTro !== "QuanTriVien") {
+      toast.error(
+        "Đây không phải tài khoản CLB hoặc Quản trị viên. Sinh viên vui lòng đăng nhập ở trang Sinh viên.",
+      );
       signOut();
       return;
     }
-    navigate({ to: homePath(role), replace: true });
-  }, [ready, userId, role, profile]);
+    navigate({ to: homePath(vaiTro), replace: true });
+  }, [ready, maNguoiDung, vaiTro, biKhoa]);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -53,7 +61,10 @@ function ClubLoginPage() {
       return;
     }
     setBusy(true);
-    const { error } = await supabase.auth.signInWithPassword({ email: loginIdToEmail(loginId), password });
+    const { error } = await supabase.auth.signInWithPassword({
+      email: loginIdToEmail(loginId),
+      password,
+    });
     setBusy(false);
     if (error) toast.error("Tên đăng nhập hoặc mật khẩu không đúng");
     else toast.success("Đăng nhập thành công");
@@ -68,28 +79,70 @@ function ClubLoginPage() {
           <span className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-primary px-3 py-1 text-sm font-extrabold text-primary-foreground">
             <ShieldCheck className="h-4 w-4" /> Cổng dành cho CLB và Quản trị viên
           </span>
-          <p className="mt-2 text-sm font-semibold text-muted-foreground">Dùng tài khoản do Quản trị viên cấp</p>
+          <p className="mt-2 text-sm font-semibold text-muted-foreground">
+            Dùng tài khoản do Quản trị viên cấp
+          </p>
         </div>
         <form onSubmit={submit} className="space-y-4" noValidate>
           <div className="space-y-1.5">
-            <Label htmlFor="loginId" className="font-bold">Tên đăng nhập</Label>
-            <Input id="loginId" type="text" autoCapitalize="none" autoComplete="username" value={loginId} maxLength={255} onChange={(e) => { setLoginId(e.target.value); setErr(""); }} placeholder="Username của CLB (Quản trị viên: dùng email)" />
+            <Label htmlFor="loginId" className="font-bold">
+              Tên đăng nhập
+            </Label>
+            <Input
+              id="loginId"
+              type="text"
+              autoCapitalize="none"
+              autoComplete="username"
+              value={loginId}
+              maxLength={255}
+              onChange={(e) => {
+                setLoginId(e.target.value);
+                setErr("");
+              }}
+              placeholder="Username của CLB (Quản trị viên: dùng email)"
+            />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="pw" className="font-bold">Mật khẩu</Label>
-            <Input id="pw" type="password" autoComplete="current-password" value={password} onChange={(e) => { setPassword(e.target.value); setErr(""); }} placeholder="••••••••" />
+            <Label htmlFor="pw" className="font-bold">
+              Mật khẩu
+            </Label>
+            <Input
+              id="pw"
+              type="password"
+              autoComplete="current-password"
+              value={password}
+              onChange={(e) => {
+                setPassword(e.target.value);
+                setErr("");
+              }}
+              placeholder="••••••••"
+            />
           </div>
           {err && <p className="text-sm font-semibold text-destructive">{err}</p>}
-          <Button type="submit" disabled={busy} className="h-11 w-full rounded-xl bg-primary text-base font-extrabold text-primary-foreground hover:bg-primary-dark">
+          <Button
+            type="submit"
+            disabled={busy}
+            className="h-11 w-full rounded-xl bg-primary text-base font-extrabold text-primary-foreground hover:bg-primary-dark"
+          >
             {busy ? "Đang xử lý..." : "Đăng nhập"}
           </Button>
         </form>
         <div className="mt-6 flex flex-col items-center gap-1 border-t pt-4 text-center text-sm font-semibold text-muted-foreground">
           <span>
             Bạn là sinh viên?{" "}
-            <Link to="/dang-nhap-sinh-vien" className="font-extrabold text-primary underline-offset-2 hover:underline">Đăng nhập tại đây</Link>
+            <Link
+              to="/dang-nhap-sinh-vien"
+              className="font-extrabold text-primary underline-offset-2 hover:underline"
+            >
+              Đăng nhập tại đây
+            </Link>
           </span>
-          <Link to="/dang-nhap" className="text-xs font-bold text-primary underline-offset-2 hover:underline">← Quay lại chọn đối tượng</Link>
+          <Link
+            to="/dang-nhap"
+            className="text-xs font-bold text-primary underline-offset-2 hover:underline"
+          >
+            ← Quay lại chọn đối tượng
+          </Link>
         </div>
       </div>
     </main>

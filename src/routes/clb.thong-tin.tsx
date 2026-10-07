@@ -1,29 +1,55 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { Card, Empty, GridSkeleton, Page, RoleGate } from "@/components/common";
-import { ClubForm } from "@/components/forms";
-import { useAuth } from "@/lib/auth";
-import { useClubs } from "@/lib/data";
+import { ClubForm, clbSangDraft } from "@/components/forms";
+import { useCLBCuaToi } from "@/lib/data";
+import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/clb/thong-tin")({
-  head: () => ({ meta: [{ title: "Thông tin CLB – BA CLUBS" }, { name: "description", content: "Cập nhật thông tin giới thiệu câu lạc bộ." }, { property: "og:title", content: "Thông tin CLB – BA CLUBS" }, { property: "og:description", content: "Cập nhật thông tin giới thiệu câu lạc bộ." }] }),
+  head: () => ({
+    meta: [
+      { title: "Thông tin CLB – BA CLUBS" },
+      { name: "description", content: "Gửi yêu cầu cập nhật thông tin giới thiệu câu lạc bộ." },
+      { property: "og:title", content: "Thông tin CLB – BA CLUBS" },
+      {
+        property: "og:description",
+        content: "Gửi yêu cầu cập nhật thông tin giới thiệu câu lạc bộ.",
+      },
+    ],
+  }),
   component: () => (
-    <RoleGate roles={["club_rep"]}>
+    <RoleGate vaiTro={["DaiDienCLB"]}>
       <ClubInfo />
     </RoleGate>
   ),
 });
 
 function ClubInfo() {
-  const { clubIds } = useAuth();
-  const { data, isLoading } = useClubs();
+  const { club, isLoading } = useCLBCuaToi();
   const qc = useQueryClient();
-  const club = data?.find((c) => c.id === clubIds[0]);
+
   return (
-    <Page title="Thông tin CLB" subtitle="Chỉnh sửa thông tin câu lạc bộ bạn phụ trách">
-      {isLoading ? <GridSkeleton n={1} /> : !club ? <Empty text="Tài khoản chưa được gán CLB nào" /> : (
+    <Page
+      title="Thông tin CLB"
+      subtitle="Thay đổi được gửi tới Quản trị viên duyệt trước khi công khai"
+      actions={
+        <Button asChild variant="outline">
+          <Link to="/clb/yeu-cau">Xem các yêu cầu đã gửi</Link>
+        </Button>
+      }
+    >
+      {isLoading ? (
+        <GridSkeleton n={1} />
+      ) : !club ? (
+        <Empty text="Tài khoản chưa được gán CLB nào" />
+      ) : (
         <Card className="max-w-3xl">
-          <ClubForm key={club.id} initial={(({ categories: _c, ...r }) => r)(club)} onSaved={() => qc.invalidateQueries({ queryKey: ["clubs"] })} />
+          <ClubForm
+            key={club.MaCLB}
+            initial={clbSangDraft(club)}
+            cheDo="yeu-cau"
+            onSaved={() => qc.invalidateQueries({ queryKey: ["yeu_cau_cua_clb"] })}
+          />
         </Card>
       )}
     </Page>
