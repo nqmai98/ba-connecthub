@@ -25,7 +25,7 @@ function Accounts() {
     queryKey: ["admin-accounts"],
     queryFn: async () => {
       const [p, r] = await Promise.all([
-        supabase.from("profiles").select("id, full_name, email, username, is_locked").order("created_at", { ascending: false }),
+        supabase.from("profiles").select("id, full_name, email, is_locked").order("created_at", { ascending: false }),
         supabase.from("user_roles").select("user_id, role"),
       ]);
       if (p.error) throw p.error;
@@ -48,18 +48,18 @@ function Accounts() {
     qc.invalidateQueries({ queryKey: ["admin-accounts"] });
   };
 
-  const rows = q.data?.filter((u) => (u.full_name + u.email + (u.username ?? "")).toLowerCase().includes(search.toLowerCase()));
+  const rows = q.data?.filter((u) => (u.full_name + u.email).toLowerCase().includes(search.toLowerCase()));
   return (
-    <Page title="Quản lý tài khoản" actions={<Input className="w-64" placeholder="Tìm theo tên, username hoặc email" value={search} onChange={(e) => setSearch(e.target.value)} />}>
+    <Page title="Quản lý tài khoản" actions={<Input className="w-64" placeholder="Tìm theo tên hoặc email" value={search} onChange={(e) => setSearch(e.target.value)} />}>
       {q.isLoading ? <GridSkeleton n={3} /> : !rows?.length ? <Empty text="Không có tài khoản" /> : (
         <div className="overflow-x-auto rounded-2xl border bg-card">
           <table className="w-full min-w-[680px] text-sm">
-            <thead className="bg-muted text-left font-bold"><tr><th className="p-3">Họ tên</th><th className="p-3">Username / Email</th><th className="p-3">Vai trò</th><th className="p-3">Trạng thái</th><th className="p-3"></th></tr></thead>
+            <thead className="bg-muted text-left font-bold"><tr><th className="p-3">Họ tên</th><th className="p-3">Email</th><th className="p-3">Vai trò</th><th className="p-3">Trạng thái</th><th className="p-3"></th></tr></thead>
             <tbody>
               {rows.map((u) => (
                 <tr key={u.id} className="border-t">
                   <td className="p-3 font-semibold">{u.full_name || "—"}</td>
-                  <td className="p-3">{u.username ?? u.email}</td>
+                  <td className="p-3">{u.email}</td>
                   <td className="p-3">
                     <select disabled={u.id === userId} className="h-9 rounded-md border bg-background px-2" value={u.role} onChange={(e) => changeRole(u.id, e.target.value as Role)}>
                       {(Object.keys(ROLE_LABEL) as Role[]).map((r) => <option key={r} value={r}>{ROLE_LABEL[r]}</option>)}

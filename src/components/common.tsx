@@ -248,7 +248,7 @@ export function RoleGate({ roles, children }: { roles?: Role[]; children: ReactN
         <GridSkeleton n={3} />
       </main>
     );
-  if (!userId) return <Navigate to={roles && !roles.includes("student") ? "/dang-nhap-clb" : "/dang-nhap"} />;
+  if (!userId) return <Navigate to="/dang-nhap" />;
   if (roles && !roles.some((r) => mine.includes(r)))
     return (
       <main className="mx-auto max-w-xl px-4 py-16">

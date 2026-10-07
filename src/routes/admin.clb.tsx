@@ -1,13 +1,14 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
-import { Copy, Dices, KeyRound, Plus } from "lucide-react";
+import { KeyRound, Pencil, Plus, Trash2 } from "lucide-react";
+import { ClubForm, emptyClub, type ClubDraft } from "@/components/forms";
+import { ConfirmDialog } from "@/components/common";
 import { supabase } from "@/integrations/supabase/client";
 import { useClubs, type Club } from "@/lib/data";
 import { createClubAccount } from "@/lib/admin.functions";
-import { USERNAME_HINT, USERNAME_REGEX } from "@/lib/club-account";
 import { ClubLogo, Empty, GridSkeleton, Page, RoleGate } from "@/components/common";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -38,21 +39,24 @@ function ManageClubs() {
       const { data: r, error } = await supabase.from("club_reps").select("club_id, user_id");
       if (error) throw error;
       const ids = r.map((x) => x.user_id);
-      const { data: p } = ids.length ? await supabase.from("profiles").select("id, email, username").in("id", ids) : { data: [] };
+      const { data: p } = ids.length ? await supabase.from("profiles").select("id, email").in("id", ids) : { data: [] };
       const map: Record<string, string[]> = {};
-      r.forEach((x) => (map[x.club_id] ??= []).push((() => { const u = p?.find((y) => y.id === x.user_id); return u?.username ?? u?.email ?? "?"; })()));
+      r.forEach((x) => (map[x.club_id] ??= []).push(p?.find((y) => y.id === x.user_id)?.email ?? "?"));
       return map;
     },
   });
-  // undefined: đóng · null: tạo CLB mới · Club: cấp tài khoản cho CLB có sẵn
-  const [target, setTarget] = useState<Club | null | undefined>(undefined);
+  const [target, setTarget] = useState<Club | null>(null);
+  const [editing, setEditing] = useState<ClubDraft | null>(null);
+  const [del, setDel] = useState<Club | null>(null);
+  const qc = useQueryClient();
+  const remove = async (c: Club) => {
+    const { error } = await supabase.from("clubs").delete().eq("id", c.id);
+    if (error) { toast.error("Xóa thất bại (CLB còn bài đăng/người theo dõi, hãy ẩn thay vì xóa)"); return; }
+    toast.success("Đã xóa CLB"); qc.invalidateQueries({ queryKey: ["clubs"] });
+  };
 
   return (
-    <Page
-      title="Quản lý CLB"
-      subtitle="Tạo CLB và cấp tài khoản đăng nhập cho từng câu lạc bộ"
-      actions={<Button onClick={() => setTarget(null)} className="rounded-xl bg-accent font-bold text-accent-foreground hover:bg-accent/90"><Plus className="h-4 w-4" /> Tạo tài khoản CLB</Button>}
-    >
+    <Page title="Quản lý CLB" subtitle="Thêm, sửa, ẩn/xóa CLB và cấp tài khoản cho đại diện" actions={<Button onClick={() => setEditing(emptyClub)} className="bg-primary font-bold"><Plus className="h-4 w-4" /> Thêm CLB</Button>}>
       {isLoading ? <GridSkeleton n={3} /> : !clubs?.length ? <Empty text="Chưa có câu lạc bộ" /> : (
         <div className="space-y-3">
           {clubs.map((c) => (
@@ -62,114 +66,70 @@ function ManageClubs() {
                 <div className="min-w-0">
                   <div className="truncate font-bold text-primary">{c.name}</div>
                   <div className="truncate text-sm text-muted-foreground">
-                    {reps.data?.[c.id]?.length ? "Tài khoản (username): " + reps.data[c.id]!.join(", ") : "Chưa có tài khoản"}
+                    {reps.data?.[c.id]?.length ? "Tài khoản: " + reps.data[c.id]!.join(", ") : "Chưa có tài khoản"}
                   </div>
                 </div>
               </div>
+              {!c.is_active && <span className="rounded-full bg-muted px-2 py-1 text-xs font-bold">Đang ẩn</span>}
+              <Button variant="outline" onClick={() => setEditing((({ categories: _x, ...r }) => r)(c))}><Pencil className="h-4 w-4" /> Sửa</Button>
+              <Button variant="outline" className="text-destructive" onClick={() => setDel(c)}><Trash2 className="h-4 w-4" /></Button>
               <Button onClick={() => setTarget(c)} className="shrink-0 rounded-xl bg-accent font-bold text-accent-foreground hover:bg-accent/90">
-                <KeyRound className="h-4 w-4" /> Cấp tài khoản
+                <KeyRound className="h-4 w-4" /> Tạo tài khoản
               </Button>
             </div>
           ))}
         </div>
       )}
-      <CreateDialog target={target} onClose={() => setTarget(undefined)} />
+      <Dialog open={!!editing} onOpenChange={(o) => !o && setEditing(null)}>
+        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
+          <DialogHeader><DialogTitle>{editing?.id ? "Sửa CLB" : "Thêm CLB"}</DialogTitle></DialogHeader>
+          {editing && <ClubForm admin initial={editing} onSaved={() => { setEditing(null); qc.invalidateQueries({ queryKey: ["clubs"] }); }} />}
+        </DialogContent>
+      </Dialog>
+      <ConfirmDialog open={!!del} onOpenChange={(o) => !o && setDel(null)} title="Xóa CLB này?" description="Thao tác không thể hoàn tác." confirmText="Xóa" destructive onConfirm={() => del && remove(del)} />
+      <CreateDialog club={target} onClose={() => setTarget(null)} />
     </Page>
   );
 }
 
-const randomPassword = () => {
-  const chars = "abcdefghijkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-  const buf = crypto.getRandomValues(new Uint32Array(10));
-  return Array.from(buf, (n) => chars[n % chars.length]).join("");
-};
-
-function CreateDialog({ target, onClose }: { target: Club | null | undefined; onClose: () => void }) {
+function CreateDialog({ club, onClose }: { club: Club | null; onClose: () => void }) {
   const create = useServerFn(createClubAccount);
   const qc = useQueryClient();
-  const open = target !== undefined;
-  const existing = target ?? null;
-  const [form, setForm] = useState({ clubName: "", username: "", password: "" });
-  const [done, setDone] = useState<{ clubName: string; username: string; password: string } | null>(null);
+  const [form, setForm] = useState({ fullName: "", email: "", password: "" });
   const [busy, setBusy] = useState(false);
-
-  useEffect(() => {
-    if (open) { setForm({ clubName: existing?.name ?? "", username: "", password: "" }); setDone(null); }
-  }, [open, existing]);
-
   const submit = async () => {
-    const username = form.username.trim().toLowerCase();
-    if (form.clubName.trim().length < 2) { toast.error("Vui lòng nhập tên đầy đủ CLB"); return; }
-    if (!USERNAME_REGEX.test(username)) { toast.error("Username không hợp lệ: " + USERNAME_HINT); return; }
+    if (!club) return;
+    if (!form.fullName.trim() || !form.email.trim()) { toast.error("Vui lòng nhập đủ họ tên và email"); return; }
     if (form.password.length < 8) { toast.error("Mật khẩu tối thiểu 8 ký tự"); return; }
     setBusy(true);
     try {
-      await create({ data: { clubId: existing?.id, clubName: form.clubName.trim(), username, password: form.password } });
-      toast.success("Đã tạo tài khoản cho " + form.clubName.trim());
+      await create({ data: { clubId: club.id, ...form } });
+      toast.success("Đã tạo tài khoản cho " + club.name);
       qc.invalidateQueries({ queryKey: ["club-reps-admin"] });
-      qc.invalidateQueries({ queryKey: ["clubs"] });
-      qc.invalidateQueries({ queryKey: ["admin-accounts"] });
-      setDone({ clubName: form.clubName.trim(), username, password: form.password });
+      setForm({ fullName: "", email: "", password: "" });
+      onClose();
     } catch (e) {
       toast.error((e as Error).message);
     } finally {
       setBusy(false);
     }
   };
-
-  const copy = async () => {
-    if (!done) return;
-    try {
-      await navigator.clipboard.writeText(`CLB: ${done.clubName}\nTên đăng nhập: ${done.username}\nMật khẩu: ${done.password}`);
-      toast.success("Đã sao chép thông tin đăng nhập");
-    } catch { toast.error("Không thể sao chép, hãy chép thủ công"); }
-  };
-
   return (
-    <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
+    <Dialog open={!!club} onOpenChange={(o) => !o && onClose()}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{done ? "Tạo tài khoản thành công" : existing ? "Cấp tài khoản – " + existing.name : "Tạo tài khoản CLB mới"}</DialogTitle>
+          <DialogTitle>Tạo tài khoản – {club?.name}</DialogTitle>
         </DialogHeader>
-        {done ? (
-          <div className="space-y-3">
-            <div className="space-y-1 rounded-xl border bg-muted p-4 text-sm">
-              <div><span className="font-semibold text-muted-foreground">CLB: </span><b>{done.clubName}</b></div>
-              <div><span className="font-semibold text-muted-foreground">Tên đăng nhập: </span><b>{done.username}</b></div>
-              <div><span className="font-semibold text-muted-foreground">Mật khẩu: </span><b>{done.password}</b></div>
-            </div>
-            <p className="text-xs font-semibold text-muted-foreground">Mật khẩu chỉ hiển thị một lần này. Hãy gửi cho CLB; họ đăng nhập ở tab "CLB / Quản trị".</p>
-            <DialogFooter>
-              <Button variant="outline" onClick={copy}><Copy className="h-4 w-4" /> Sao chép</Button>
-              <Button onClick={onClose} className="bg-primary font-bold">Xong</Button>
-            </DialogFooter>
-          </div>
-        ) : (
-          <>
-            <div className="space-y-3">
-              <div className="space-y-1.5">
-                <Label>Tên đầy đủ CLB *</Label>
-                <Input value={form.clubName} maxLength={150} disabled={!!existing} onChange={(e) => setForm({ ...form, clubName: e.target.value })} placeholder="VD: CLB Tiếng Anh BA English" />
-              </div>
-              <div className="space-y-1.5">
-                <Label>Username *</Label>
-                <Input value={form.username} maxLength={30} autoCapitalize="none" autoComplete="off" onChange={(e) => setForm({ ...form, username: e.target.value.toLowerCase() })} placeholder="VD: baenglish" />
-                <p className="text-xs font-medium text-muted-foreground">{USERNAME_HINT}</p>
-              </div>
-              <div className="space-y-1.5">
-                <Label>Mật khẩu * (tối thiểu 8 ký tự)</Label>
-                <div className="flex gap-2">
-                  <Input type="text" value={form.password} maxLength={72} autoComplete="off" onChange={(e) => setForm({ ...form, password: e.target.value })} />
-                  <Button type="button" variant="outline" className="shrink-0" onClick={() => setForm({ ...form, password: randomPassword() })}><Dices className="h-4 w-4" /> Ngẫu nhiên</Button>
-                </div>
-              </div>
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={onClose}>Hủy</Button>
-              <Button disabled={busy} onClick={submit} className="bg-primary font-bold">{busy ? "Đang tạo..." : "Tạo tài khoản"}</Button>
-            </DialogFooter>
-          </>
-        )}
+        <div className="space-y-3">
+          <div className="space-y-1.5"><Label>Họ tên người phụ trách</Label><Input value={form.fullName} maxLength={100} onChange={(e) => setForm({ ...form, fullName: e.target.value })} /></div>
+          <div className="space-y-1.5"><Label>Email đăng nhập</Label><Input type="email" value={form.email} maxLength={255} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder="clb@hvnh.edu.vn" /></div>
+          <div className="space-y-1.5"><Label>Mật khẩu (tối thiểu 8 ký tự)</Label><Input type="text" value={form.password} maxLength={72} onChange={(e) => setForm({ ...form, password: e.target.value })} /></div>
+          <p className="text-xs font-semibold text-muted-foreground">Gửi email và mật khẩu này cho CLB để họ đăng nhập ở mục "CLB / Quản trị".</p>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>Hủy</Button>
+          <Button disabled={busy} onClick={submit} className="bg-primary font-bold">{busy ? "Đang tạo..." : "Tạo tài khoản"}</Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );
