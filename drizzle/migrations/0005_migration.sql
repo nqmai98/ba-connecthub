@@ -422,37 +422,8 @@ drop table _mig_clb;
 drop table _mig_bai_dang;
 
 -- ---------------------------------------------------------------------
--- 4. SAO LƯU LƯỢC ĐỒ CŨ RỒI XOÁ
+-- 4. XOÁ LƯỢC ĐỒ CŨ
 -- ---------------------------------------------------------------------
-
--- Toàn bộ dữ liệu của 10 bảng cũ được chép sang schema backup_truoc_0005 TRƯỚC KHI xoá,
--- để luôn có đường lùi kể cả khi dự án dùng gói Supabase không có tính năng backup.
--- Các cột kiểu ENUM được ép sang text, vì phần dưới có "drop type ... cascade"
--- và lệnh đó sẽ xoá luôn mọi cột còn tham chiếu tới ENUM, kể cả cột trong bản sao lưu.
--- Xem lại dữ liệu cũ:  select * from backup_truoc_0005.clubs;
--- Khi đã chắc chắn mọi thứ chạy đúng, có thể xoá:  drop schema backup_truoc_0005 cascade;
-create schema if not exists backup_truoc_0005;
-
-create table backup_truoc_0005.categories      as select * from public.categories;
-create table backup_truoc_0005.clubs           as select * from public.clubs;
-create table backup_truoc_0005.profiles        as select * from public.profiles;
-create table backup_truoc_0005.club_reps       as select * from public.club_reps;
-create table backup_truoc_0005.follows         as select * from public.follows;
-create table backup_truoc_0005.favorite_events as select * from public.favorite_events;
-create table backup_truoc_0005.notifications   as select * from public.notifications;
-create table backup_truoc_0005.site_stats      as select * from public.site_stats;
-
-create table backup_truoc_0005.user_roles as
-  select id, user_id, role::text as role from public.user_roles;
-
-create table backup_truoc_0005.posts as
-  select id, club_id, author_id, type::text as type, title, content, image_url,
-         event_time, location, status::text as status, reject_reason, created_at, updated_at
-  from public.posts;
-
--- Bản sao lưu chỉ dành cho quản trị hệ thống, không lộ ra API công khai
-revoke all on schema backup_truoc_0005 from anon, authenticated;
-revoke all on all tables in schema backup_truoc_0005 from anon, authenticated;
 
 drop trigger if exists on_auth_user_created on auth.users;
 drop trigger if exists posts_before_trg on public.posts;
