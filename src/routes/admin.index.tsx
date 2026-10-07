@@ -50,7 +50,7 @@ function Dashboard() {
             <h2 className="mb-4 text-lg font-bold">Số bài đăng theo CLB</h2>
             <div className="h-80">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={s?.chart}>
+                <BarChart data={s?.chart ?? []}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} />
                   <XAxis dataKey="name" fontSize={12} interval={0} angle={-15} textAnchor="end" height={60} />
                   <YAxis allowDecimals={false} fontSize={12} />
