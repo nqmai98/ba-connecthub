@@ -50,6 +50,13 @@
       "when": 1794973714857,
       "tag": "0006_su_kien_noi_bat",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1794998519768,
+      "tag": "0007_restrict_role_and_media_reads",
+      "breakpoints": true
     }
   ]
 }
