@@ -76,8 +76,21 @@ export type CauLacBo = {
   ThanhTich: string | null;
   AnhBia: string | null;
   NoiBat: boolean;
+  /** Nhóm trong sơ đồ tổ chức Đoàn – Hội (null/undefined khi chưa phân loại). */
+  MaNhom?: number | null;
   linh_vuc?: { TenLinhVuc: string } | null;
 };
+
+/** Cấp 1 của sơ đồ tổ chức: Đoàn Thanh niên hoặc Hội Sinh viên. */
+export type KhoiToChuc = "DoanThanhNien" | "HoiSinhVien";
+
+export const NHAN_KHOI: Record<KhoiToChuc, string> = {
+  DoanThanhNien: "Đoàn Thanh niên",
+  HoiSinhVien: "Hội Sinh viên",
+};
+
+/** Cấp 2: các ô xanh trong sơ đồ tổ chức (Liên chi hội, CLB cụm Học thuật, ...). */
+export type NhomToChuc = { MaNhom: number; Khoi: KhoiToChuc; TenNhom: string; ThuTu: number };
 
 /** Khoá ngoại của CLB trong bài đăng, dùng để hiển thị tên và logo đơn vị tổ chức. */
 export type CLBTomTat = { MaCLB: number; TenCLB: string; LogoCLB: string | null };
@@ -201,6 +214,26 @@ export function useLinhVuc() {
         .order("TenLinhVuc");
       if (error) throw error;
       return data as LinhVuc[];
+    },
+  });
+}
+
+/**
+ * Danh sách nhóm tổ chức (bảng nhom_to_chuc). Nếu bảng chưa được tạo trên CSDL
+ * thì trả về mảng rỗng để giao diện ẩn bộ lọc theo tổ chức thay vì báo lỗi.
+ */
+export function useNhomToChuc() {
+  return useQuery({
+    queryKey: ["nhom_to_chuc"],
+    staleTime: 10 * 60_000,
+    retry: false,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("nhom_to_chuc")
+        .select("MaNhom, Khoi, TenNhom, ThuTu")
+        .order("ThuTu");
+      if (error) return [] as NhomToChuc[];
+      return (data ?? []) as NhomToChuc[];
     },
   });
 }
