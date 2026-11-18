@@ -50,8 +50,10 @@ function Home() {
       <HotEventsBanner />
 
       <div className="mx-auto max-w-7xl space-y-12 px-3 py-8 sm:px-6 sm:py-10">
+        <GioiThieu soCLB={dangHoatDong.length} soSuKien={suKien?.length ?? 0} />
+
         {/* Tìm kiếm + khám phá theo sơ đồ tổ chức Đoàn – Hội */}
-        <section className="-mt-14 rounded-3xl border border-white/70 bg-card/85 p-4 shadow-[0_18px_50px_-24px_rgb(31_35_95/0.55)] backdrop-blur sm:-mt-16 sm:p-6">
+        <section className="rounded-3xl border border-white/70 bg-card/85 p-4 shadow-[0_18px_50px_-24px_rgb(31_35_95/0.55)] backdrop-blur sm:p-6">
           <ClubSearchBox />
           {(dsNhom ?? []).length > 0 ? (
             <>
@@ -88,8 +90,6 @@ function Home() {
             </>
           )}
         </section>
-
-        <GioiThieu soCLB={dangHoatDong.length} soSuKien={suKien?.length ?? 0} />
 
         <section>
           <SectionHeader title="CLB nổi bật" to="/cau-lac-bo" />
@@ -202,7 +202,7 @@ function GioiThieu({ soCLB, soSuKien }: { soCLB: number; soSuKien: number }) {
   return (
     <section
       aria-labelledby="gioi-thieu"
-      className="grid items-start gap-6 rounded-3xl border bg-card p-6 shadow-[var(--shadow-soft)] sm:p-8 lg:grid-cols-[1.25fr_1fr] lg:gap-10"
+      className="relative -mt-14 grid items-start gap-6 rounded-3xl border border-white/70 bg-card p-6 shadow-[0_18px_50px_-24px_rgb(31_35_95/0.55)] sm:-mt-16 sm:p-8 lg:grid-cols-[1.25fr_1fr] lg:gap-10"
     >
       <div>
         <div className="flex items-center gap-3">
