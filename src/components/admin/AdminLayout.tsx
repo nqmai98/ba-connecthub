@@ -5,50 +5,57 @@ import { LogOut } from "lucide-react";
 import logo from "@/assets/bav-logo.png.asset.json";
 import { supabase } from "@/integrations/supabase/client";
 import { NHAN_VAI_TRO, useAuth } from "@/lib/auth";
-import { useThongBao } from "@/lib/data";
+import { NotificationBell } from "@/components/student/NotificationBell";
 import { Button } from "@/components/ui/button";
 
 type MucMenu = {
   to: string;
   label: string;
   exact?: boolean;
-  /** Số hiển thị cạnh mục menu (việc chờ xử lý / thông báo chưa đọc). */
-  dem?: "baiChoDuyet" | "yeuCauChoDuyet" | "thongBao";
+  /** Hiện số việc đang chờ xử lý cạnh mục menu. */
+  dem?: boolean;
 };
 
 /**
- * Menu khu Quản trị – theo PTTKHT mục 3.2 (Hình 13–17): Dashboard, Duyệt bài, Quản lý CLB,
- * Quản lý tài khoản, Thông báo; cộng 2 trang có sẵn trong code cũ phục vụ bảng
- * yeu_cau_cap_nhat và nhat_ky_hoat_dong của chương 4 (Duyệt yêu cầu, Nhật ký).
- * Thứ tự giữ đúng như thanh điều hướng của code cũ.
+ * Menu khu Quản trị – theo PTTKHT mục 3.2 (Hình 13–17) và các bảng của chương 4:
+ *  - Kiểm duyệt gộp "Duyệt bài" + "Duyệt yêu cầu" (bảng kiem_duyet, yeu_cau_cap_nhat)
+ *  - Nhật ký: bảng nhat_ky_hoat_dong
+ *  - Thông báo: chuyển thành chuông ở góc phải (giống giao diện Sinh viên)
  */
 const MENU: MucMenu[] = [
   { to: "/admin", label: "Dashboard", exact: true },
-  { to: "/admin/duyet-bai", label: "Duyệt bài", dem: "baiChoDuyet" },
-  { to: "/admin/yeu-cau", label: "Duyệt yêu cầu", dem: "yeuCauChoDuyet" },
+  { to: "/admin/kiem-duyet", label: "Kiểm duyệt", dem: true },
   { to: "/admin/clb", label: "Quản lý CLB" },
   { to: "/admin/tai-khoan", label: "Quản lý tài khoản" },
   { to: "/admin/nhat-ky", label: "Nhật ký" },
-  { to: "/admin/thong-bao", label: "Thông báo", dem: "thongBao" },
 ];
 
 /** Số bài đăng / yêu cầu cập nhật đang chờ Quản trị viên xử lý, làm mới mỗi phút. */
-function useViecChoXuLy() {
+export function useViecChoXuLy() {
   return useQuery({
     queryKey: ["admin-viec-cho"],
     refetchInterval: 60_000,
     queryFn: async () => {
-      const [bai, yeuCau] = await Promise.all([
+      const [bai, suKien, yeuCau] = await Promise.all([
         supabase
           .from("bai_dang")
           .select("MaBaiDang", { count: "exact", head: true })
-          .eq("TrangThaiKiemDuyet", "ChoDuyet"),
+          .eq("TrangThaiKiemDuyet", "ChoDuyet")
+          .neq("LoaiBaiDang", "SuKien"),
+        supabase
+          .from("bai_dang")
+          .select("MaBaiDang", { count: "exact", head: true })
+          .eq("TrangThaiKiemDuyet", "ChoDuyet")
+          .eq("LoaiBaiDang", "SuKien"),
         supabase
           .from("yeu_cau_cap_nhat")
           .select("MaYeuCau", { count: "exact", head: true })
           .eq("TrangThaiXuLy", "ChoDuyet"),
       ]);
-      return { baiChoDuyet: bai.count ?? 0, yeuCauChoDuyet: yeuCau.count ?? 0 };
+      const baiDang = bai.count ?? 0;
+      const suKienCho = suKien.count ?? 0;
+      const thongTin = yeuCau.count ?? 0;
+      return { baiDang, suKien: suKienCho, thongTin, tong: baiDang + suKienCho + thongTin };
     },
   });
 }
@@ -59,15 +66,10 @@ function useViecChoXuLy() {
  * Không dùng chung thanh điều hướng, nền hay menu với giao diện Sinh viên.
  */
 export function AdminLayout({ children }: { children: ReactNode }) {
-  const { nguoiDung, vaiTro, signOut } = useAuth();
+  const { nguoiDung, vaiTro, signOut, maNguoiDung } = useAuth();
   const navigate = useNavigate();
   const { data: viecCho } = useViecChoXuLy();
-  const { data: thongBao } = useThongBao();
-  const so = {
-    baiChoDuyet: viecCho?.baiChoDuyet ?? 0,
-    yeuCauChoDuyet: viecCho?.yeuCauChoDuyet ?? 0,
-    thongBao: thongBao?.filter((n) => !n.DaDoc).length ?? 0,
-  };
+  const tenHienThi = nguoiDung?.HoTen || nguoiDung?.EmailTruong || "Quản trị viên";
 
   return (
     <div className="min-h-screen bg-[#f3f5fb]">
@@ -85,7 +87,7 @@ export function AdminLayout({ children }: { children: ReactNode }) {
 
           <nav className="scrollbar-none order-3 -mx-1 flex w-full gap-1 overflow-x-auto px-1 lg:order-2 lg:w-auto lg:flex-1 lg:justify-center">
             {MENU.map((m) => {
-              const dem = m.dem ? so[m.dem] : 0;
+              const dem = m.dem ? (viecCho?.tong ?? 0) : 0;
               return (
                 <Link
                   key={m.to}
@@ -106,14 +108,23 @@ export function AdminLayout({ children }: { children: ReactNode }) {
           </nav>
 
           <div className="order-2 ml-auto flex shrink-0 items-center gap-2 lg:order-3">
-            <div className="hidden text-right leading-tight sm:block">
-              <div className="max-w-[170px] truncate text-sm font-bold">
-                {nguoiDung?.HoTen || nguoiDung?.EmailTruong}
-              </div>
-              <div className="text-xs font-semibold text-muted-foreground">
-                {vaiTro && NHAN_VAI_TRO[vaiTro]}
-              </div>
-            </div>
+            {maNguoiDung && <NotificationBell tatCa="/admin/thong-bao" />}
+            <Link
+              to="/admin/ho-so"
+              title="Hồ sơ của tôi"
+              className="flex items-center gap-2 rounded-full py-1 pl-1 pr-1 transition hover:bg-secondary sm:pr-3"
+              activeProps={{ className: "bg-secondary" }}
+            >
+              <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-primary text-sm font-extrabold text-primary-foreground">
+                {tenHienThi.trim().split(/\s+/).slice(-1)[0]?.charAt(0).toUpperCase()}
+              </span>
+              <span className="hidden text-left leading-tight sm:block">
+                <span className="block max-w-[150px] truncate text-sm font-bold">{tenHienThi}</span>
+                <span className="block text-xs font-semibold text-muted-foreground">
+                  {vaiTro && NHAN_VAI_TRO[vaiTro]}
+                </span>
+              </span>
+            </Link>
             <Button
               variant="outline"
               size="sm"

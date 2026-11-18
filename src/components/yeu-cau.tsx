@@ -9,9 +9,12 @@ const LA_ANH = new Set<TruongCLBCoTheSua>(["LogoCLB", "AnhBia"]);
 export function BangThayDoi({
   noiDung,
   linhVuc,
+  hienTai,
 }: {
   noiDung: string;
   linhVuc?: LinhVuc[] | undefined;
+  /** Thông tin CLB hiện tại – khi có, bảng hiện thêm cột "Hiện tại" để so sánh trước/sau. */
+  hienTai?: Record<string, unknown> | null | undefined;
 }) {
   let parsed: Record<string, unknown>;
   try {
@@ -40,13 +43,29 @@ export function BangThayDoi({
   return (
     <div className="overflow-x-auto rounded-xl border">
       <table className="w-full text-sm">
+        {hienTai && (
+          <thead className="bg-muted/60 text-left text-xs uppercase tracking-wide text-muted-foreground">
+            <tr>
+              <th className="w-44 p-2.5 font-extrabold">Trường thông tin</th>
+              <th className="p-2.5 font-extrabold">Hiện tại</th>
+              <th className="p-2.5 font-extrabold text-primary">Đề xuất thay đổi</th>
+            </tr>
+          </thead>
+        )}
         <tbody>
           {entries.map(([k, v]) => (
             <tr key={k} className="border-b last:border-b-0">
               <th className="w-44 bg-muted p-2.5 text-left align-top font-bold">
                 {NHAN_TRUONG_CLB[k as TruongCLBCoTheSua] ?? k}
               </th>
-              <td className="p-2.5 align-top">{hienThi(k, v)}</td>
+              {hienTai && (
+                <td className="p-2.5 align-top text-muted-foreground line-through decoration-destructive/40">
+                  {hienThi(k, hienTai[k] ?? null)}
+                </td>
+              )}
+              <td className={hienTai ? "bg-success/5 p-2.5 align-top font-semibold" : "p-2.5 align-top"}>
+                {hienThi(k, v)}
+              </td>
             </tr>
           ))}
         </tbody>

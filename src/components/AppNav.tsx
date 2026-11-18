@@ -31,8 +31,7 @@ const MENUS: Record<TenVaiTro | "guest", Item[]> = {
   ],
   QuanTriVien: [
     { to: "/admin", label: "Dashboard", exact: true },
-    { to: "/admin/duyet-bai", label: "Duyệt bài" },
-    { to: "/admin/yeu-cau", label: "Duyệt yêu cầu" },
+    { to: "/admin/kiem-duyet", label: "Kiểm duyệt" },
     { to: "/admin/clb", label: "Quản lý CLB" },
     { to: "/admin/tai-khoan", label: "Quản lý tài khoản" },
     { to: "/admin/nhat-ky", label: "Nhật ký" },

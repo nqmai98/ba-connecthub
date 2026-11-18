@@ -4,6 +4,7 @@ import { useState } from "react";
 import { formatDateTime, useDanhDauDaDoc, useThongBao, type ThongBaoCuaToi } from "@/lib/data";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
+import { NoiDungThongBao } from "@/components/ThongBaoList";
 
 /**
  * Chuông thông báo thay cho mục "Thông báo" trên thanh điều hướng.
@@ -77,11 +78,9 @@ export function NotificationBell({
                       n.DaDoc ? "bg-transparent" : "bg-destructive",
                     )}
                   />
-                  <span className="min-w-0">
-                    <span className={cn("line-clamp-2 text-sm", !n.DaDoc && "font-bold")}>
-                      {n.TieuDe}
-                    </span>
-                    <span className="mt-0.5 block text-xs font-semibold text-muted-foreground">
+                  <span className="min-w-0 flex-1">
+                    <NoiDungThongBao n={n} gon />
+                    <span className="mt-1 block text-xs font-semibold text-muted-foreground">
                       {formatDateTime(n.ThoiGianTao)}
                     </span>
                   </span>

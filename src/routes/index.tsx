@@ -10,7 +10,7 @@ import {
   type KhoiToChuc,
   type NhomToChuc,
 } from "@/lib/data";
-import { DON_VI_MAC_DINH, maNhomCuaCLB, useSoDoToChuc } from "@/lib/so-do-to-chuc";
+import { maNhomCuaCLB, useSoDoToChuc } from "@/lib/so-do-to-chuc";
 import { ClubCard, Empty, EventCard, GridSkeleton } from "@/components/common";
 import { HotEventsBanner } from "@/components/student/HotEventsBanner";
 import { ClubSearchBox } from "@/components/student/Filters";
@@ -123,10 +123,7 @@ function KhoiCard({
   clubs: CauLacBo[];
 }) {
   const maNhom = new Set(nhom.map((n) => n.MaNhom));
-  const tong = clubs.filter((c) => {
-    const ma = maNhomCuaCLB(c, DON_VI_MAC_DINH);
-    return ma != null && maNhom.has(ma);
-  }).length;
+  const tong = clubs.filter((c) => c.MaNhom != null && maNhom.has(c.MaNhom)).length;
   return (
     <div className="rounded-2xl border bg-card p-4">
       <Link
@@ -147,7 +144,7 @@ function KhoiCard({
           >
             {n.TenNhom}
             <span className="rounded-full bg-secondary px-1.5 text-xs text-secondary-foreground">
-              {clubs.filter((c) => maNhomCuaCLB(c, DON_VI_MAC_DINH) === n.MaNhom).length}
+              {clubs.filter((c) => c.MaNhom === n.MaNhom).length}
             </span>
           </Link>
         ))}

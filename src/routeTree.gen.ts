@@ -20,11 +20,13 @@ import { Route as SuKienRouteImport } from './routes/su-kien'
 import { Route as ThongBaoRouteImport } from './routes/thong-bao'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as AdminClbRouteImport } from './routes/admin.clb'
+import { Route as AdminHoSoRouteImport } from './routes/admin.ho-so'
+import { Route as AdminKiemDuyetRouteImport } from './routes/admin.kiem-duyet'
+import { Route as AdminThongBaoRouteImport } from './routes/admin.thong-bao'
 import { Route as AdminDangNhapRouteImport } from './routes/admin.dang-nhap'
 import { Route as AdminDuyetBaiRouteImport } from './routes/admin.duyet-bai'
 import { Route as AdminNhatKyRouteImport } from './routes/admin.nhat-ky'
 import { Route as AdminTaiKhoanRouteImport } from './routes/admin.tai-khoan'
-import { Route as AdminThongBaoRouteImport } from './routes/admin.thong-bao'
 import { Route as AdminYeuCauRouteImport } from './routes/admin.yeu-cau'
 import { Route as CauLacBoIndexRouteImport } from './routes/cau-lac-bo.index'
 import { Route as CauLacBoIdRouteImport } from './routes/cau-lac-bo.$id'
@@ -89,6 +91,21 @@ const AdminClbRoute = AdminClbRouteImport.update({
   path: '/admin/clb',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminHoSoRoute = AdminHoSoRouteImport.update({
+  id: '/admin/ho-so',
+  path: '/admin/ho-so',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminKiemDuyetRoute = AdminKiemDuyetRouteImport.update({
+  id: '/admin/kiem-duyet',
+  path: '/admin/kiem-duyet',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminThongBaoRoute = AdminThongBaoRouteImport.update({
+  id: '/admin/thong-bao',
+  path: '/admin/thong-bao',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminDangNhapRoute = AdminDangNhapRouteImport.update({
   id: '/admin/dang-nhap',
   path: '/admin/dang-nhap',
@@ -107,11 +124,6 @@ const AdminNhatKyRoute = AdminNhatKyRouteImport.update({
 const AdminTaiKhoanRoute = AdminTaiKhoanRouteImport.update({
   id: '/admin/tai-khoan',
   path: '/admin/tai-khoan',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AdminThongBaoRoute = AdminThongBaoRouteImport.update({
-  id: '/admin/thong-bao',
-  path: '/admin/thong-bao',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminYeuCauRoute = AdminYeuCauRouteImport.update({
@@ -166,11 +178,13 @@ export interface FileRoutesByFullPath {
   '/su-kien': typeof SuKienRoute
   '/thong-bao': typeof ThongBaoRoute
   '/admin/clb': typeof AdminClbRoute
+  '/admin/ho-so': typeof AdminHoSoRoute
+  '/admin/kiem-duyet': typeof AdminKiemDuyetRoute
+  '/admin/thong-bao': typeof AdminThongBaoRoute
   '/admin/dang-nhap': typeof AdminDangNhapRoute
   '/admin/duyet-bai': typeof AdminDuyetBaiRoute
   '/admin/nhat-ky': typeof AdminNhatKyRoute
   '/admin/tai-khoan': typeof AdminTaiKhoanRoute
-  '/admin/thong-bao': typeof AdminThongBaoRoute
   '/admin/yeu-cau': typeof AdminYeuCauRoute
   '/cau-lac-bo/$id': typeof CauLacBoIdRoute
   '/clb/bai-dang': typeof ClbBaiDangRoute
@@ -192,11 +206,13 @@ export interface FileRoutesByTo {
   '/su-kien': typeof SuKienRoute
   '/thong-bao': typeof ThongBaoRoute
   '/admin/clb': typeof AdminClbRoute
+  '/admin/ho-so': typeof AdminHoSoRoute
+  '/admin/kiem-duyet': typeof AdminKiemDuyetRoute
+  '/admin/thong-bao': typeof AdminThongBaoRoute
   '/admin/dang-nhap': typeof AdminDangNhapRoute
   '/admin/duyet-bai': typeof AdminDuyetBaiRoute
   '/admin/nhat-ky': typeof AdminNhatKyRoute
   '/admin/tai-khoan': typeof AdminTaiKhoanRoute
-  '/admin/thong-bao': typeof AdminThongBaoRoute
   '/admin/yeu-cau': typeof AdminYeuCauRoute
   '/cau-lac-bo/$id': typeof CauLacBoIdRoute
   '/clb/bai-dang': typeof ClbBaiDangRoute
@@ -219,11 +235,13 @@ export interface FileRoutesById {
   '/su-kien': typeof SuKienRoute
   '/thong-bao': typeof ThongBaoRoute
   '/admin/clb': typeof AdminClbRoute
+  '/admin/ho-so': typeof AdminHoSoRoute
+  '/admin/kiem-duyet': typeof AdminKiemDuyetRoute
+  '/admin/thong-bao': typeof AdminThongBaoRoute
   '/admin/dang-nhap': typeof AdminDangNhapRoute
   '/admin/duyet-bai': typeof AdminDuyetBaiRoute
   '/admin/nhat-ky': typeof AdminNhatKyRoute
   '/admin/tai-khoan': typeof AdminTaiKhoanRoute
-  '/admin/thong-bao': typeof AdminThongBaoRoute
   '/admin/yeu-cau': typeof AdminYeuCauRoute
   '/cau-lac-bo/$id': typeof CauLacBoIdRoute
   '/clb/bai-dang': typeof ClbBaiDangRoute
@@ -247,11 +265,13 @@ export interface FileRouteTypes {
     | '/su-kien'
     | '/thong-bao'
     | '/admin/clb'
+    | '/admin/ho-so'
+    | '/admin/kiem-duyet'
+    | '/admin/thong-bao'
     | '/admin/dang-nhap'
     | '/admin/duyet-bai'
     | '/admin/nhat-ky'
     | '/admin/tai-khoan'
-    | '/admin/thong-bao'
     | '/admin/yeu-cau'
     | '/cau-lac-bo/$id'
     | '/clb/bai-dang'
@@ -273,11 +293,13 @@ export interface FileRouteTypes {
     | '/su-kien'
     | '/thong-bao'
     | '/admin/clb'
+    | '/admin/ho-so'
+    | '/admin/kiem-duyet'
+    | '/admin/thong-bao'
     | '/admin/dang-nhap'
     | '/admin/duyet-bai'
     | '/admin/nhat-ky'
     | '/admin/tai-khoan'
-    | '/admin/thong-bao'
     | '/admin/yeu-cau'
     | '/cau-lac-bo/$id'
     | '/clb/bai-dang'
@@ -299,11 +321,13 @@ export interface FileRouteTypes {
     | '/su-kien'
     | '/thong-bao'
     | '/admin/clb'
+    | '/admin/ho-so'
+    | '/admin/kiem-duyet'
+    | '/admin/thong-bao'
     | '/admin/dang-nhap'
     | '/admin/duyet-bai'
     | '/admin/nhat-ky'
     | '/admin/tai-khoan'
-    | '/admin/thong-bao'
     | '/admin/yeu-cau'
     | '/cau-lac-bo/$id'
     | '/clb/bai-dang'
@@ -326,11 +350,13 @@ export interface RootRouteChildren {
   SuKienRoute: typeof SuKienRoute
   ThongBaoRoute: typeof ThongBaoRoute
   AdminClbRoute: typeof AdminClbRoute
+  AdminHoSoRoute: typeof AdminHoSoRoute
+  AdminKiemDuyetRoute: typeof AdminKiemDuyetRoute
+  AdminThongBaoRoute: typeof AdminThongBaoRoute
   AdminDangNhapRoute: typeof AdminDangNhapRoute
   AdminDuyetBaiRoute: typeof AdminDuyetBaiRoute
   AdminNhatKyRoute: typeof AdminNhatKyRoute
   AdminTaiKhoanRoute: typeof AdminTaiKhoanRoute
-  AdminThongBaoRoute: typeof AdminThongBaoRoute
   AdminYeuCauRoute: typeof AdminYeuCauRoute
   CauLacBoIdRoute: typeof CauLacBoIdRoute
   ClbBaiDangRoute: typeof ClbBaiDangRoute
@@ -421,6 +447,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminClbRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/ho-so': {
+      id: '/admin/ho-so'
+      path: '/admin/ho-so'
+      fullPath: '/admin/ho-so'
+      preLoaderRoute: typeof AdminHoSoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/kiem-duyet': {
+      id: '/admin/kiem-duyet'
+      path: '/admin/kiem-duyet'
+      fullPath: '/admin/kiem-duyet'
+      preLoaderRoute: typeof AdminKiemDuyetRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/thong-bao': {
+      id: '/admin/thong-bao'
+      path: '/admin/thong-bao'
+      fullPath: '/admin/thong-bao'
+      preLoaderRoute: typeof AdminThongBaoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/dang-nhap': {
       id: '/admin/dang-nhap'
       path: '/admin/dang-nhap'
@@ -447,13 +494,6 @@ declare module '@tanstack/react-router' {
       path: '/admin/tai-khoan'
       fullPath: '/admin/tai-khoan'
       preLoaderRoute: typeof AdminTaiKhoanRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/admin/thong-bao': {
-      id: '/admin/thong-bao'
-      path: '/admin/thong-bao'
-      fullPath: '/admin/thong-bao'
-      preLoaderRoute: typeof AdminThongBaoRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin/yeu-cau': {
@@ -526,11 +566,13 @@ const rootRouteChildren: RootRouteChildren = {
   SuKienRoute: SuKienRoute,
   ThongBaoRoute: ThongBaoRoute,
   AdminClbRoute: AdminClbRoute,
+  AdminHoSoRoute: AdminHoSoRoute,
+  AdminKiemDuyetRoute: AdminKiemDuyetRoute,
+  AdminThongBaoRoute: AdminThongBaoRoute,
   AdminDangNhapRoute: AdminDangNhapRoute,
   AdminDuyetBaiRoute: AdminDuyetBaiRoute,
   AdminNhatKyRoute: AdminNhatKyRoute,
   AdminTaiKhoanRoute: AdminTaiKhoanRoute,
-  AdminThongBaoRoute: AdminThongBaoRoute,
   AdminYeuCauRoute: AdminYeuCauRoute,
   CauLacBoIdRoute: CauLacBoIdRoute,
   ClbBaiDangRoute: ClbBaiDangRoute,
