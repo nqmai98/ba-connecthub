@@ -573,10 +573,6 @@ function ThemTaiKhoanDialog({
                   </Button>
                 </div>
               </div>
-              <p className="rounded-xl bg-muted p-3 text-xs font-semibold text-muted-foreground">
-                Không cần điền giới thiệu, logo hay ảnh bìa: đại diện CLB tự cập nhật sau khi đăng nhập.
-                Quản trị viên vẫn sửa được bằng nút “Sửa” trong danh sách.
-              </p>
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={onClose}>

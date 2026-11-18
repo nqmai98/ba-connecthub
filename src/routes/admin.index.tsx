@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import type { ReactNode } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import {
   ArrowRight,
   CalendarDays,
@@ -15,6 +15,13 @@ import {
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { supabase } from "@/integrations/supabase/client";
 import { ClubLogo, GridSkeleton, Page, RoleGate } from "@/components/common";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { useViecChoXuLy } from "@/components/admin/AdminLayout";
 import { NHAN_KHOI, useCauLacBo, type KhoiToChuc } from "@/lib/data";
 import { maNhomCuaCLB, useSoDoToChuc } from "@/lib/so-do-to-chuc";
@@ -38,7 +45,38 @@ export const Route = createFileRoute("/admin/")({
 const MAU = { tinBai: "#4152b8", suKien: "#c98208" };
 const NGAY = 24 * 60 * 60 * 1000;
 
-type BaiTK = { MaCLB: number; LoaiBaiDang: string; TrangThaiKiemDuyet: string; NgayTao: string };
+type BaiTK = {
+  MaBaiDang: number;
+  MaCLB: number;
+  LoaiBaiDang: string;
+  TrangThaiKiemDuyet: string;
+  NgayTao: string;
+};
+
+/* ----------------------- Lọc thời gian theo năm học / học kì ----------------------- */
+type HocKi = "ca-nam" | "hk1" | "hk2" | "hk3";
+const NHAN_HOC_KI: Record<HocKi, string> = {
+  "ca-nam": "Cả năm",
+  hk1: "Học kì 1",
+  hk2: "Học kì 2",
+  hk3: "Học kì 3",
+};
+/** Năm học Y–Y+1: HK1 tháng 8–12 năm Y, HK2 tháng 1–6 năm Y+1, HK3 tháng 7 năm Y+1. */
+function khoangHocKi(namHoc: number, hk: HocKi): [Date, Date] {
+  const d = (y: number, m: number) => new Date(y, m, 1);
+  switch (hk) {
+    case "hk1":
+      return [d(namHoc, 7), d(namHoc + 1, 0)];
+    case "hk2":
+      return [d(namHoc + 1, 0), d(namHoc + 1, 6)];
+    case "hk3":
+      return [d(namHoc + 1, 6), d(namHoc + 1, 7)];
+    default:
+      return [d(namHoc, 7), d(namHoc + 1, 7)];
+  }
+}
+const namHocCua = (t: Date) => (t.getMonth() >= 7 ? t.getFullYear() : t.getFullYear() - 1);
+
 
 /**
  * Dashboard Quản trị – theo PTTKHT (câu hỏi 11, 15 và Hình 13): số CLB, số bài viết, số sự kiện,
@@ -52,20 +90,23 @@ function Dashboard() {
   const { data: clubs } = useCauLacBo();
   const { data: dsNhom } = useSoDoToChuc();
   const { data: viecCho } = useViecChoXuLy();
+  const [namHoc, setNamHoc] = useState(() => namHocCua(new Date()));
+  const [hocKi, setHocKi] = useState<HocKi>("ca-nam");
+  const [xemTop, setXemTop] = useState(false);
 
   const q = useQuery({
     queryKey: ["admin-dashboard"],
     queryFn: async () => {
       const [posts, suKien, theoDoi, nguoiDung, stats] = await Promise.all([
-        supabase.from("bai_dang").select("MaCLB, LoaiBaiDang, TrangThaiKiemDuyet, NgayTao"),
-        supabase.from("su_kien").select("MaBaiDang, ThoiGianKetThuc"),
+        supabase.from("bai_dang").select("MaBaiDang, MaCLB, LoaiBaiDang, TrangThaiKiemDuyet, NgayTao"),
+        supabase.from("su_kien").select("MaBaiDang, ThoiGianBatDau, ThoiGianKetThuc"),
         supabase.from("theo_doi_clb").select("MaCLB"),
         supabase.from("nguoi_dung").select("TrangThaiTaiKhoan, vai_tro(TenVaiTro)"),
         supabase.from("thong_ke_truy_cap").select("LuotTruyCap").maybeSingle(),
       ]);
       return {
         posts: (posts.data ?? []) as BaiTK[],
-        suKienSapToi: (suKien.data ?? []).filter((s) => new Date(s.ThoiGianKetThuc).getTime() >= Date.now()).length,
+        suKien: (suKien.data ?? []) as { MaBaiDang: number; ThoiGianBatDau: string; ThoiGianKetThuc: string }[],
         theoDoi: (theoDoi.data ?? []) as { MaCLB: number }[],
         nguoiDung: (nguoiDung.data ?? []) as unknown as {
           TrangThaiTaiKhoan: string;
@@ -76,30 +117,47 @@ function Dashboard() {
     },
   });
 
+  const dsNamHoc = useMemo(() => {
+    const hienTai = namHocCua(new Date());
+    const dauTien = Math.min(
+      hienTai,
+      ...(q.data?.posts ?? []).map((p) => namHocCua(new Date(p.NgayTao))),
+    );
+    return Array.from({ length: hienTai - dauTien + 1 }, (_, i) => hienTai - i);
+  }, [q.data]);
+
   if (q.isLoading || !clubs)
     return (
       <Page title="Dashboard">
         <GridSkeleton n={4} />
       </Page>
     );
-  const d = q.data ?? { posts: [], suKienSapToi: 0, theoDoi: [], nguoiDung: [], luotTruyCap: 0 };
+  const d = q.data ?? { posts: [], suKien: [], theoDoi: [], nguoiDung: [], luotTruyCap: 0 };
   const now = Date.now();
-  const daDuyet = d.posts.filter((p) => p.TrangThaiKiemDuyet === "DaDuyet");
+  const [tu, den] = khoangHocKi(namHoc, hocKi);
+  const tenKy = `${NHAN_HOC_KI[hocKi]} · ${namHoc}–${namHoc + 1}`;
+  const batDauSK = new Map(d.suKien.map((x) => [x.MaBaiDang, x.ThoiGianBatDau]));
+  // Bài viết tính theo ngày gửi; sự kiện tính theo ngày diễn ra
+  const thoiDiem = (p: BaiTK) => new Date(p.LoaiBaiDang === "SuKien" ? (batDauSK.get(p.MaBaiDang) ?? p.NgayTao) : p.NgayTao);
+  const trongKy = (p: BaiTK) => {
+    const t = thoiDiem(p);
+    return t >= tu && t < den;
+  };
+  const daDuyetTatCa = d.posts.filter((p) => p.TrangThaiKiemDuyet === "DaDuyet");
+  const daDuyet = daDuyetTatCa.filter(trongKy);
   const gan30 = (p: BaiTK) => now - new Date(p.NgayTao).getTime() <= 30 * NGAY;
   const tinBai = daDuyet.filter((p) => p.LoaiBaiDang !== "SuKien");
   const suKien = daDuyet.filter((p) => p.LoaiBaiDang === "SuKien");
+  const suKienSapToi = d.suKien.filter((x) => new Date(x.ThoiGianKetThuc).getTime() >= now).length;
   const clbHoatDong = clubs.filter((c) => c.TrangThaiHoatDong === "DangHoatDong").length;
 
-  // ---- Xu hướng 6 tháng gần nhất ----
-  const thang = Array.from({ length: 6 }, (_, i) => {
-    const t = new Date();
-    t.setDate(1);
-    t.setMonth(t.getMonth() - (5 - i));
-    return { y: t.getFullYear(), m: t.getMonth() };
-  });
+  // ---- Xu hướng theo từng tháng trong kỳ đã chọn ----
+  const thang: { y: number; m: number }[] = [];
+  for (let t = new Date(tu); t < den; t = new Date(t.getFullYear(), t.getMonth() + 1, 1))
+    thang.push({ y: t.getFullYear(), m: t.getMonth() });
   const xuHuong = thang.map(({ y, m }) => {
     const trong = daDuyet.filter((p) => {
-      const t = new Date(p.NgayTao);
+      const t = thoiDiem(p);
       return t.getFullYear() === y && t.getMonth() === m;
     });
     return {
@@ -111,8 +169,14 @@ function Dashboard() {
 
   // ---- Theo đơn vị trong sơ đồ tổ chức ----
   const clbKemNhom = clubs.map((c) => ({ ...c, MaNhom: maNhomCuaCLB(c, dsNhom) }));
+  // Số bài viết / sự kiện được duyệt trong kỳ của từng CLB
+  const baiTheoCLB = new Map<number, number>();
+  const skTheoCLB = new Map<number, number>();
+  tinBai.forEach((p) => baiTheoCLB.set(p.MaCLB, (baiTheoCLB.get(p.MaCLB) ?? 0) + 1));
+  suKien.forEach((p) => skTheoCLB.set(p.MaCLB, (skTheoCLB.get(p.MaCLB) ?? 0) + 1));
+  const tongTheoCLB = (ma: number) => (baiTheoCLB.get(ma) ?? 0) + (skTheoCLB.get(ma) ?? 0);
   const baiGanDayTheoCLB = new Map<number, number>();
-  daDuyet.filter(gan30).forEach((p) => baiGanDayTheoCLB.set(p.MaCLB, (baiGanDayTheoCLB.get(p.MaCLB) ?? 0) + 1));
+  daDuyetTatCa.filter(gan30).forEach((p) => baiGanDayTheoCLB.set(p.MaCLB, (baiGanDayTheoCLB.get(p.MaCLB) ?? 0) + 1));
   const theoDoiTheoCLB = new Map<number, number>();
   d.theoDoi.forEach((t) => theoDoiTheoCLB.set(t.MaCLB, (theoDoiTheoCLB.get(t.MaCLB) ?? 0) + 1));
 
@@ -121,18 +185,25 @@ function Dashboard() {
     return {
       ...n,
       soCLB: cl.length,
-      baiGanDay: cl.reduce((s, c) => s + (baiGanDayTheoCLB.get(c.MaCLB) ?? 0), 0),
+      baiGanDay: cl.reduce((s, c) => s + tongTheoCLB(c.MaCLB), 0),
     };
   });
   const chuaPhanLoai = clbKemNhom.filter((c) => c.MaNhom == null);
   const maxBai = Math.max(1, ...donVi.map((x) => x.baiGanDay));
 
   // ---- Top CLB & CLB im lặng ----
-  const top = clubs
-    .map((c) => ({ c, bai: baiGanDayTheoCLB.get(c.MaCLB) ?? 0, theoDoi: theoDoiTheoCLB.get(c.MaCLB) ?? 0 }))
-    .filter((x) => x.bai > 0 || x.theoDoi > 0)
-    .sort((a, b) => b.bai - a.bai || b.theoDoi - a.theoDoi)
-    .slice(0, 5);
+  // Xếp hạng: tổng bài viết + sự kiện được duyệt trong kỳ, hòa thì xét số người theo dõi
+  const xepHang = clubs
+    .map((c) => ({
+      c,
+      bai: baiTheoCLB.get(c.MaCLB) ?? 0,
+      suKien: skTheoCLB.get(c.MaCLB) ?? 0,
+      theoDoi: theoDoiTheoCLB.get(c.MaCLB) ?? 0,
+    }))
+    .filter((x) => x.bai + x.suKien > 0)
+    .sort((a, b) => b.bai + b.suKien - (a.bai + a.suKien) || b.theoDoi - a.theoDoi);
+  const top = xepHang.slice(0, 5);
+  const top15 = xepHang.slice(0, 15);
   const imLang = clubs.filter(
     (c) => c.TrangThaiHoatDong === "DangHoatDong" && !baiGanDayTheoCLB.get(c.MaCLB),
   ).length;
@@ -142,12 +213,46 @@ function Dashboard() {
   const biKhoa = d.nguoiDung.filter((u) => u.TrangThaiTaiKhoan === "BiKhoa").length;
 
   return (
-    <Page title="Dashboard" subtitle="Tổng quan hoạt động của các câu lạc bộ trên BAV CLUBS">
+    <Page
+      title="Dashboard"
+      subtitle="Tổng quan hoạt động của các câu lạc bộ trên BAV CLUBS"
+      actions={
+        <div className="flex flex-wrap items-center gap-2">
+          <select
+            aria-label="Năm học"
+            value={namHoc}
+            onChange={(e) => setNamHoc(Number(e.target.value))}
+            className="h-10 rounded-xl border bg-card px-3 text-sm font-bold text-primary"
+          >
+            {dsNamHoc.map((y) => (
+              <option key={y} value={y}>
+                Năm học {y}–{y + 1}
+              </option>
+            ))}
+          </select>
+          <div className="flex rounded-xl border bg-card p-1" role="group" aria-label="Học kì">
+            {(Object.keys(NHAN_HOC_KI) as HocKi[]).map((k) => (
+              <button
+                key={k}
+                onClick={() => setHocKi(k)}
+                aria-pressed={hocKi === k}
+                className={cn(
+                  "rounded-lg px-3 py-1.5 text-sm font-bold transition",
+                  hocKi === k ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-primary",
+                )}
+              >
+                {NHAN_HOC_KI[k]}
+              </button>
+            ))}
+          </div>
+        </div>
+      }
+    >
       {/* KPI theo PTTKHT: CLB – Bài viết – Sự kiện – Chờ duyệt – Lượt truy cập */}
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
         <KPI icon={UsersRound} nhan="Câu lạc bộ" so={clubs.length} phu={`${clbHoatDong} đang hoạt động`} />
-        <KPI icon={FileText} nhan="Bài viết" so={tinBai.length} phu={`+${tinBai.filter(gan30).length} trong 30 ngày`} />
-        <KPI icon={CalendarDays} nhan="Sự kiện" so={suKien.length} phu={`${d.suKienSapToi} sắp / đang diễn ra`} />
+        <KPI icon={FileText} nhan="Bài viết" so={tinBai.length} phu={tenKy} />
+        <KPI icon={CalendarDays} nhan="Sự kiện" so={suKien.length} phu={`${tenKy} · ${suKienSapToi} sắp diễn ra`} />
         <KPI
           icon={ClipboardCheck}
           nhan="Chờ duyệt"
@@ -156,17 +261,17 @@ function Dashboard() {
           to="/admin/kiem-duyet"
           noiBat={(viecCho?.tong ?? 0) > 0}
         />
-        <KPI icon={Eye} nhan="Lượt truy cập" so={d.luotTruyCap} phu={`${demVaiTro("SinhVien")} tài khoản sinh viên`} />
+        <KPI icon={Eye} nhan="Lượt truy cập" so={d.luotTruyCap} phu="Tổng từ khi ra mắt" />
       </div>
 
       <div className="mt-5 grid gap-5 lg:grid-cols-3">
         {/* Xu hướng bài đăng */}
-        <Khung tieuDe="Nội dung được duyệt theo tháng" phu="6 tháng gần nhất" className="lg:col-span-2">
+        <Khung tieuDe="Nội dung được duyệt theo tháng" phu={tenKy} className="lg:col-span-2">
           <div className="mb-2 flex gap-4 text-xs font-bold text-muted-foreground">
             <ChuThich mau={MAU.tinBai} ten="Tin bài" />
             <ChuThich mau={MAU.suKien} ten="Sự kiện" />
           </div>
-          <div className="h-64" role="img" aria-label="Biểu đồ cột số tin bài và sự kiện được duyệt trong 6 tháng gần nhất">
+          <div className="h-64" role="img" aria-label={`Biểu đồ cột số tin bài và sự kiện được duyệt theo tháng, ${tenKy}`}>
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={xuHuong} barGap={2} barCategoryGap="28%">
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" />
@@ -233,7 +338,7 @@ function Dashboard() {
         {/* Hoạt động theo đơn vị */}
         <Khung
           tieuDe="Hoạt động theo tổ chức"
-          phu="Số CLB và số bài được duyệt trong 30 ngày, gộp theo sơ đồ Đoàn – Hội"
+          phu={`Số CLB và số bài viết, sự kiện được duyệt · ${tenKy}`}
           className="lg:col-span-2"
         >
           <div className="grid gap-5 md:grid-cols-2">
@@ -244,7 +349,7 @@ function Dashboard() {
                   {donVi
                     .filter((x) => x.Khoi === k)
                     .map((x) => (
-                      <li key={x.MaNhom} title={`${x.TenNhom}: ${x.soCLB} CLB, ${x.baiGanDay} bài trong 30 ngày`}>
+                      <li key={x.MaNhom} title={`${x.TenNhom}: ${x.soCLB} CLB, ${x.baiGanDay} bài viết và sự kiện`}>
                         <Link to="/admin/clb" search={{ khoi: k, nhom: x.MaNhom }} className="group block">
                           <div className="flex items-baseline justify-between gap-2 text-sm">
                             <span className="truncate font-semibold group-hover:text-primary">{x.TenNhom}</span>
@@ -277,17 +382,17 @@ function Dashboard() {
 
         <div className="space-y-5">
           {/* Top CLB */}
-          <Khung tieuDe="CLB tích cực nhất" phu="Theo số bài được duyệt trong 30 ngày">
+          <Khung tieuDe="CLB tích cực nhất" phu={`Theo số bài viết và sự kiện được duyệt · ${tenKy}`}>
             {top.length ? (
               <ol className="space-y-2.5">
-                {top.map(({ c, bai, theoDoi }, i) => (
+                {top.map(({ c, bai, suKien: sk, theoDoi }, i) => (
                   <li key={c.MaCLB} className="flex items-center gap-3">
                     <span className="w-4 text-center text-sm font-extrabold text-muted-foreground">{i + 1}</span>
                     <ClubLogo club={c} size={32} />
                     <span className="min-w-0 flex-1">
                       <span className="block truncate text-sm font-bold">{c.TenCLB}</span>
                       <span className="block text-xs font-semibold text-muted-foreground">
-                        {bai} bài · {theoDoi} người theo dõi
+                        {bai} bài viết · {sk} sự kiện · {theoDoi} người theo dõi
                       </span>
                     </span>
                     {i === 0 && <TrendingUp className="h-4 w-4 text-success" aria-label="Dẫn đầu" />}
@@ -295,7 +400,12 @@ function Dashboard() {
                 ))}
               </ol>
             ) : (
-              <p className="text-sm text-muted-foreground">Chưa có hoạt động trong 30 ngày qua.</p>
+              <p className="text-sm text-muted-foreground">Chưa có hoạt động trong kỳ này.</p>
+            )}
+            {xepHang.length > 5 && (
+              <Button variant="outline" size="sm" className="mt-4 w-full font-bold" onClick={() => setXemTop(true)}>
+                Xem thêm (Top {Math.min(15, xepHang.length)})
+              </Button>
             )}
           </Khung>
 
@@ -327,6 +437,43 @@ function Dashboard() {
           </Khung>
         </div>
       </div>
+      <Dialog open={xemTop} onOpenChange={setXemTop}>
+        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Top 15 CLB hoạt động tích cực</DialogTitle>
+          </DialogHeader>
+          <p className="-mt-2 text-sm font-semibold text-muted-foreground">{tenKy}</p>
+          <div className="overflow-x-auto rounded-xl border">
+            <table className="w-full text-sm">
+              <thead className="bg-muted text-left text-xs uppercase tracking-wide text-muted-foreground">
+                <tr>
+                  <th className="p-2.5 text-center">#</th>
+                  <th className="p-2.5">Câu lạc bộ</th>
+                  <th className="p-2.5 text-right">Bài viết</th>
+                  <th className="p-2.5 text-right">Sự kiện</th>
+                  <th className="p-2.5 text-right">Theo dõi</th>
+                </tr>
+              </thead>
+              <tbody>
+                {top15.map(({ c, bai, suKien: sk, theoDoi }, i) => (
+                  <tr key={c.MaCLB} className="border-t">
+                    <td className="p-2.5 text-center font-extrabold text-muted-foreground">{i + 1}</td>
+                    <td className="p-2.5">
+                      <span className="flex items-center gap-2">
+                        <ClubLogo club={c} size={28} />
+                        <span className="font-bold">{c.TenCLB}</span>
+                      </span>
+                    </td>
+                    <td className="p-2.5 text-right font-semibold">{bai}</td>
+                    <td className="p-2.5 text-right font-semibold">{sk}</td>
+                    <td className="p-2.5 text-right font-semibold">{theoDoi}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </DialogContent>
+      </Dialog>
     </Page>
   );
 }
