@@ -5,13 +5,12 @@ import logo from "@/assets/bav-logo.png.asset.json";
 import {
   NHAN_KHOI,
   useCauLacBo,
-  useLinhVuc,
-  useNhomToChuc,
   useSuKien,
   type CauLacBo,
   type KhoiToChuc,
   type NhomToChuc,
 } from "@/lib/data";
+import { maNhomCuaCLB, useSoDoToChuc } from "@/lib/so-do-to-chuc";
 import { ClubCard, Empty, EventCard, GridSkeleton } from "@/components/common";
 import { HotEventsBanner } from "@/components/student/HotEventsBanner";
 import { ClubSearchBox } from "@/components/student/Filters";
@@ -36,14 +35,11 @@ export const Route = createFileRoute("/")({
 });
 
 function Home() {
-  const { data: linhVuc } = useLinhVuc();
-  const { data: dsNhom } = useNhomToChuc();
+  const { data: dsNhom } = useSoDoToChuc();
   const { data: clubs, isLoading } = useCauLacBo();
   const { data: suKien, isLoading: evLoading } = useSuKien({ sapDienRa: true });
   const dangHoatDong = (clubs ?? []).filter((c) => c.TrangThaiHoatDong !== "NgungHoatDong");
   const noiBat = dangHoatDong.filter((c) => c.NoiBat).slice(0, 6);
-  const demTheoLinhVuc = new Map<number, number>();
-  dangHoatDong.forEach((c) => demTheoLinhVuc.set(c.MaLinhVuc, (demTheoLinhVuc.get(c.MaLinhVuc) ?? 0) + 1));
 
   return (
     <main>
@@ -55,40 +51,17 @@ function Home() {
         {/* Tìm kiếm + khám phá theo sơ đồ tổ chức Đoàn – Hội */}
         <section className="rounded-3xl border border-white/70 bg-card/85 p-4 shadow-[0_18px_50px_-24px_rgb(31_35_95/0.55)] backdrop-blur sm:p-6">
           <ClubSearchBox />
-          {(dsNhom ?? []).length > 0 ? (
-            <>
-              <h2 className="mb-3 mt-5 text-base text-foreground">Khám phá theo tổ chức</h2>
-              <div className="grid gap-3 md:grid-cols-2">
-                {(Object.keys(NHAN_KHOI) as KhoiToChuc[]).map((k) => (
-                  <KhoiCard
-                    key={k}
-                    khoi={k}
-                    nhom={(dsNhom ?? []).filter((n) => n.Khoi === k)}
-                    clubs={dangHoatDong}
-                  />
-                ))}
-              </div>
-            </>
-          ) : (
-            <>
-              <h2 className="mb-3 mt-5 text-base text-foreground">Lọc nhanh theo lĩnh vực</h2>
-              <div className="scrollbar-none flex gap-2 overflow-x-auto pb-1">
-                {(linhVuc ?? []).map((lv) => (
-                  <Link
-                    key={lv.MaLinhVuc}
-                    to="/cau-lac-bo"
-                    search={{ linh_vuc: lv.MaLinhVuc }}
-                    className="inline-flex shrink-0 items-center gap-2 rounded-full border bg-card px-4 py-2 text-sm font-bold text-primary hover:border-primary"
-                  >
-                    {lv.TenLinhVuc}
-                    <span className="rounded-full bg-secondary px-2 py-0.5 text-xs">
-                      {demTheoLinhVuc.get(lv.MaLinhVuc) ?? 0}
-                    </span>
-                  </Link>
-                ))}
-              </div>
-            </>
-          )}
+          <h2 className="mb-3 mt-5 text-base text-foreground">Khám phá theo tổ chức</h2>
+          <div className="grid gap-3 md:grid-cols-2">
+            {(Object.keys(NHAN_KHOI) as KhoiToChuc[]).map((k) => (
+              <KhoiCard
+                key={k}
+                khoi={k}
+                nhom={dsNhom.filter((n) => n.Khoi === k)}
+                clubs={dangHoatDong.map((c) => ({ ...c, MaNhom: maNhomCuaCLB(c, dsNhom) }))}
+              />
+            ))}
+          </div>
         </section>
 
         <section>

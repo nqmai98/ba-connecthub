@@ -1,7 +1,8 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useMemo } from "react";
 import { z } from "zod";
-import { NHAN_KHOI, useCauLacBo, useLinhVuc, useNhomToChuc, type KhoiToChuc } from "@/lib/data";
+import { NHAN_KHOI, useCauLacBo, type KhoiToChuc } from "@/lib/data";
+import { maNhomCuaCLB, useSoDoToChuc } from "@/lib/so-do-to-chuc";
 import { ClubCard, Empty, GridSkeleton, Page } from "@/components/common";
 import { Button } from "@/components/ui/button";
 import { FilterChip, FilterGroup, ResultBar, SearchBar, boDau } from "@/components/student/Filters";
@@ -44,20 +45,23 @@ export const Route = createFileRoute("/cau-lac-bo/")({
  * Chỉ hiển thị CLB chưa ngừng hoạt động. Bộ lọc được giữ trên URL để chia sẻ/quay lại được.
  */
 function ClubList() {
-  const { q = "", khoi, nhom, linh_vuc } = Route.useSearch();
+  const { q = "", khoi, nhom } = Route.useSearch();
   const navigate = useNavigate({ from: "/cau-lac-bo/" });
-  const { data: linhVuc } = useLinhVuc();
-  const { data: dsNhom } = useNhomToChuc();
+  const { data: dsNhom } = useSoDoToChuc();
   const { data: clubs, isLoading } = useCauLacBo();
 
-  const nhomTheoMa = useMemo(() => new Map((dsNhom ?? []).map((n) => [n.MaNhom, n])), [dsNhom]);
+  const nhomTheoMa = useMemo(() => new Map(dsNhom.map((n) => [n.MaNhom, n])), [dsNhom]);
+
+  // Gắn sẵn đơn vị (cấp 2) cho từng CLB: theo CSDL nếu Admin đã gán, nếu không thì theo tên
+  const conHoatDong = useMemo(
+    () =>
+      (clubs ?? [])
+        .filter((c) => c.TrangThaiHoatDong !== "NgungHoatDong")
+        .map((c) => ({ ...c, MaNhom: maNhomCuaCLB(c, dsNhom) })),
+    [clubs, dsNhom],
+  );
   const khoiCua = (maNhom: number | null | undefined) =>
     maNhom != null ? nhomTheoMa.get(maNhom)?.Khoi : undefined;
-
-  const conHoatDong = useMemo(
-    () => (clubs ?? []).filter((c) => c.TrangThaiHoatDong !== "NgungHoatDong"),
-    [clubs],
-  );
 
   // Bước 1: từ khóa
   const theoTuKhoa = useMemo(() => {
@@ -83,15 +87,10 @@ function ClubList() {
     () => theoKhoi.filter((c) => !nhom || c.MaNhom === nhom),
     [theoKhoi, nhom],
   );
-  // Bước 4: lĩnh vực
-  const list = useMemo(
-    () => theoNhom.filter((c) => !linh_vuc || c.MaLinhVuc === linh_vuc),
-    [theoNhom, linh_vuc],
-  );
+  const list = theoNhom;
 
-  const coBoLocToChuc = (dsNhom ?? []).length > 0;
-  const nhomCuaKhoi = (dsNhom ?? []).filter((n) => n.Khoi === khoi);
-  const dangLoc = !!q || !!khoi || !!nhom || !!linh_vuc;
+  const nhomCuaKhoi = dsNhom.filter((n) => n.Khoi === khoi);
+  const dangLoc = !!q || !!khoi || !!nhom;
   const xoaLoc = () => navigate({ search: {} });
   const chonKhoi = (k: KhoiToChuc | undefined) =>
     navigate({ search: (p: SearchCLB) => ({ ...p, khoi: k, nhom: undefined }) });
@@ -110,8 +109,8 @@ function ClubList() {
           }
         />
 
-        {coBoLocToChuc && (
-          <>
+        {/* Dòng 1 – Tổ chức. Dòng 2 – Đơn vị (chỉ hiện khi đã chọn Đoàn hoặc Hội) */}
+        <>
             {/* Cấp 1: Đoàn Thanh niên / Hội Sinh viên */}
             <FilterGroup label="Tổ chức">
               <FilterChip active={!khoi} count={theoTuKhoa.length} onClick={() => chonKhoi(undefined)}>
@@ -159,35 +158,6 @@ function ClubList() {
               </FilterGroup>
             )}
           </>
-        )}
-
-        <FilterGroup label="Lĩnh vực">
-          <FilterChip
-            active={!linh_vuc}
-            count={theoNhom.length}
-            onClick={() => navigate({ search: (p: SearchCLB) => ({ ...p, linh_vuc: undefined }) })}
-          >
-            Tất cả
-          </FilterChip>
-          {(linhVuc ?? []).map((lv) => (
-            <FilterChip
-              key={lv.MaLinhVuc}
-              title={lv.MoTa ?? undefined}
-              active={linh_vuc === lv.MaLinhVuc}
-              count={theoNhom.filter((c) => c.MaLinhVuc === lv.MaLinhVuc).length}
-              onClick={() =>
-                navigate({
-                  search: (p: SearchCLB) => ({
-                    ...p,
-                    linh_vuc: p.linh_vuc === lv.MaLinhVuc ? undefined : lv.MaLinhVuc,
-                  }),
-                })
-              }
-            >
-              {lv.TenLinhVuc}
-            </FilterChip>
-          ))}
-        </FilterGroup>
       </div>
 
       {isLoading ? (
