@@ -82,9 +82,9 @@ export type Database = {
           NamThanhLap: number | null
           NgayCapNhat: string
           NoiBat: boolean
+          TenCLB: string
           ThanhTich: string | null
           ThongTinLienHe: string | null
-          TenCLB: string
           TrangThaiHoatDong: string
         }
         Insert: {
@@ -100,9 +100,9 @@ export type Database = {
           NamThanhLap?: number | null
           NgayCapNhat?: string
           NoiBat?: boolean
+          TenCLB: string
           ThanhTich?: string | null
           ThongTinLienHe?: string | null
-          TenCLB: string
           TrangThaiHoatDong?: string
         }
         Update: {
@@ -118,9 +118,9 @@ export type Database = {
           NamThanhLap?: number | null
           NgayCapNhat?: string
           NoiBat?: boolean
+          TenCLB?: string
           ThanhTich?: string | null
           ThongTinLienHe?: string | null
-          TenCLB?: string
           TrangThaiHoatDong?: string
         }
         Relationships: [
@@ -549,16 +549,47 @@ export type Database = {
       }
       dem_nguoi_theo_doi: { Args: { _ma_clb: number }; Returns: number }
       ghi_nhan_truy_cap: { Args: never; Returns: undefined }
+      ghi_nhat_ky: {
+        Args: {
+          _doi_tuong: string
+          _gia_tri_cu: string
+          _gia_tri_moi: string
+          _hanh_dong: string
+          _ma_doi_tuong: number
+        }
+        Returns: undefined
+      }
+      gui_thong_bao: {
+        Args: {
+          _duong_dan: string
+          _loai: string
+          _nguoi_nhan: string[]
+          _noi_dung: string
+          _tieu_de: string
+        }
+        Returns: number
+      }
+      la_dai_dien_bai_dang: {
+        Args: { _ma_bai_dang: number; _ma_nguoi_dung: string }
+        Returns: boolean
+      }
       la_dai_dien_clb: {
         Args: { _ma_clb: number; _ma_nguoi_dung: string }
         Returns: boolean
       }
       la_quan_tri_vien: { Args: { _ma_nguoi_dung: string }; Returns: boolean }
       lam_moi_trang_thai_su_kien: { Args: never; Returns: undefined }
-      tai_khoan_hoat_dong: { Args: { _ma_nguoi_dung: string }; Returns: boolean }
       su_kien_noi_bat: {
         Args: { _gioi_han?: number }
-        Returns: { MaBaiDang: number; LuotYeuThich: number; DiemNoiBat: number }[]
+        Returns: {
+          DiemNoiBat: number
+          LuotYeuThich: number
+          MaBaiDang: number
+        }[]
+      }
+      tai_khoan_hoat_dong: {
+        Args: { _ma_nguoi_dung: string }
+        Returns: boolean
       }
       tu_choi_bai_dang: {
         Args: { _ly_do: string; _ma_bai_dang: number }

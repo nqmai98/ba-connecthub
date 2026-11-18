@@ -33,6 +33,7 @@ create table public.vai_tro (
   "MoTaQuyen" text
 );
 
+-- "LogoCLB" / "AnhBia" để text: ảnh nằm trong kho riêng nên đường dẫn ký tên dài hơn 255 ký tự.
 create table public.cau_lac_bo (
   "MaCLB"             int generated always as identity primary key,
   "TenCLB"            varchar(255) not null,
@@ -40,7 +41,7 @@ create table public.cau_lac_bo (
   "MaLinhVuc"         int not null references public.linh_vuc("MaLinhVuc") on delete restrict,
   "DonViTrucThuoc"    varchar(255),
   "MoTa"              text,
-  "LogoCLB"           varchar(255),
+  "LogoCLB"           text,
   "ThongTinLienHe"    varchar(255),
   "Fanpage"           varchar(255),
   "TrangThaiHoatDong" varchar(30) not null default 'DangHoatDong'
@@ -50,7 +51,7 @@ create table public.cau_lac_bo (
   "GioiThieuNgan"     varchar(300),
   "BanChuyenMon"      text,
   "ThanhTich"         text,
-  "AnhBia"            varchar(255),
+  "AnhBia"            text,
   "NoiBat"            boolean not null default false
 );
 create index cau_lac_bo_linh_vuc_idx on public.cau_lac_bo ("MaLinhVuc");
@@ -94,6 +95,7 @@ create table public.theo_doi_clb (
 );
 create index theo_doi_clb_clb_idx on public.theo_doi_clb ("MaCLB");
 
+-- Trường "AnhBia" để text: ảnh nằm trong kho riêng nên đường dẫn ký tên dài hơn 255 ký tự.
 create table public.bai_dang (
   "MaBaiDang"          int generated always as identity primary key,
   "MaCLB"              int not null references public.cau_lac_bo("MaCLB") on delete cascade,
@@ -102,7 +104,7 @@ create table public.bai_dang (
     check ("LoaiBaiDang" in ('TinTuc', 'ChuongTrinh', 'ThanhTich', 'ThongBaoCLB', 'SuKien')),
   "TieuDe"             varchar(255) not null,
   "NoiDung"            text not null,
-  "AnhBia"             varchar(255),
+  "AnhBia"             text,
   "TrangThaiKiemDuyet" varchar(20) not null default 'ChoDuyet'
     check ("TrangThaiKiemDuyet" in ('ChoDuyet', 'DaDuyet', 'TuChoi')),
   "NgayTao"            timestamptz not null default now(),
