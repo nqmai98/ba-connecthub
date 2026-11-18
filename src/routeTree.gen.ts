@@ -20,6 +20,8 @@ import { Route as SuKienRouteImport } from './routes/su-kien'
 import { Route as ThongBaoRouteImport } from './routes/thong-bao'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as AdminClbRouteImport } from './routes/admin.clb'
+import { Route as AdminThongBaoRouteImport } from './routes/admin.thong-bao'
+import { Route as AdminDangNhapRouteImport } from './routes/admin.dang-nhap'
 import { Route as AdminDuyetBaiRouteImport } from './routes/admin.duyet-bai'
 import { Route as AdminNhatKyRouteImport } from './routes/admin.nhat-ky'
 import { Route as AdminTaiKhoanRouteImport } from './routes/admin.tai-khoan'
@@ -85,6 +87,16 @@ const AdminIndexRoute = AdminIndexRouteImport.update({
 const AdminClbRoute = AdminClbRouteImport.update({
   id: '/admin/clb',
   path: '/admin/clb',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminThongBaoRoute = AdminThongBaoRouteImport.update({
+  id: '/admin/thong-bao',
+  path: '/admin/thong-bao',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminDangNhapRoute = AdminDangNhapRouteImport.update({
+  id: '/admin/dang-nhap',
+  path: '/admin/dang-nhap',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminDuyetBaiRoute = AdminDuyetBaiRouteImport.update({
@@ -154,6 +166,8 @@ export interface FileRoutesByFullPath {
   '/su-kien': typeof SuKienRoute
   '/thong-bao': typeof ThongBaoRoute
   '/admin/clb': typeof AdminClbRoute
+  '/admin/thong-bao': typeof AdminThongBaoRoute
+  '/admin/dang-nhap': typeof AdminDangNhapRoute
   '/admin/duyet-bai': typeof AdminDuyetBaiRoute
   '/admin/nhat-ky': typeof AdminNhatKyRoute
   '/admin/tai-khoan': typeof AdminTaiKhoanRoute
@@ -178,6 +192,8 @@ export interface FileRoutesByTo {
   '/su-kien': typeof SuKienRoute
   '/thong-bao': typeof ThongBaoRoute
   '/admin/clb': typeof AdminClbRoute
+  '/admin/thong-bao': typeof AdminThongBaoRoute
+  '/admin/dang-nhap': typeof AdminDangNhapRoute
   '/admin/duyet-bai': typeof AdminDuyetBaiRoute
   '/admin/nhat-ky': typeof AdminNhatKyRoute
   '/admin/tai-khoan': typeof AdminTaiKhoanRoute
@@ -203,6 +219,8 @@ export interface FileRoutesById {
   '/su-kien': typeof SuKienRoute
   '/thong-bao': typeof ThongBaoRoute
   '/admin/clb': typeof AdminClbRoute
+  '/admin/thong-bao': typeof AdminThongBaoRoute
+  '/admin/dang-nhap': typeof AdminDangNhapRoute
   '/admin/duyet-bai': typeof AdminDuyetBaiRoute
   '/admin/nhat-ky': typeof AdminNhatKyRoute
   '/admin/tai-khoan': typeof AdminTaiKhoanRoute
@@ -229,6 +247,8 @@ export interface FileRouteTypes {
     | '/su-kien'
     | '/thong-bao'
     | '/admin/clb'
+    | '/admin/thong-bao'
+    | '/admin/dang-nhap'
     | '/admin/duyet-bai'
     | '/admin/nhat-ky'
     | '/admin/tai-khoan'
@@ -253,6 +273,8 @@ export interface FileRouteTypes {
     | '/su-kien'
     | '/thong-bao'
     | '/admin/clb'
+    | '/admin/thong-bao'
+    | '/admin/dang-nhap'
     | '/admin/duyet-bai'
     | '/admin/nhat-ky'
     | '/admin/tai-khoan'
@@ -277,6 +299,8 @@ export interface FileRouteTypes {
     | '/su-kien'
     | '/thong-bao'
     | '/admin/clb'
+    | '/admin/thong-bao'
+    | '/admin/dang-nhap'
     | '/admin/duyet-bai'
     | '/admin/nhat-ky'
     | '/admin/tai-khoan'
@@ -302,6 +326,8 @@ export interface RootRouteChildren {
   SuKienRoute: typeof SuKienRoute
   ThongBaoRoute: typeof ThongBaoRoute
   AdminClbRoute: typeof AdminClbRoute
+  AdminThongBaoRoute: typeof AdminThongBaoRoute
+  AdminDangNhapRoute: typeof AdminDangNhapRoute
   AdminDuyetBaiRoute: typeof AdminDuyetBaiRoute
   AdminNhatKyRoute: typeof AdminNhatKyRoute
   AdminTaiKhoanRoute: typeof AdminTaiKhoanRoute
@@ -395,6 +421,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminClbRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/thong-bao': {
+      id: '/admin/thong-bao'
+      path: '/admin/thong-bao'
+      fullPath: '/admin/thong-bao'
+      preLoaderRoute: typeof AdminThongBaoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/dang-nhap': {
+      id: '/admin/dang-nhap'
+      path: '/admin/dang-nhap'
+      fullPath: '/admin/dang-nhap'
+      preLoaderRoute: typeof AdminDangNhapRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/duyet-bai': {
       id: '/admin/duyet-bai'
       path: '/admin/duyet-bai'
@@ -486,6 +526,8 @@ const rootRouteChildren: RootRouteChildren = {
   SuKienRoute: SuKienRoute,
   ThongBaoRoute: ThongBaoRoute,
   AdminClbRoute: AdminClbRoute,
+  AdminThongBaoRoute: AdminThongBaoRoute,
+  AdminDangNhapRoute: AdminDangNhapRoute,
   AdminDuyetBaiRoute: AdminDuyetBaiRoute,
   AdminNhatKyRoute: AdminNhatKyRoute,
   AdminTaiKhoanRoute: AdminTaiKhoanRoute,

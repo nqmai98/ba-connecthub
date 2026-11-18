@@ -13,15 +13,15 @@ import { Label } from "@/components/ui/label";
 export const Route = createFileRoute("/dang-nhap-clb")({
   head: () => ({
     meta: [
-      { title: "Đăng nhập CLB / Quản trị – BAV CLUBS" },
+      { title: "Đăng nhập Đại diện CLB – BAV CLUBS" },
       {
         name: "description",
-        content: "Cổng đăng nhập dành cho Đại diện câu lạc bộ và Quản trị viên BAV CLUBS.",
+        content: "Cổng đăng nhập dành cho Đại diện câu lạc bộ BAV CLUBS.",
       },
-      { property: "og:title", content: "Đăng nhập CLB / Quản trị – BAV CLUBS" },
+      { property: "og:title", content: "Đăng nhập Đại diện CLB – BAV CLUBS" },
       {
         property: "og:description",
-        content: "Cổng đăng nhập dành cho Đại diện câu lạc bộ và Quản trị viên BAV CLUBS.",
+        content: "Cổng đăng nhập dành cho Đại diện câu lạc bộ BAV CLUBS.",
       },
     ],
   }),
@@ -77,7 +77,7 @@ function ClubLoginPage() {
           <img src={logo.url} alt="Logo Học viện Ngân hàng" className="h-24 w-auto" />
           <h1 className="mt-3 text-2xl text-primary">BAV CLUBS</h1>
           <span className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-primary px-3 py-1 text-sm font-extrabold text-primary-foreground">
-            <ShieldCheck className="h-4 w-4" /> Cổng dành cho CLB và Quản trị viên
+            <ShieldCheck className="h-4 w-4" /> Cổng dành cho Đại diện CLB
           </span>
           <p className="mt-2 text-sm font-semibold text-muted-foreground">
             Dùng tài khoản do Quản trị viên cấp
@@ -99,7 +99,7 @@ function ClubLoginPage() {
                 setLoginId(e.target.value);
                 setErr("");
               }}
-              placeholder="Username của CLB (Quản trị viên: dùng email)"
+              placeholder="Username của CLB"
             />
           </div>
           <div className="space-y-1.5">
@@ -137,6 +137,12 @@ function ClubLoginPage() {
               Đăng nhập tại đây
             </Link>
           </span>
+          <Link
+            to="/admin/dang-nhap"
+            className="text-xs font-bold text-primary underline-offset-2 hover:underline"
+          >
+            Quản trị viên đăng nhập tại đây
+          </Link>
         </div>
       </div>
     </main>

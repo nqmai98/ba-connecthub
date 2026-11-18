@@ -10,7 +10,12 @@ import { cn } from "@/lib/utils";
  * Khi có thông báo chưa đọc: chuông rung lắc định kỳ (chỉ hiệu ứng, không có âm thanh)
  * và có chấm đỏ nhấp nháy. Bấm vào chuông để xem nhanh 5 thông báo mới nhất.
  */
-export function NotificationBell() {
+export function NotificationBell({
+  tatCa = "/thong-bao",
+}: {
+  /** Trang "Xem tất cả thông báo" của từng khu giao diện. */
+  tatCa?: "/thong-bao" | "/admin/thong-bao";
+} = {}) {
   const { data } = useThongBao();
   const danhDau = useDanhDauDaDoc();
   const navigate = useNavigate();
@@ -21,7 +26,7 @@ export function NotificationBell() {
   const openItem = async (n: ThongBaoCuaToi) => {
     setOpen(false);
     if (!n.DaDoc) await danhDau.mutateAsync(n.MaThongBao);
-    navigate({ to: n.DuongDan || "/thong-bao" });
+    navigate({ to: n.DuongDan || tatCa });
   };
 
   return (
@@ -90,7 +95,7 @@ export function NotificationBell() {
           </p>
         )}
         <Link
-          to="/thong-bao"
+          to={tatCa}
           onClick={() => setOpen(false)}
           className="block border-t px-4 py-3 text-center text-sm font-bold text-primary hover:bg-secondary"
         >

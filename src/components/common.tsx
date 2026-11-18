@@ -431,9 +431,19 @@ export function RoleGate({
         <GridSkeleton n={3} />
       </main>
     );
-  // Khu quản lý (/clb, /admin) có trang đăng nhập riêng; khu Sinh viên dùng /dang-nhap
+  // Mỗi khu có trang đăng nhập riêng: /admin/dang-nhap, /dang-nhap-clb, /dang-nhap
   if (!maNguoiDung)
-    return <Navigate to={/^\/(clb|admin)(\/|$)/.test(pathname) ? "/dang-nhap-clb" : "/dang-nhap"} />;
+    return (
+      <Navigate
+        to={
+          /^\/admin(\/|$)/.test(pathname)
+            ? "/admin/dang-nhap"
+            : /^\/clb(\/|$)/.test(pathname)
+              ? "/dang-nhap-clb"
+              : "/dang-nhap"
+        }
+      />
+    );
   if (canThiet && (!vaiTro || !canThiet.includes(vaiTro)))
     return (
       <main className="mx-auto max-w-xl px-4 py-16">

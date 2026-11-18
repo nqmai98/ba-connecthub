@@ -2,6 +2,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
   Outlet,
   Link,
+  Navigate,
   createRootRouteWithContext,
   useRouter,
   useRouterState,
@@ -16,6 +17,7 @@ import { reportLovableError } from "../lib/lovable-error-reporting";
 import { AuthProvider, useAuth } from "@/lib/auth";
 import { AppNav } from "@/components/AppNav";
 import { StudentNav } from "@/components/student/StudentNav";
+import { AdminLayout } from "@/components/admin/AdminLayout";
 import { Toaster } from "@/components/ui/sonner";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -123,23 +125,33 @@ function RootComponent() {
 }
 
 /**
- * Tách 3 khu giao diện theo đường dẫn:
- *  - Sinh viên:      "/" (trang chủ, câu lạc bộ, sự kiện, lịch cá nhân, đang theo dõi, thông báo)
- *  - Đại diện CLB:   "/clb/..."
- *  - Quản trị viên:  "/admin/..."
- * Giao diện Sinh viên dùng thanh điều hướng + nền tinh hà riêng; hai khu quản lý
- * tạm thời vẫn dùng thanh điều hướng cũ (sẽ làm lại ở bước sau).
+ * Tách 3 khu giao diện theo đường dẫn, mỗi khu một khung riêng:
+ *  - Sinh viên:      "/" ...            đăng nhập ở /dang-nhap      (StudentNav + nền tinh hà)
+ *  - Đại diện CLB:   "/clb/..."         đăng nhập ở /dang-nhap-clb  (tạm dùng thanh điều hướng cũ)
+ *  - Quản trị viên:  "/admin/..."       đăng nhập ở /admin/dang-nhap (AdminLayout, thanh bên riêng)
  */
 function AppShell() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
-  const { vaiTro } = useAuth();
-  const laQuanLy = vaiTro === "DaiDienCLB" || vaiTro === "QuanTriVien";
-  const khuQuanLy =
-    /^\/(clb|admin)(\/|$)/.test(pathname) ||
-    pathname.startsWith("/dang-nhap-clb") ||
-    (pathname.startsWith("/thong-bao") && laQuanLy);
+  const { vaiTro, ready, maNguoiDung } = useAuth();
 
-  if (khuQuanLy)
+  // ---- Khu Quản trị ----
+  if (pathname === "/admin/dang-nhap") return <Outlet />;
+  if (/^\/admin(\/|$)/.test(pathname)) {
+    if (ready && (!maNguoiDung || vaiTro !== "QuanTriVien"))
+      return <Navigate to="/admin/dang-nhap" replace />;
+    return (
+      <AdminLayout>
+        <Outlet />
+      </AdminLayout>
+    );
+  }
+
+  // ---- Khu Đại diện CLB ----
+  const khuCLB =
+    /^\/clb(\/|$)/.test(pathname) ||
+    pathname.startsWith("/dang-nhap-clb") ||
+    (pathname.startsWith("/thong-bao") && vaiTro === "DaiDienCLB");
+  if (khuCLB)
     return (
       <div className="min-h-screen">
         <AppNav />
@@ -147,6 +159,7 @@ function AppShell() {
       </div>
     );
 
+  // ---- Khu Sinh viên ----
   return (
     <div className="bg-nebula min-h-screen">
       <StudentNav />
