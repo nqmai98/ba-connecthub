@@ -1,4 +1,4 @@
-import { useNhomToChuc, type CauLacBo, type NhomToChuc } from "./data";
+import type { CauLacBo, NhomToChuc } from "./data";
 
 /**
  * SƠ ĐỒ TỔ CHỨC ĐOÀN THANH NIÊN – HỘI SINH VIÊN HỌC VIỆN NGÂN HÀNG
@@ -57,16 +57,13 @@ const QUY_TAC: { khoi: NhomToChuc["Khoi"]; tenNhom: string; tuKhoa: RegExp }[] =
 const boDau = (s: string) =>
   s.normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/đ/g, "d").replace(/Đ/g, "D").toLowerCase();
 
-/** Danh sách đơn vị: lấy từ CSDL nếu đã có, nếu chưa thì dùng danh sách khai báo sẵn. */
+/** Danh sách đơn vị dùng làm cấu hình giao diện hiện tại. */
 export function useSoDoToChuc() {
-  const { data, isLoading } = useNhomToChuc();
-  const ds = data && data.length ? data : DON_VI_MAC_DINH;
-  return { data: ds, isLoading };
+  return { data: DON_VI_MAC_DINH, isLoading: false };
 }
 
-/** Mã đơn vị của một CLB: ưu tiên giá trị Admin đã gán trong CSDL, nếu không thì suy ra từ tên. */
+/** Mã đơn vị của một CLB được suy ra từ tên hiển thị. */
 export function maNhomCuaCLB(c: CauLacBo, ds: NhomToChuc[]): number | null {
-  if (c.MaNhom != null && ds.some((n) => n.MaNhom === c.MaNhom)) return c.MaNhom;
   const ten = boDau(c.TenCLB);
   const quyTac = QUY_TAC.find((q) => q.tuKhoa.test(ten));
   if (!quyTac) return null;

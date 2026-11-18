@@ -15,9 +15,6 @@ import {
   type LoaiBaiDang,
   type LoaiSuKien,
   type TruongCLBCoTheSua,
-  NHAN_KHOI,
-  useNhomToChuc,
-  type KhoiToChuc,
 } from "@/lib/data";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -325,8 +322,6 @@ export type CLBDraft = {
   AnhBia: string | null;
   TrangThaiHoatDong: CauLacBo["TrangThaiHoatDong"];
   NoiBat: boolean;
-  /** Đơn vị trong sơ đồ tổ chức Đoàn – Hội; chỉ Quản trị viên gán. */
-  MaNhom: number | null;
 };
 
 export const CLB_RONG: CLBDraft = {
@@ -344,7 +339,6 @@ export const CLB_RONG: CLBDraft = {
   AnhBia: null,
   TrangThaiHoatDong: "DangHoatDong",
   NoiBat: false,
-  MaNhom: null,
 };
 
 export function clbSangDraft(c: CauLacBo): CLBDraft {
@@ -364,7 +358,6 @@ export function clbSangDraft(c: CauLacBo): CLBDraft {
     AnhBia: c.AnhBia,
     TrangThaiHoatDong: c.TrangThaiHoatDong,
     NoiBat: c.NoiBat,
-    MaNhom: c.MaNhom ?? null,
   };
 }
 
@@ -383,9 +376,6 @@ export function ClubForm({
   onSaved: () => void;
 }) {
   const { data: linhVuc } = useLinhVuc();
-  const { data: dsNhom } = useNhomToChuc();
-  // Chỉ gửi cột MaNhom khi bảng nhom_to_chuc đã có trên CSDL
-  const coNhom = (dsNhom ?? []).length > 0;
   const [f, setF] = useState<CLBDraft>(initial);
   const [busy, setBusy] = useState(false);
   const set = <K extends keyof CLBDraft>(k: K, v: CLBDraft[K]) => setF({ ...f, [k]: v });
@@ -402,12 +392,11 @@ export function ClubForm({
     setBusy(true);
     try {
       if (cheDo === "admin") {
-        const { MaCLB, MaNhom, ...row } = f;
+        const { MaCLB, ...row } = f;
         const payload = {
           ...row,
           TenCLB: row.TenCLB.trim(),
           MaLinhVuc: f.MaLinhVuc,
-          ...(coNhom ? { MaNhom } : {}),
         };
         const r = MaCLB
           ? await supabase.from("cau_lac_bo").update(payload).eq("MaCLB", MaCLB)
@@ -470,29 +459,6 @@ export function ClubForm({
             ))}
           </select>
         </div>
-        {cheDo === "admin" && coNhom && (
-          <div className="space-y-1.5 sm:col-span-2">
-            <Label>Thuộc đơn vị (sơ đồ tổ chức Đoàn – Hội)</Label>
-            <select
-              className="h-10 w-full rounded-md border bg-background px-3 text-sm"
-              value={f.MaNhom ?? ""}
-              onChange={(e) => set("MaNhom", e.target.value ? Number(e.target.value) : null)}
-            >
-              <option value="">-- Chưa phân loại --</option>
-              {(Object.keys(NHAN_KHOI) as KhoiToChuc[]).map((k) => (
-                <optgroup key={k} label={NHAN_KHOI[k]}>
-                  {(dsNhom ?? [])
-                    .filter((n) => n.Khoi === k)
-                    .map((n) => (
-                      <option key={n.MaNhom} value={n.MaNhom}>
-                        {n.TenNhom}
-                      </option>
-                    ))}
-                </optgroup>
-              ))}
-            </select>
-          </div>
-        )}
         <div className="space-y-1.5">
           <Label>{NHAN_TRUONG_CLB.NamThanhLap}</Label>
           <Input
