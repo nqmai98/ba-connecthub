@@ -26,6 +26,8 @@ import { useViecChoXuLy } from "@/components/admin/AdminLayout";
 import { NHAN_KHOI, useCauLacBo, type KhoiToChuc } from "@/lib/data";
 import { maNhomCuaCLB, useSoDoToChuc } from "@/lib/so-do-to-chuc";
 import { cn } from "@/lib/utils";
+import { danhSachNamHoc, khoangHocKi, namHocCua, NHAN_HOC_KI, type HocKi } from "@/lib/hoc-ki";
+import { BoLocHocKi } from "@/components/BoLocHocKi";
 
 export const Route = createFileRoute("/admin/")({
   head: () => ({
@@ -53,29 +55,6 @@ type BaiTK = {
   NgayTao: string;
 };
 
-/* ----------------------- Lọc thời gian theo năm học / học kì ----------------------- */
-type HocKi = "ca-nam" | "hk1" | "hk2" | "hk3";
-const NHAN_HOC_KI: Record<HocKi, string> = {
-  "ca-nam": "Cả năm",
-  hk1: "Học kì 1",
-  hk2: "Học kì 2",
-  hk3: "Học kì 3",
-};
-/** Năm học Y–Y+1: HK1 tháng 8–12 năm Y, HK2 tháng 1–6 năm Y+1, HK3 tháng 7 năm Y+1. */
-function khoangHocKi(namHoc: number, hk: HocKi): [Date, Date] {
-  const d = (y: number, m: number) => new Date(y, m, 1);
-  switch (hk) {
-    case "hk1":
-      return [d(namHoc, 7), d(namHoc + 1, 0)];
-    case "hk2":
-      return [d(namHoc + 1, 0), d(namHoc + 1, 6)];
-    case "hk3":
-      return [d(namHoc + 1, 6), d(namHoc + 1, 7)];
-    default:
-      return [d(namHoc, 7), d(namHoc + 1, 7)];
-  }
-}
-const namHocCua = (t: Date) => (t.getMonth() >= 7 ? t.getFullYear() : t.getFullYear() - 1);
 
 
 /**
@@ -117,14 +96,7 @@ function Dashboard() {
     },
   });
 
-  const dsNamHoc = useMemo(() => {
-    const hienTai = namHocCua(new Date());
-    const dauTien = Math.min(
-      hienTai,
-      ...(q.data?.posts ?? []).map((p) => namHocCua(new Date(p.NgayTao))),
-    );
-    return Array.from({ length: hienTai - dauTien + 1 }, (_, i) => hienTai - i);
-  }, [q.data]);
+  const dsNamHoc = useMemo(() => danhSachNamHoc((q.data?.posts ?? []).map((p) => p.NgayTao)), [q.data]);
 
   if (q.isLoading || !clubs)
     return (
@@ -217,35 +189,7 @@ function Dashboard() {
       title="Dashboard"
       subtitle="Tổng quan hoạt động của các câu lạc bộ trên BAV CLUBS"
       actions={
-        <div className="flex flex-wrap items-center gap-2">
-          <select
-            aria-label="Năm học"
-            value={namHoc}
-            onChange={(e) => setNamHoc(Number(e.target.value))}
-            className="h-10 rounded-xl border bg-card px-3 text-sm font-bold text-primary"
-          >
-            {dsNamHoc.map((y) => (
-              <option key={y} value={y}>
-                Năm học {y}–{y + 1}
-              </option>
-            ))}
-          </select>
-          <div className="flex rounded-xl border bg-card p-1" role="group" aria-label="Học kì">
-            {(Object.keys(NHAN_HOC_KI) as HocKi[]).map((k) => (
-              <button
-                key={k}
-                onClick={() => setHocKi(k)}
-                aria-pressed={hocKi === k}
-                className={cn(
-                  "rounded-lg px-3 py-1.5 text-sm font-bold transition",
-                  hocKi === k ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-primary",
-                )}
-              >
-                {NHAN_HOC_KI[k]}
-              </button>
-            ))}
-          </div>
-        </div>
+        <BoLocHocKi dsNamHoc={dsNamHoc} namHoc={namHoc} hocKi={hocKi} onNamHoc={setNamHoc} onHocKi={setHocKi} />
       }
     >
       {/* KPI theo PTTKHT: CLB – Bài viết – Sự kiện – Chờ duyệt – Lượt truy cập */}

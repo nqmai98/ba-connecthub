@@ -15,6 +15,8 @@ import {
   type LoaiBaiDang,
   type LoaiSuKien,
   type TruongCLBCoTheSua,
+  NHAN_KHOI,
+  type KhoiToChuc,
 } from "@/lib/data";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,6 +24,9 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { ConfirmDialog } from "@/components/common";
 import { cn } from "@/lib/utils";
+import { RichTextEditor } from "@/components/RichTextEditor";
+import { DON_VI_MAC_DINH, nhanDonVi } from "@/lib/so-do-to-chuc";
+import { anhTrongBai, lamSachHtml, vanBanThuan } from "@/lib/noi-dung";
 
 function ImageField({
   label,
@@ -114,7 +119,7 @@ export function PostForm({
   const submit = async () => {
     const e: Record<string, boolean> = {
       TieuDe: !f.TieuDe.trim(),
-      NoiDung: !f.NoiDung.trim(),
+      NoiDung: !vanBanThuan(f.NoiDung).trim() && !anhTrongBai(f.NoiDung).length,
       ThoiGianBatDau: laSuKien && !f.ThoiGianBatDau,
       ThoiGianKetThuc: laSuKien && !f.ThoiGianKetThuc,
       DiaDiem: laSuKien && !f.DiaDiem.trim(),
@@ -135,7 +140,8 @@ export function PostForm({
       const baiDang = {
         LoaiBaiDang: f.LoaiBaiDang,
         TieuDe: f.TieuDe.trim().slice(0, 255),
-        NoiDung: f.NoiDung.trim().slice(0, 10000),
+        // HTML từ trình soạn thảo, lọc lại lần nữa trước khi lưu
+        NoiDung: lamSachHtml(f.NoiDung).trim().slice(0, 200000),
         AnhBia: f.AnhBia,
       };
 
@@ -209,12 +215,11 @@ export function PostForm({
       </div>
       <div className="space-y-1.5">
         <Label>Nội dung *</Label>
-        <Textarea
-          className={err("NoiDung")}
-          rows={7}
-          maxLength={10000}
+        <RichTextEditor
           value={f.NoiDung}
-          onChange={(e) => setF({ ...f, NoiDung: e.target.value })}
+          loi={!!errs["NoiDung"]}
+          onChange={(html) => setF((cu) => ({ ...cu, NoiDung: html }))}
+          placeholder="Viết nội dung bài đăng – định dạng chữ, chèn nhiều ảnh xen giữa bài như một trang tin..."
         />
       </div>
 
@@ -271,7 +276,11 @@ export function PostForm({
         </div>
       )}
 
-      <ImageField label="Ảnh bìa" value={f.AnhBia} onChange={(v) => setF({ ...f, AnhBia: v })} />
+      <ImageField
+        label="Ảnh bìa (hiển thị ở danh sách tin và đầu bài viết)"
+        value={f.AnhBia}
+        onChange={(v) => setF({ ...f, AnhBia: v })}
+      />
       {Object.values(errs).some(Boolean) && (
         <p className="text-sm font-semibold text-destructive">
           Các trường đánh dấu đỏ là bắt buộc.
@@ -471,12 +480,26 @@ export function ClubForm({
         </div>
         <div className="space-y-1.5">
           <Label>{NHAN_TRUONG_CLB.DonViTrucThuoc}</Label>
-          <Input
-            maxLength={255}
-            placeholder="VD: Đoàn Thanh niên, Hội Sinh viên, Khoa Ngân hàng"
+          {/* Chọn theo sơ đồ tổ chức Đoàn Thanh niên – Hội Sinh viên (giống bộ lọc bên Sinh viên) */}
+          <select
+            className="h-10 w-full rounded-md border bg-background px-3 text-sm"
             value={f.DonViTrucThuoc ?? ""}
             onChange={(e) => set("DonViTrucThuoc", e.target.value || null)}
-          />
+          >
+            <option value="">-- Chọn đơn vị trực thuộc --</option>
+            {f.DonViTrucThuoc && !DON_VI_MAC_DINH.some((n) => nhanDonVi(n) === f.DonViTrucThuoc) && (
+              <option value={f.DonViTrucThuoc}>{f.DonViTrucThuoc} (giá trị cũ)</option>
+            )}
+            {(Object.keys(NHAN_KHOI) as KhoiToChuc[]).map((k) => (
+              <optgroup key={k} label={NHAN_KHOI[k]}>
+                {DON_VI_MAC_DINH.filter((n) => n.Khoi === k).map((n) => (
+                  <option key={n.MaNhom} value={nhanDonVi(n)}>
+                    {n.TenNhom}
+                  </option>
+                ))}
+              </optgroup>
+            ))}
+          </select>
         </div>
         <div className="space-y-1.5">
           <Label>{NHAN_TRUONG_CLB.ThongTinLienHe}</Label>

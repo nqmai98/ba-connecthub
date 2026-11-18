@@ -20,6 +20,7 @@ import { Route as SuKienRouteImport } from './routes/su-kien'
 import { Route as ThongBaoRouteImport } from './routes/thong-bao'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as AdminClbRouteImport } from './routes/admin.clb'
+import { Route as BaiVietIdRouteImport } from './routes/bai-viet.$id'
 import { Route as ClbHoSoRouteImport } from './routes/clb.ho-so'
 import { Route as ClbThongBaoRouteImport } from './routes/clb.thong-bao'
 import { Route as ClbDangNhapRouteImport } from './routes/clb.dang-nhap'
@@ -92,6 +93,11 @@ const AdminIndexRoute = AdminIndexRouteImport.update({
 const AdminClbRoute = AdminClbRouteImport.update({
   id: '/admin/clb',
   path: '/admin/clb',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BaiVietIdRoute = BaiVietIdRouteImport.update({
+  id: '/bai-viet/$id',
+  path: '/bai-viet/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ClbHoSoRoute = ClbHoSoRouteImport.update({
@@ -196,6 +202,7 @@ export interface FileRoutesByFullPath {
   '/su-kien': typeof SuKienRoute
   '/thong-bao': typeof ThongBaoRoute
   '/admin/clb': typeof AdminClbRoute
+  '/bai-viet/$id': typeof BaiVietIdRoute
   '/clb/ho-so': typeof ClbHoSoRoute
   '/clb/thong-bao': typeof ClbThongBaoRoute
   '/clb/dang-nhap': typeof ClbDangNhapRoute
@@ -227,6 +234,7 @@ export interface FileRoutesByTo {
   '/su-kien': typeof SuKienRoute
   '/thong-bao': typeof ThongBaoRoute
   '/admin/clb': typeof AdminClbRoute
+  '/bai-viet/$id': typeof BaiVietIdRoute
   '/clb/ho-so': typeof ClbHoSoRoute
   '/clb/thong-bao': typeof ClbThongBaoRoute
   '/clb/dang-nhap': typeof ClbDangNhapRoute
@@ -259,6 +267,7 @@ export interface FileRoutesById {
   '/su-kien': typeof SuKienRoute
   '/thong-bao': typeof ThongBaoRoute
   '/admin/clb': typeof AdminClbRoute
+  '/bai-viet/$id': typeof BaiVietIdRoute
   '/clb/ho-so': typeof ClbHoSoRoute
   '/clb/thong-bao': typeof ClbThongBaoRoute
   '/clb/dang-nhap': typeof ClbDangNhapRoute
@@ -292,6 +301,7 @@ export interface FileRouteTypes {
     | '/su-kien'
     | '/thong-bao'
     | '/admin/clb'
+    | '/bai-viet/$id'
     | '/clb/ho-so'
     | '/clb/thong-bao'
     | '/clb/dang-nhap'
@@ -323,6 +333,7 @@ export interface FileRouteTypes {
     | '/su-kien'
     | '/thong-bao'
     | '/admin/clb'
+    | '/bai-viet/$id'
     | '/clb/ho-so'
     | '/clb/thong-bao'
     | '/clb/dang-nhap'
@@ -354,6 +365,7 @@ export interface FileRouteTypes {
     | '/su-kien'
     | '/thong-bao'
     | '/admin/clb'
+    | '/bai-viet/$id'
     | '/clb/ho-so'
     | '/clb/thong-bao'
     | '/clb/dang-nhap'
@@ -386,6 +398,7 @@ export interface RootRouteChildren {
   SuKienRoute: typeof SuKienRoute
   ThongBaoRoute: typeof ThongBaoRoute
   AdminClbRoute: typeof AdminClbRoute
+  BaiVietIdRoute: typeof BaiVietIdRoute
   ClbHoSoRoute: typeof ClbHoSoRoute
   ClbThongBaoRoute: typeof ClbThongBaoRoute
   ClbDangNhapRoute: typeof ClbDangNhapRoute
@@ -484,6 +497,13 @@ declare module '@tanstack/react-router' {
       path: '/admin/clb'
       fullPath: '/admin/clb'
       preLoaderRoute: typeof AdminClbRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/bai-viet/$id': {
+      id: '/bai-viet/$id'
+      path: '/bai-viet/$id'
+      fullPath: '/bai-viet/$id'
+      preLoaderRoute: typeof BaiVietIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/clb/ho-so': {
@@ -626,6 +646,7 @@ const rootRouteChildren: RootRouteChildren = {
   SuKienRoute: SuKienRoute,
   ThongBaoRoute: ThongBaoRoute,
   AdminClbRoute: AdminClbRoute,
+  BaiVietIdRoute: BaiVietIdRoute,
   ClbHoSoRoute: ClbHoSoRoute,
   ClbThongBaoRoute: ClbThongBaoRoute,
   ClbDangNhapRoute: ClbDangNhapRoute,

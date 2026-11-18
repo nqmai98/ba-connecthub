@@ -1,3 +1,4 @@
+import { TheTin } from "@/components/TheTin";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { Building2, CalendarClock, Facebook, Mail, Users } from "lucide-react";
@@ -217,26 +218,9 @@ function ClubDetail() {
       <section className="mt-8">
         <h2 className="mb-3 text-xl">Tin tức & hoạt động</h2>
         {tinBai.length ? (
-          <div className="space-y-3">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {tinBai.map((n) => (
-              <Card key={n.MaBaiDang}>
-                <div className="flex flex-wrap items-center gap-2">
-                  <LoaiBaiDangBadge loai={n.LoaiBaiDang} />
-                  <span className="text-xs font-semibold text-muted-foreground">
-                    {formatDateTime(n.NgayDang ?? n.NgayTao)}
-                  </span>
-                </div>
-                <h3 className="mt-1 text-base">{n.TieuDe}</h3>
-                {n.AnhBia && (
-                  <img
-                    src={n.AnhBia}
-                    alt=""
-                    className="mt-3 max-h-72 w-full rounded-xl object-cover"
-                    loading="lazy"
-                  />
-                )}
-                <p className="mt-2 whitespace-pre-line text-sm">{n.NoiDung}</p>
-              </Card>
+              <TheTin key={n.MaBaiDang} bai={n} />
             ))}
           </div>
         ) : (

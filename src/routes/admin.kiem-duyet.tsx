@@ -26,6 +26,8 @@ import {
   TrangThaiXuLyBadge,
 } from "@/components/common";
 import { BangThayDoi } from "@/components/yeu-cau";
+import { NoiDungBaiViet } from "@/components/NoiDungBaiViet";
+import { vanBanThuan } from "@/lib/noi-dung";
 import { useViecChoXuLy } from "@/components/admin/AdminLayout";
 import {
   formatDateTime,
@@ -343,9 +345,11 @@ function TheBai({ p, onDuyet, onTuChoi }: { p: BaiCanDuyet; onDuyet: () => void;
               )}
             </div>
           )}
-          <p className={cn("mt-2 whitespace-pre-line text-sm text-foreground/85", !moRong && "line-clamp-3")}>
-            {p.NoiDung}
-          </p>
+          {moRong ? (
+            <NoiDungBaiViet noiDung={p.NoiDung} className="mt-3 rounded-xl border bg-background p-4 text-sm" />
+          ) : (
+            <p className="mt-2 line-clamp-3 whitespace-pre-line text-sm text-foreground/85">{vanBanThuan(p.NoiDung)}</p>
+          )}
           <button
             onClick={() => setMoRong((v) => !v)}
             className="mt-1 inline-flex items-center gap-1 text-sm font-bold text-primary hover:underline"

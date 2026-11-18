@@ -3,6 +3,7 @@ import { useMemo, useState } from "react";
 import { NHAN_LOAI_SU_KIEN, useSuKien, type LoaiSuKien } from "@/lib/data";
 import { Empty, EventCard, GridSkeleton, Page } from "@/components/common";
 import { Button } from "@/components/ui/button";
+import { vanBanThuan } from "@/lib/noi-dung";
 import { FilterChip, FilterGroup, ResultBar, SearchBar, boDau } from "@/components/student/Filters";
 
 export const Route = createFileRoute("/su-kien")({
@@ -34,7 +35,7 @@ function EventsPage() {
     const k = boDau(q);
     if (!k) return data ?? [];
     return (data ?? []).filter((e) =>
-      boDau(`${e.TieuDe} ${e.NoiDung} ${e.DiaDiem ?? ""} ${e.cau_lac_bo?.TenCLB ?? ""}`).includes(k),
+      boDau(`${e.TieuDe} ${vanBanThuan(e.NoiDung)} ${e.DiaDiem ?? ""} ${e.cau_lac_bo?.TenCLB ?? ""}`).includes(k),
     );
   }, [data, q]);
 

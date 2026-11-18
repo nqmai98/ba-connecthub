@@ -1,4 +1,4 @@
-import type { CauLacBo, NhomToChuc } from "./data";
+import { NHAN_KHOI, type CauLacBo, type NhomToChuc } from "./data";
 
 /**
  * SƠ ĐỒ TỔ CHỨC ĐOÀN THANH NIÊN – HỘI SINH VIÊN HỌC VIỆN NGÂN HÀNG
@@ -62,8 +62,18 @@ export function useSoDoToChuc() {
   return { data: DON_VI_MAC_DINH, isLoading: false };
 }
 
-/** Mã đơn vị của một CLB được suy ra từ tên hiển thị. */
+/** Giá trị lưu vào cột cau_lac_bo.DonViTrucThuoc khi chọn từ danh sách, VD "Hội Sinh viên – Liên chi hội". */
+export const nhanDonVi = (n: NhomToChuc) => `${NHAN_KHOI[n.Khoi]} – ${n.TenNhom}`;
+
+/**
+ * Mã đơn vị của một CLB:
+ *  1. theo "Đơn vị trực thuộc" CLB đã chọn trong trang Thông tin CLB (chính xác nhất);
+ *  2. nếu chưa chọn, suy ra từ tên CLB theo QUY_TAC ở trên.
+ */
 export function maNhomCuaCLB(c: CauLacBo, ds: NhomToChuc[]): number | null {
+  const donVi = c.DonViTrucThuoc?.trim();
+  const theoDonVi = donVi ? ds.find((n) => nhanDonVi(n) === donVi) : undefined;
+  if (theoDonVi) return theoDonVi.MaNhom;
   const ten = boDau(c.TenCLB);
   const quyTac = QUY_TAC.find((q) => q.tuKhoa.test(ten));
   if (!quyTac) return null;

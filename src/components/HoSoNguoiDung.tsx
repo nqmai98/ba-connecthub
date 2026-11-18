@@ -16,6 +16,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { NHAN_VAI_TRO, homePath, useAuth } from "@/lib/auth";
 import { formatDateTime, useThongBao, useTheoDoi, useYeuThich } from "@/lib/data";
+import { CLUB_EMAIL_DOMAIN, emailToUsername } from "@/lib/club-account";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -48,6 +49,10 @@ export function HoSoNguoiDung({ khu = "sinh-vien" }: { khu?: "sinh-vien" | "clb"
 
   if (!nguoiDung) return null;
   const laGoogle = session?.user.app_metadata?.["provider"] === "google";
+  // Tài khoản CLB đăng nhập bằng username; hệ thống đăng nhập bắt buộc có email nên username được
+  // ghép với tên miền nội bộ "@clb.baclubs.local" (không phải email thật) – xem lib/club-account.ts.
+  const laTaiKhoanCLB = nguoiDung.EmailTruong.toLowerCase().endsWith(CLUB_EMAIL_DOMAIN);
+  const tenDangNhap = laTaiKhoanCLB ? emailToUsername(nguoiDung.EmailTruong) : nguoiDung.EmailTruong;
 
   const anhDaiDien = session?.user.user_metadata?.["avatar_url"] as string | undefined;
   const tenHienThi = nguoiDung.HoTen || nguoiDung.TenDangNhap || nguoiDung.EmailTruong;
@@ -104,7 +109,7 @@ export function HoSoNguoiDung({ khu = "sinh-vien" }: { khu?: "sinh-vien" | "clb"
           )}
           <div className="min-w-0 flex-1">
             <h1 className="truncate text-2xl sm:text-3xl">{tenHienThi}</h1>
-            <p className="mt-1 truncate font-semibold text-white/75">{nguoiDung.EmailTruong}</p>
+            <p className="mt-1 truncate font-semibold text-white/75">{tenDangNhap}</p>
             <div className="mt-3 flex flex-wrap justify-center gap-2 sm:justify-start">
               <span className="rounded-full bg-accent px-3 py-1 text-xs font-extrabold text-accent-foreground">
                 {vaiTro ? NHAN_VAI_TRO[vaiTro] : "Người dùng"}
@@ -181,15 +186,17 @@ export function HoSoNguoiDung({ khu = "sinh-vien" }: { khu?: "sinh-vien" | "clb"
               {loi.sdt && <p className="text-sm font-semibold text-destructive">{loi.sdt}</p>}
             </div>
             <div className="space-y-1.5">
-              <Label>{laGoogle ? "Email trường" : "Email đăng nhập"}</Label>
+              <Label>{laTaiKhoanCLB ? "Tên đăng nhập" : laGoogle ? "Email trường" : "Email đăng nhập"}</Label>
               <div className="flex h-10 items-center gap-2 rounded-md border bg-muted px-3 text-sm text-muted-foreground">
-                <Mail className="h-4 w-4 shrink-0" />
-                <span className="truncate">{nguoiDung.EmailTruong}</span>
+                {laTaiKhoanCLB ? <UserRound className="h-4 w-4 shrink-0" /> : <Mail className="h-4 w-4 shrink-0" />}
+                <span className="truncate">{tenDangNhap}</span>
               </div>
               <p className="text-xs font-medium text-muted-foreground">
-                {laGoogle
-                  ? "Email gắn với tài khoản Google của trường nên không thay đổi được."
-                  : "Email đăng nhập không thay đổi được tại đây."}
+                {laTaiKhoanCLB
+                  ? "Tên đăng nhập do Quản trị viên cấp khi tạo tài khoản CLB. Muốn đổi tên đăng nhập, hãy liên hệ Quản trị viên; mật khẩu bạn tự đổi được ở mục Tài khoản bên cạnh."
+                  : laGoogle
+                    ? "Email gắn với tài khoản Google của trường nên không thay đổi được."
+                    : "Email đăng nhập do Quản trị viên quản lý nên không đổi được tại đây."}
               </p>
             </div>
           </div>

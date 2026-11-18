@@ -7,6 +7,7 @@ import { FavoriteButton } from "@/components/common";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
+import { vanBanThuan } from "@/lib/noi-dung";
 
 /** Thời gian mỗi slide (ms) trước khi tự lướt sang sự kiện tiếp theo. */
 const THOI_GIAN_SLIDE = 6000;
@@ -194,7 +195,7 @@ function Slide({ e, active, total }: { e: SuKienNoiBat; active: boolean; total: 
         <h2 className="mt-4 line-clamp-3 text-2xl leading-tight sm:text-4xl">{e.TieuDe}</h2>
         {e.NoiDung && (
           <p className="mt-3 line-clamp-2 max-w-xl text-sm font-medium text-white/75 sm:text-base">
-            {e.NoiDung}
+            {vanBanThuan(e.NoiDung)}
           </p>
         )}
 
@@ -225,7 +226,7 @@ function Slide({ e, active, total }: { e: SuKienNoiBat; active: boolean; total: 
               tabIndex={active ? 0 : -1}
               className="rounded-xl bg-white font-extrabold text-primary hover:bg-white/90"
             >
-              <Link to="/cau-lac-bo/$id" params={{ id: String(e.cau_lac_bo.MaCLB) }}>
+              <Link to="/bai-viet/$id" params={{ id: String(e.MaBaiDang) }}>
                 Xem chi tiết
               </Link>
             </Button>

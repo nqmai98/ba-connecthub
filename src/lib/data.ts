@@ -328,6 +328,22 @@ export function useBaiDangCuaCLB(maCLB: number) {
   });
 }
 
+/** Một bài viết cho trang đọc bài /bai-viet/$id (RLS: sinh viên chỉ xem được bài đã duyệt). */
+export function useBaiViet(maBaiDang: number) {
+  return useQuery({
+    queryKey: ["bai_viet", maBaiDang],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("bai_dang")
+        .select(`*, ${CHON_CLB_TOM_TAT}, su_kien(*)`)
+        .eq("MaBaiDang", maBaiDang)
+        .maybeSingle();
+      if (error) throw error;
+      return data as unknown as BaiDang | null;
+    },
+  });
+}
+
 /* ------------------------------------------------------------------ */
 /* Theo dõi CLB                                                        */
 /* ------------------------------------------------------------------ */

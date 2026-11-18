@@ -1,5 +1,6 @@
 import { useState, type ReactNode } from "react";
 import { Link, Navigate, useRouterState } from "@tanstack/react-router";
+import { vanBanThuan } from "@/lib/noi-dung";
 import { Bell, BellOff, Calendar, Inbox, MapPin, Star, Users } from "lucide-react";
 import { useAuth, type TenVaiTro } from "@/lib/auth";
 import {
@@ -383,8 +384,12 @@ export function EventCard({ suKien }: { suKien: SuKien }) {
           <LoaiSuKienBadge loai={suKien.LoaiSuKien} />
           <TrangThaiDienRaBadge trangThai={suKien.TrangThaiDienRa} />
         </div>
-        <h3 className="text-lg leading-snug text-primary">{suKien.TieuDe}</h3>
-        <p className="line-clamp-2 text-sm italic text-muted-foreground">{suKien.NoiDung}</p>
+        <h3 className="text-lg leading-snug text-primary">
+          <Link to="/bai-viet/$id" params={{ id: String(suKien.MaBaiDang) }} className="hover:underline">
+            {suKien.TieuDe}
+          </Link>
+        </h3>
+        <p className="line-clamp-2 text-sm italic text-muted-foreground">{vanBanThuan(suKien.NoiDung)}</p>
         <div className="space-y-1 text-sm font-semibold text-muted-foreground">
           <div className="flex items-center gap-2">
             <Calendar className="h-4 w-4 shrink-0 text-primary" />
