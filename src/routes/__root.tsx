@@ -15,9 +15,9 @@ import { useEffect, type ReactNode } from "react";
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { AuthProvider, useAuth } from "@/lib/auth";
-import { AppNav } from "@/components/AppNav";
 import { StudentNav } from "@/components/student/StudentNav";
 import { AdminLayout } from "@/components/admin/AdminLayout";
+import { ClubLayout } from "@/components/clb/ClubLayout";
 import { Toaster } from "@/components/ui/sonner";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -127,7 +127,7 @@ function RootComponent() {
 /**
  * Tách 3 khu giao diện theo đường dẫn, mỗi khu một khung riêng:
  *  - Sinh viên:      "/" ...            đăng nhập ở /dang-nhap      (StudentNav + nền tinh hà)
- *  - Đại diện CLB:   "/clb/..."         đăng nhập ở /dang-nhap-clb  (tạm dùng thanh điều hướng cũ)
+ *  - Đại diện CLB:   "/clb/..."         đăng nhập ở /clb/dang-nhap   (ClubLayout, menu riêng)
  *  - Quản trị viên:  "/admin/..."       đăng nhập ở /admin/dang-nhap (AdminLayout, thanh bên riêng)
  */
 function AppShell() {
@@ -147,17 +147,21 @@ function AppShell() {
   }
 
   // ---- Khu Đại diện CLB ----
-  const khuCLB =
-    /^\/clb(\/|$)/.test(pathname) ||
-    pathname.startsWith("/dang-nhap-clb") ||
-    (pathname.startsWith("/thong-bao") && vaiTro === "DaiDienCLB");
-  if (khuCLB)
+  if (pathname === "/clb/dang-nhap" || pathname.startsWith("/dang-nhap-clb")) return <Outlet />;
+  if (/^\/clb(\/|$)/.test(pathname)) {
+    if (ready && (!maNguoiDung || vaiTro !== "DaiDienCLB"))
+      return <Navigate to="/clb/dang-nhap" replace />;
     return (
-      <div className="min-h-screen">
-        <AppNav />
+      <ClubLayout>
         <Outlet />
-      </div>
+      </ClubLayout>
     );
+  }
+  // Thông báo của CLB / Quản trị nằm trong khu riêng của họ
+  if (pathname.startsWith("/thong-bao") && ready && vaiTro === "DaiDienCLB")
+    return <Navigate to="/clb/thong-bao" replace />;
+  if (pathname.startsWith("/thong-bao") && ready && vaiTro === "QuanTriVien")
+    return <Navigate to="/admin/thong-bao" replace />;
 
   // ---- Khu Sinh viên ----
   return (

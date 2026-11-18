@@ -445,7 +445,7 @@ function ThemTaiKhoanDialog({
     if (!done) return;
     try {
       await navigator.clipboard.writeText(
-        `CLB: ${done.clubName}\nTên đăng nhập: ${done.username}\nMật khẩu: ${done.password}\nĐăng nhập tại: ${window.location.origin}/dang-nhap-clb`,
+        `CLB: ${done.clubName}\nTên đăng nhập: ${done.username}\nMật khẩu: ${done.password}\nĐăng nhập tại: ${window.location.origin}/clb/dang-nhap`,
       );
       toast.success("Đã sao chép thông tin đăng nhập");
     } catch {

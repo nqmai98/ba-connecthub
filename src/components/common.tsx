@@ -439,7 +439,7 @@ export function RoleGate({
           /^\/admin(\/|$)/.test(pathname)
             ? "/admin/dang-nhap"
             : /^\/clb(\/|$)/.test(pathname)
-              ? "/dang-nhap-clb"
+              ? "/clb/dang-nhap"
               : "/dang-nhap"
         }
       />

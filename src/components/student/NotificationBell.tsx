@@ -15,7 +15,7 @@ export function NotificationBell({
   tatCa = "/thong-bao",
 }: {
   /** Trang "Xem tất cả thông báo" của từng khu giao diện. */
-  tatCa?: "/thong-bao" | "/admin/thong-bao";
+  tatCa?: "/thong-bao" | "/clb/thong-bao" | "/admin/thong-bao";
 } = {}) {
   const { data } = useThongBao();
   const danhDau = useDanhDauDaDoc();

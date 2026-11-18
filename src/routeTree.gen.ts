@@ -20,6 +20,9 @@ import { Route as SuKienRouteImport } from './routes/su-kien'
 import { Route as ThongBaoRouteImport } from './routes/thong-bao'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as AdminClbRouteImport } from './routes/admin.clb'
+import { Route as ClbHoSoRouteImport } from './routes/clb.ho-so'
+import { Route as ClbThongBaoRouteImport } from './routes/clb.thong-bao'
+import { Route as ClbDangNhapRouteImport } from './routes/clb.dang-nhap'
 import { Route as AdminHoSoRouteImport } from './routes/admin.ho-so'
 import { Route as AdminKiemDuyetRouteImport } from './routes/admin.kiem-duyet'
 import { Route as AdminThongBaoRouteImport } from './routes/admin.thong-bao'
@@ -89,6 +92,21 @@ const AdminIndexRoute = AdminIndexRouteImport.update({
 const AdminClbRoute = AdminClbRouteImport.update({
   id: '/admin/clb',
   path: '/admin/clb',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ClbHoSoRoute = ClbHoSoRouteImport.update({
+  id: '/clb/ho-so',
+  path: '/clb/ho-so',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ClbThongBaoRoute = ClbThongBaoRouteImport.update({
+  id: '/clb/thong-bao',
+  path: '/clb/thong-bao',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ClbDangNhapRoute = ClbDangNhapRouteImport.update({
+  id: '/clb/dang-nhap',
+  path: '/clb/dang-nhap',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminHoSoRoute = AdminHoSoRouteImport.update({
@@ -178,6 +196,9 @@ export interface FileRoutesByFullPath {
   '/su-kien': typeof SuKienRoute
   '/thong-bao': typeof ThongBaoRoute
   '/admin/clb': typeof AdminClbRoute
+  '/clb/ho-so': typeof ClbHoSoRoute
+  '/clb/thong-bao': typeof ClbThongBaoRoute
+  '/clb/dang-nhap': typeof ClbDangNhapRoute
   '/admin/ho-so': typeof AdminHoSoRoute
   '/admin/kiem-duyet': typeof AdminKiemDuyetRoute
   '/admin/thong-bao': typeof AdminThongBaoRoute
@@ -206,6 +227,9 @@ export interface FileRoutesByTo {
   '/su-kien': typeof SuKienRoute
   '/thong-bao': typeof ThongBaoRoute
   '/admin/clb': typeof AdminClbRoute
+  '/clb/ho-so': typeof ClbHoSoRoute
+  '/clb/thong-bao': typeof ClbThongBaoRoute
+  '/clb/dang-nhap': typeof ClbDangNhapRoute
   '/admin/ho-so': typeof AdminHoSoRoute
   '/admin/kiem-duyet': typeof AdminKiemDuyetRoute
   '/admin/thong-bao': typeof AdminThongBaoRoute
@@ -235,6 +259,9 @@ export interface FileRoutesById {
   '/su-kien': typeof SuKienRoute
   '/thong-bao': typeof ThongBaoRoute
   '/admin/clb': typeof AdminClbRoute
+  '/clb/ho-so': typeof ClbHoSoRoute
+  '/clb/thong-bao': typeof ClbThongBaoRoute
+  '/clb/dang-nhap': typeof ClbDangNhapRoute
   '/admin/ho-so': typeof AdminHoSoRoute
   '/admin/kiem-duyet': typeof AdminKiemDuyetRoute
   '/admin/thong-bao': typeof AdminThongBaoRoute
@@ -265,6 +292,9 @@ export interface FileRouteTypes {
     | '/su-kien'
     | '/thong-bao'
     | '/admin/clb'
+    | '/clb/ho-so'
+    | '/clb/thong-bao'
+    | '/clb/dang-nhap'
     | '/admin/ho-so'
     | '/admin/kiem-duyet'
     | '/admin/thong-bao'
@@ -293,6 +323,9 @@ export interface FileRouteTypes {
     | '/su-kien'
     | '/thong-bao'
     | '/admin/clb'
+    | '/clb/ho-so'
+    | '/clb/thong-bao'
+    | '/clb/dang-nhap'
     | '/admin/ho-so'
     | '/admin/kiem-duyet'
     | '/admin/thong-bao'
@@ -321,6 +354,9 @@ export interface FileRouteTypes {
     | '/su-kien'
     | '/thong-bao'
     | '/admin/clb'
+    | '/clb/ho-so'
+    | '/clb/thong-bao'
+    | '/clb/dang-nhap'
     | '/admin/ho-so'
     | '/admin/kiem-duyet'
     | '/admin/thong-bao'
@@ -350,6 +386,9 @@ export interface RootRouteChildren {
   SuKienRoute: typeof SuKienRoute
   ThongBaoRoute: typeof ThongBaoRoute
   AdminClbRoute: typeof AdminClbRoute
+  ClbHoSoRoute: typeof ClbHoSoRoute
+  ClbThongBaoRoute: typeof ClbThongBaoRoute
+  ClbDangNhapRoute: typeof ClbDangNhapRoute
   AdminHoSoRoute: typeof AdminHoSoRoute
   AdminKiemDuyetRoute: typeof AdminKiemDuyetRoute
   AdminThongBaoRoute: typeof AdminThongBaoRoute
@@ -445,6 +484,27 @@ declare module '@tanstack/react-router' {
       path: '/admin/clb'
       fullPath: '/admin/clb'
       preLoaderRoute: typeof AdminClbRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/clb/ho-so': {
+      id: '/clb/ho-so'
+      path: '/clb/ho-so'
+      fullPath: '/clb/ho-so'
+      preLoaderRoute: typeof ClbHoSoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/clb/thong-bao': {
+      id: '/clb/thong-bao'
+      path: '/clb/thong-bao'
+      fullPath: '/clb/thong-bao'
+      preLoaderRoute: typeof ClbThongBaoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/clb/dang-nhap': {
+      id: '/clb/dang-nhap'
+      path: '/clb/dang-nhap'
+      fullPath: '/clb/dang-nhap'
+      preLoaderRoute: typeof ClbDangNhapRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin/ho-so': {
@@ -566,6 +626,9 @@ const rootRouteChildren: RootRouteChildren = {
   SuKienRoute: SuKienRoute,
   ThongBaoRoute: ThongBaoRoute,
   AdminClbRoute: AdminClbRoute,
+  ClbHoSoRoute: ClbHoSoRoute,
+  ClbThongBaoRoute: ClbThongBaoRoute,
+  ClbDangNhapRoute: ClbDangNhapRoute,
   AdminHoSoRoute: AdminHoSoRoute,
   AdminKiemDuyetRoute: AdminKiemDuyetRoute,
   AdminThongBaoRoute: AdminThongBaoRoute,

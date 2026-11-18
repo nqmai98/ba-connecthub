@@ -26,10 +26,10 @@ const chuanHoaSDT = (s: string) => s.replace(/[\s.-]/g, "");
 const sdtHopLe = (s: string) => /^(0|\+84)\d{9}$/.test(chuanHoaSDT(s));
 
 /**
- * Trang hồ sơ tài khoản dùng chung cho khu Sinh viên (/ho-so) và khu Quản trị (/admin/ho-so).
+ * Trang hồ sơ tài khoản dùng chung cho khu Sinh viên (/ho-so), Đại diện CLB (/clb/ho-so) và Quản trị (/admin/ho-so).
  * Ở khu Quản trị: không có ô thống kê theo dõi/yêu thích, đăng xuất quay về /admin/dang-nhap.
  */
-export function HoSoNguoiDung({ khu = "sinh-vien" }: { khu?: "sinh-vien" | "admin" }) {
+export function HoSoNguoiDung({ khu = "sinh-vien" }: { khu?: "sinh-vien" | "clb" | "admin" }) {
   const { nguoiDung, vaiTro, session, refresh, signOut, biKhoa } = useAuth();
   const navigate = useNavigate();
   const { data: theoDoi } = useTheoDoi();
@@ -232,7 +232,10 @@ export function HoSoNguoiDung({ khu = "sinh-vien" }: { khu?: "sinh-vien" | "admi
             className="mt-6 w-full font-bold text-destructive hover:text-destructive"
             onClick={async () => {
               await signOut();
-              navigate({ to: khu === "admin" ? "/admin/dang-nhap" : "/dang-nhap", replace: true });
+              navigate({
+                to: khu === "admin" ? "/admin/dang-nhap" : khu === "clb" ? "/clb/dang-nhap" : "/dang-nhap",
+                replace: true,
+              });
             }}
           >
             <LogOut className="h-4 w-4" /> Đăng xuất
