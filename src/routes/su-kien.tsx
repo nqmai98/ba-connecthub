@@ -63,7 +63,7 @@ function EventsPage() {
         </FilterGroup>
         <FilterGroup label="Loại sự kiện">
           <FilterChip active={loai === "TatCa"} count={theoTuKhoa.length} onClick={() => setLoai("TatCa")}>
-            Mọi loại
+            Tất cả
           </FilterChip>
           {(Object.keys(NHAN_LOAI_SU_KIEN) as LoaiSuKien[]).map((t) => (
             <FilterChip

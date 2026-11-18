@@ -21,11 +21,20 @@ const SINH_VIEN: Item[] = [
 
 /** Thanh điều hướng riêng của giao diện Sinh viên (link gốc "/"). */
 export function StudentNav() {
-  const { vaiTro, nguoiDung, signOut, maNguoiDung } = useAuth();
+  const { vaiTro, nguoiDung, signOut, maNguoiDung, session } = useAuth();
   const navigate = useNavigate();
   const laSinhVien = vaiTro === "SinhVien";
   const laQuanLy = vaiTro === "DaiDienCLB" || vaiTro === "QuanTriVien";
   const items = laSinhVien ? SINH_VIEN : CONG_KHAI;
+  const anhDaiDien = session?.user.user_metadata?.["avatar_url"] as string | undefined;
+  const tenHienThi = nguoiDung?.HoTen || nguoiDung?.TenDangNhap || nguoiDung?.EmailTruong || "";
+  const chuCai = tenHienThi
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(-2)
+    .map((w) => w[0])
+    .join("")
+    .toUpperCase();
 
   return (
     <header className="glass-nav sticky top-0 z-40 border-b border-white/60 shadow-[0_6px_24px_-16px_rgb(31_35_95/0.45)]">
@@ -71,14 +80,31 @@ export function StudentNav() {
                   </Link>
                 </Button>
               )}
-              <div className="hidden text-right leading-tight sm:block">
-                <div className="max-w-[160px] truncate text-sm font-bold">
-                  {nguoiDung?.HoTen || nguoiDung?.TenDangNhap || nguoiDung?.EmailTruong}
-                </div>
-                <div className="text-xs font-semibold text-muted-foreground">
-                  {vaiTro && NHAN_VAI_TRO[vaiTro]}
-                </div>
-              </div>
+              <Link
+                to="/ho-so"
+                title="Hồ sơ của tôi"
+                className="flex items-center gap-2 rounded-full py-1 pl-1 pr-1 transition hover:bg-secondary sm:pr-3"
+                activeProps={{ className: "bg-secondary" }}
+              >
+                {anhDaiDien ? (
+                  <img
+                    src={anhDaiDien}
+                    alt="Hồ sơ của tôi"
+                    referrerPolicy="no-referrer"
+                    className="h-9 w-9 shrink-0 rounded-full border object-cover"
+                  />
+                ) : (
+                  <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-primary text-sm font-extrabold text-primary-foreground">
+                    {chuCai || "?"}
+                  </span>
+                )}
+                <span className="hidden text-left leading-tight sm:block">
+                  <span className="block max-w-[150px] truncate text-sm font-bold">{tenHienThi}</span>
+                  <span className="block text-xs font-semibold text-muted-foreground">
+                    {vaiTro && NHAN_VAI_TRO[vaiTro]}
+                  </span>
+                </span>
+              </Link>
               <Button
                 variant="outline"
                 size="sm"
