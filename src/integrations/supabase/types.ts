@@ -556,6 +556,10 @@ export type Database = {
       la_quan_tri_vien: { Args: { _ma_nguoi_dung: string }; Returns: boolean }
       lam_moi_trang_thai_su_kien: { Args: never; Returns: undefined }
       tai_khoan_hoat_dong: { Args: { _ma_nguoi_dung: string }; Returns: boolean }
+      su_kien_noi_bat: {
+        Args: { _gioi_han?: number }
+        Returns: { MaBaiDang: number; LuotYeuThich: number; DiemNoiBat: number }[]
+      }
       tu_choi_bai_dang: {
         Args: { _ly_do: string; _ma_bai_dang: number }
         Returns: undefined

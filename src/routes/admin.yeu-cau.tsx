@@ -28,12 +28,12 @@ import { cn } from "@/lib/utils";
 export const Route = createFileRoute("/admin/yeu-cau")({
   head: () => ({
     meta: [
-      { title: "Duyệt yêu cầu cập nhật – BA CLUBS" },
+      { title: "Duyệt yêu cầu cập nhật – BAV CLUBS" },
       {
         name: "description",
         content: "Duyệt các yêu cầu cập nhật thông tin do đại diện câu lạc bộ gửi lên.",
       },
-      { property: "og:title", content: "Duyệt yêu cầu cập nhật – BA CLUBS" },
+      { property: "og:title", content: "Duyệt yêu cầu cập nhật – BAV CLUBS" },
       { property: "og:description", content: "Duyệt các yêu cầu cập nhật thông tin câu lạc bộ." },
     ],
   }),

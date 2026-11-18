@@ -21,9 +21,9 @@ import { cn } from "@/lib/utils";
 export const Route = createFileRoute("/lich-ca-nhan")({
   head: () => ({
     meta: [
-      { title: "Lịch cá nhân – BA CLUBS" },
+      { title: "Lịch cá nhân – BAV CLUBS" },
       { name: "description", content: "Lịch các sự kiện bạn đã yêu thích." },
-      { property: "og:title", content: "Lịch cá nhân – BA CLUBS" },
+      { property: "og:title", content: "Lịch cá nhân – BAV CLUBS" },
       { property: "og:description", content: "Lịch các sự kiện bạn đã yêu thích." },
     ],
   }),

@@ -24,9 +24,9 @@ import {
 export const Route = createFileRoute("/admin/clb")({
   head: () => ({
     meta: [
-      { title: "Quản lý CLB – BA CLUBS" },
+      { title: "Quản lý CLB – BAV CLUBS" },
       { name: "description", content: "Quản lý câu lạc bộ và cấp tài khoản cho đại diện CLB." },
-      { property: "og:title", content: "Quản lý CLB – BA CLUBS" },
+      { property: "og:title", content: "Quản lý CLB – BAV CLUBS" },
       {
         property: "og:description",
         content: "Quản lý câu lạc bộ và cấp tài khoản cho đại diện CLB.",

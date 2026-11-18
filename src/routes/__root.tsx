@@ -4,6 +4,7 @@ import {
   Link,
   createRootRouteWithContext,
   useRouter,
+  useRouterState,
   HeadContent,
   Scripts,
   type ErrorComponentProps,
@@ -12,8 +13,9 @@ import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
-import { AuthProvider } from "@/lib/auth";
+import { AuthProvider, useAuth } from "@/lib/auth";
 import { AppNav } from "@/components/AppNav";
+import { StudentNav } from "@/components/student/StudentNav";
 import { Toaster } from "@/components/ui/sonner";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -67,9 +69,9 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "BA CLUBS – Học viện Ngân hàng" },
+      { title: "BAV CLUBS – Học viện Ngân hàng" },
       { name: "description", content: "Tra cứu câu lạc bộ, đội nhóm và sự kiện tại Học viện Ngân hàng." },
-      { property: "og:title", content: "BA CLUBS – Học viện Ngân hàng" },
+      { property: "og:title", content: "BAV CLUBS – Học viện Ngân hàng" },
       { property: "og:description", content: "Tra cứu câu lạc bộ, đội nhóm và sự kiện tại Học viện Ngân hàng." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -113,12 +115,42 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <div className="min-h-screen">
-          <AppNav />
-          <Outlet />
-        </div>
+        <AppShell />
         <Toaster richColors position="top-center" />
       </AuthProvider>
     </QueryClientProvider>
+  );
+}
+
+/**
+ * Tách 3 khu giao diện theo đường dẫn:
+ *  - Sinh viên:      "/" (trang chủ, câu lạc bộ, sự kiện, lịch cá nhân, đang theo dõi, thông báo)
+ *  - Đại diện CLB:   "/clb/..."
+ *  - Quản trị viên:  "/admin/..."
+ * Giao diện Sinh viên dùng thanh điều hướng + nền tinh hà riêng; hai khu quản lý
+ * tạm thời vẫn dùng thanh điều hướng cũ (sẽ làm lại ở bước sau).
+ */
+function AppShell() {
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const { vaiTro } = useAuth();
+  const laQuanLy = vaiTro === "DaiDienCLB" || vaiTro === "QuanTriVien";
+  const khuQuanLy =
+    /^\/(clb|admin)(\/|$)/.test(pathname) ||
+    pathname.startsWith("/dang-nhap-clb") ||
+    (pathname.startsWith("/thong-bao") && laQuanLy);
+
+  if (khuQuanLy)
+    return (
+      <div className="min-h-screen">
+        <AppNav />
+        <Outlet />
+      </div>
+    );
+
+  return (
+    <div className="bg-nebula min-h-screen">
+      <StudentNav />
+      <Outlet />
+    </div>
   );
 }

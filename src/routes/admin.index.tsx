@@ -16,10 +16,10 @@ import { Card, GridSkeleton, Page, RoleGate } from "@/components/common";
 export const Route = createFileRoute("/admin/")({
   head: () => ({
     meta: [
-      { title: "Dashboard – BA CLUBS" },
-      { name: "description", content: "Thống kê tổng quan hệ thống BA CLUBS." },
-      { property: "og:title", content: "Dashboard – BA CLUBS" },
-      { property: "og:description", content: "Thống kê tổng quan hệ thống BA CLUBS." },
+      { title: "Dashboard – BAV CLUBS" },
+      { name: "description", content: "Thống kê tổng quan hệ thống BAV CLUBS." },
+      { property: "og:title", content: "Dashboard – BAV CLUBS" },
+      { property: "og:description", content: "Thống kê tổng quan hệ thống BAV CLUBS." },
     ],
   }),
   component: () => (

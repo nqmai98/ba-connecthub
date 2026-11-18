@@ -11,12 +11,12 @@ import { BangThayDoi } from "@/components/yeu-cau";
 export const Route = createFileRoute("/clb/yeu-cau")({
   head: () => ({
     meta: [
-      { title: "Yêu cầu cập nhật – BA CLUBS" },
+      { title: "Yêu cầu cập nhật – BAV CLUBS" },
       {
         name: "description",
         content: "Theo dõi các yêu cầu cập nhật thông tin câu lạc bộ đã gửi tới Quản trị viên.",
       },
-      { property: "og:title", content: "Yêu cầu cập nhật – BA CLUBS" },
+      { property: "og:title", content: "Yêu cầu cập nhật – BAV CLUBS" },
       {
         property: "og:description",
         content: "Theo dõi các yêu cầu cập nhật thông tin câu lạc bộ.",

@@ -259,6 +259,47 @@ export function useSuKien(opts: { sapDienRa?: boolean; maCLB?: number } = {}) {
   });
 }
 
+/** Sự kiện kèm thông tin xếp hạng độ "hot" dùng cho banner trang chủ. */
+export type SuKienNoiBat = SuKien & { LuotYeuThich: number; DiemNoiBat: number; Hang: number };
+
+/**
+ * 5–7 sự kiện nổi bật cho banner trang chủ Sinh viên, được chọn TỰ ĐỘNG theo độ hot
+ * (lượt yêu thích, lượt yêu thích gần đây, số người theo dõi CLB tổ chức) – không chọn tay.
+ * Xếp hạng do hàm CSDL su_kien_noi_bat tính (xem sql/0006_su_kien_noi_bat.sql).
+ * Nếu hàm chưa được tạo trên CSDL, tạm xếp theo sự kiện sắp diễn ra gần nhất để banner vẫn chạy.
+ */
+export function useSuKienNoiBat(gioiHan = 7) {
+  const { data: suKien, isLoading } = useSuKien({ sapDienRa: true });
+  const xepHang = useQuery({
+    queryKey: ["su_kien_noi_bat", gioiHan],
+    staleTime: 5 * 60_000,
+    retry: false,
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("su_kien_noi_bat", { _gioi_han: gioiHan });
+      if (error) return null; // hàm chưa có trên CSDL -> dùng thứ tự dự phòng
+      return data ?? [];
+    },
+  });
+
+  const list: SuKienNoiBat[] = (() => {
+    const ds = suKien ?? [];
+    if (xepHang.data) {
+      const theoMa = new Map(ds.map((e) => [e.MaBaiDang, e]));
+      return xepHang.data
+        .map((r, i) => {
+          const e = theoMa.get(r.MaBaiDang);
+          return e ? { ...e, LuotYeuThich: r.LuotYeuThich, DiemNoiBat: r.DiemNoiBat, Hang: i + 1 } : null;
+        })
+        .filter((e): e is SuKienNoiBat => !!e);
+    }
+    return ds
+      .slice(0, gioiHan)
+      .map((e, i) => ({ ...e, LuotYeuThich: 0, DiemNoiBat: 0, Hang: i + 1 }));
+  })();
+
+  return { data: list, isLoading: isLoading || xepHang.isLoading };
+}
+
 /** Toàn bộ bài đăng đã duyệt của một CLB (gồm cả sự kiện), cho trang chi tiết CLB. */
 export function useBaiDangCuaCLB(maCLB: number) {
   return useQuery({

@@ -8,9 +8,9 @@ import { Button } from "@/components/ui/button";
 export const Route = createFileRoute("/clb/thong-tin")({
   head: () => ({
     meta: [
-      { title: "Thông tin CLB – BA CLUBS" },
+      { title: "Thông tin CLB – BAV CLUBS" },
       { name: "description", content: "Gửi yêu cầu cập nhật thông tin giới thiệu câu lạc bộ." },
-      { property: "og:title", content: "Thông tin CLB – BA CLUBS" },
+      { property: "og:title", content: "Thông tin CLB – BAV CLUBS" },
       {
         property: "og:description",
         content: "Gửi yêu cầu cập nhật thông tin giới thiệu câu lạc bộ.",

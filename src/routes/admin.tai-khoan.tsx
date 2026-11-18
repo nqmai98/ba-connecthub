@@ -12,9 +12,9 @@ import { Input } from "@/components/ui/input";
 export const Route = createFileRoute("/admin/tai-khoan")({
   head: () => ({
     meta: [
-      { title: "Quản lý tài khoản – BA CLUBS" },
+      { title: "Quản lý tài khoản – BAV CLUBS" },
       { name: "description", content: "Quản lý vai trò và trạng thái tài khoản người dùng." },
-      { property: "og:title", content: "Quản lý tài khoản – BA CLUBS" },
+      { property: "og:title", content: "Quản lý tài khoản – BAV CLUBS" },
       {
         property: "og:description",
         content: "Quản lý vai trò và trạng thái tài khoản người dùng.",

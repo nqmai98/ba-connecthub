@@ -7,13 +7,13 @@ import { useAuth } from "@/lib/auth";
 export const Route = createFileRoute("/clb/dang-bai")({
   head: () => ({
     meta: [
-      { title: "Đăng bài – BA CLUBS" },
+      { title: "Đăng bài – BAV CLUBS" },
       {
         name: "description",
         content:
           "Đăng tin tức, chương trình, thành tích, thông báo hoặc sự kiện mới cho câu lạc bộ.",
       },
-      { property: "og:title", content: "Đăng bài – BA CLUBS" },
+      { property: "og:title", content: "Đăng bài – BAV CLUBS" },
       { property: "og:description", content: "Đăng tin tức hoặc sự kiện mới cho câu lạc bộ." },
     ],
   }),

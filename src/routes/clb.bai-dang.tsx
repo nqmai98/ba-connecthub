@@ -20,12 +20,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 export const Route = createFileRoute("/clb/bai-dang")({
   head: () => ({
     meta: [
-      { title: "Bài đăng của tôi – BA CLUBS" },
+      { title: "Bài đăng của tôi – BAV CLUBS" },
       {
         name: "description",
         content: "Theo dõi trạng thái và lịch sử kiểm duyệt các bài đăng của CLB.",
       },
-      { property: "og:title", content: "Bài đăng của tôi – BA CLUBS" },
+      { property: "og:title", content: "Bài đăng của tôi – BAV CLUBS" },
       { property: "og:description", content: "Theo dõi trạng thái duyệt các bài đăng của CLB." },
     ],
   }),

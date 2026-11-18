@@ -9,9 +9,9 @@ import { Button } from "@/components/ui/button";
 export const Route = createFileRoute("/clb/")({
   head: () => ({
     meta: [
-      { title: "Tổng quan CLB – BA CLUBS" },
+      { title: "Tổng quan CLB – BAV CLUBS" },
       { name: "description", content: "Tổng quan hoạt động của câu lạc bộ." },
-      { property: "og:title", content: "Tổng quan CLB – BA CLUBS" },
+      { property: "og:title", content: "Tổng quan CLB – BAV CLUBS" },
       { property: "og:description", content: "Tổng quan hoạt động của câu lạc bộ." },
     ],
   }),

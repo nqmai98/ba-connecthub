@@ -13,15 +13,15 @@ import { Label } from "@/components/ui/label";
 export const Route = createFileRoute("/dang-nhap-clb")({
   head: () => ({
     meta: [
-      { title: "Đăng nhập CLB / Quản trị – BA CLUBS" },
+      { title: "Đăng nhập CLB / Quản trị – BAV CLUBS" },
       {
         name: "description",
-        content: "Cổng đăng nhập dành cho Đại diện câu lạc bộ và Quản trị viên BA CLUBS.",
+        content: "Cổng đăng nhập dành cho Đại diện câu lạc bộ và Quản trị viên BAV CLUBS.",
       },
-      { property: "og:title", content: "Đăng nhập CLB / Quản trị – BA CLUBS" },
+      { property: "og:title", content: "Đăng nhập CLB / Quản trị – BAV CLUBS" },
       {
         property: "og:description",
-        content: "Cổng đăng nhập dành cho Đại diện câu lạc bộ và Quản trị viên BA CLUBS.",
+        content: "Cổng đăng nhập dành cho Đại diện câu lạc bộ và Quản trị viên BAV CLUBS.",
       },
     ],
   }),
@@ -75,7 +75,7 @@ function ClubLoginPage() {
       <div className="w-full max-w-md rounded-2xl border-2 border-primary/30 bg-card p-6 shadow-[var(--shadow-soft)] sm:p-8">
         <div className="mb-6 flex flex-col items-center text-center">
           <img src={logo.url} alt="Logo Học viện Ngân hàng" className="h-24 w-auto" />
-          <h1 className="mt-3 text-2xl text-primary">BA CLUBS</h1>
+          <h1 className="mt-3 text-2xl text-primary">BAV CLUBS</h1>
           <span className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-primary px-3 py-1 text-sm font-extrabold text-primary-foreground">
             <ShieldCheck className="h-4 w-4" /> Cổng dành cho CLB và Quản trị viên
           </span>

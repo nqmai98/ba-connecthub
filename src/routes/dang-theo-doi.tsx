@@ -15,9 +15,9 @@ import { Button } from "@/components/ui/button";
 export const Route = createFileRoute("/dang-theo-doi")({
   head: () => ({
     meta: [
-      { title: "Đang theo dõi – BA CLUBS" },
+      { title: "Đang theo dõi – BAV CLUBS" },
       { name: "description", content: "Các câu lạc bộ bạn đang theo dõi." },
-      { property: "og:title", content: "Đang theo dõi – BA CLUBS" },
+      { property: "og:title", content: "Đang theo dõi – BAV CLUBS" },
       { property: "og:description", content: "Các câu lạc bộ bạn đang theo dõi." },
     ],
   }),

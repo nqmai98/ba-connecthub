@@ -9,12 +9,12 @@ import { Input } from "@/components/ui/input";
 export const Route = createFileRoute("/admin/nhat-ky")({
   head: () => ({
     meta: [
-      { title: "Nhật ký hoạt động – BA CLUBS" },
+      { title: "Nhật ký hoạt động – BAV CLUBS" },
       {
         name: "description",
         content: "Nhật ký các thao tác quan trọng trên hệ thống, phục vụ giám sát và truy vết.",
       },
-      { property: "og:title", content: "Nhật ký hoạt động – BA CLUBS" },
+      { property: "og:title", content: "Nhật ký hoạt động – BAV CLUBS" },
       { property: "og:description", content: "Nhật ký các thao tác quan trọng trên hệ thống." },
     ],
   }),

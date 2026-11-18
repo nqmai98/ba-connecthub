@@ -53,7 +53,7 @@ export function AppNav() {
         <Link to="/" className="flex min-w-0 shrink-0 items-center gap-2">
           <img src={logo.url} alt="Logo Học viện Ngân hàng" className="h-10 w-auto shrink-0" />
           <div className="min-w-0 leading-tight">
-            <div className="text-base font-extrabold text-primary">BA CLUBS</div>
+            <div className="text-base font-extrabold text-primary">BAV CLUBS</div>
             <div className="hidden text-xs font-semibold text-muted-foreground sm:block">
               Học viện Ngân hàng
             </div>

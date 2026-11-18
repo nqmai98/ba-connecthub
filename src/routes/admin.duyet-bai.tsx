@@ -28,9 +28,9 @@ import {
 export const Route = createFileRoute("/admin/duyet-bai")({
   head: () => ({
     meta: [
-      { title: "Duyệt bài – BA CLUBS" },
+      { title: "Duyệt bài – BAV CLUBS" },
       { name: "description", content: "Duyệt bài đăng do các CLB gửi lên." },
-      { property: "og:title", content: "Duyệt bài – BA CLUBS" },
+      { property: "og:title", content: "Duyệt bài – BAV CLUBS" },
       { property: "og:description", content: "Duyệt bài đăng do các CLB gửi lên." },
     ],
   }),

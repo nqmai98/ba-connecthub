@@ -10,10 +10,10 @@ import { Button } from "@/components/ui/button";
 export const Route = createFileRoute("/dang-nhap-sinh-vien")({
   head: () => ({
     meta: [
-      { title: "Đăng nhập Sinh viên – BA CLUBS" },
-      { name: "description", content: "Đăng nhập BA CLUBS bằng email trường @hvnh.edu.vn." },
-      { property: "og:title", content: "Đăng nhập Sinh viên – BA CLUBS" },
-      { property: "og:description", content: "Đăng nhập BA CLUBS bằng email trường @hvnh.edu.vn." },
+      { title: "Đăng nhập Sinh viên – BAV CLUBS" },
+      { name: "description", content: "Đăng nhập BAV CLUBS bằng email trường @hvnh.edu.vn." },
+      { property: "og:title", content: "Đăng nhập Sinh viên – BAV CLUBS" },
+      { property: "og:description", content: "Đăng nhập BAV CLUBS bằng email trường @hvnh.edu.vn." },
     ],
   }),
   component: StudentLoginPage,
@@ -44,7 +44,7 @@ function StudentLoginPage() {
       <div className="w-full max-w-md rounded-2xl border bg-card p-6 shadow-[var(--shadow-soft)] sm:p-8">
         <div className="mb-6 flex flex-col items-center text-center">
           <img src={logo.url} alt="Logo Học viện Ngân hàng" className="h-24 w-auto" />
-          <h1 className="mt-3 text-2xl text-primary">BA CLUBS</h1>
+          <h1 className="mt-3 text-2xl text-primary">BAV CLUBS</h1>
           <span className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-secondary px-3 py-1 text-sm font-extrabold text-primary">
             <GraduationCap className="h-4 w-4" /> Đăng nhập dành cho Sinh viên
           </span>

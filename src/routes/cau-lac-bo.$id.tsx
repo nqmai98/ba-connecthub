@@ -23,13 +23,13 @@ import { Skeleton } from "@/components/ui/skeleton";
 export const Route = createFileRoute("/cau-lac-bo/$id")({
   head: () => ({
     meta: [
-      { title: "Chi tiết câu lạc bộ – BA CLUBS" },
+      { title: "Chi tiết câu lạc bộ – BAV CLUBS" },
       {
         name: "description",
         content:
           "Giới thiệu, thành tích, tin tức và sự kiện của câu lạc bộ tại Học viện Ngân hàng.",
       },
-      { property: "og:title", content: "Chi tiết câu lạc bộ – BA CLUBS" },
+      { property: "og:title", content: "Chi tiết câu lạc bộ – BAV CLUBS" },
       {
         property: "og:description",
         content: "Giới thiệu, thành tích, tin tức và sự kiện của câu lạc bộ.",

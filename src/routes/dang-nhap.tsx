@@ -5,10 +5,10 @@ import { useStudentLoginRedirect } from "@/lib/use-student-login";
 export const Route = createFileRoute("/dang-nhap")({
   head: () => ({
     meta: [
-      { title: "Đăng nhập – BA CLUBS" },
-      { name: "description", content: "Chọn đối tượng đăng nhập BA CLUBS: Sinh viên hoặc Đại diện CLB / Quản trị viên." },
-      { property: "og:title", content: "Đăng nhập – BA CLUBS" },
-      { property: "og:description", content: "Chọn đối tượng đăng nhập BA CLUBS: Sinh viên hoặc Đại diện CLB / Quản trị viên." },
+      { title: "Đăng nhập – BAV CLUBS" },
+      { name: "description", content: "Chọn đối tượng đăng nhập BAV CLUBS: Sinh viên hoặc Đại diện CLB / Quản trị viên." },
+      { property: "og:title", content: "Đăng nhập – BAV CLUBS" },
+      { property: "og:description", content: "Chọn đối tượng đăng nhập BAV CLUBS: Sinh viên hoặc Đại diện CLB / Quản trị viên." },
     ],
   }),
   component: ChooseRolePage,
@@ -23,7 +23,7 @@ function ChooseRolePage() {
       <div className="w-full max-w-xl rounded-3xl bg-card p-8 text-center shadow-[var(--shadow-soft)] sm:p-12">
         <img src={logo.url} alt="Logo Học viện Ngân hàng" className="mx-auto h-28 w-auto" />
         <h1 className="mt-4 text-3xl font-extrabold text-primary">
-          <span className="text-accent">BA</span> CLUBS
+          <span className="text-accent">BAV</span> CLUBS
         </h1>
         <p className="mt-3 text-base font-semibold italic text-primary">Bạn là?</p>
         <div className="mt-4 grid gap-3 sm:grid-cols-2">
