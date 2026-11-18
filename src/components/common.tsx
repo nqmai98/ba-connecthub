@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from "react";
-import { Link, Navigate } from "@tanstack/react-router";
+import { Link, Navigate, useRouterState } from "@tanstack/react-router";
 import { Bell, BellOff, Calendar, Inbox, MapPin, Star, Users } from "lucide-react";
 import { useAuth, type TenVaiTro } from "@/lib/auth";
 import {
@@ -423,6 +423,7 @@ export function RoleGate({
   children: ReactNode;
 }) {
   const { ready, maNguoiDung, vaiTro } = useAuth();
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
   if (!ready)
     return (
       <main className="mx-auto max-w-7xl space-y-4 px-3 py-8 sm:px-6">
@@ -430,7 +431,9 @@ export function RoleGate({
         <GridSkeleton n={3} />
       </main>
     );
-  if (!maNguoiDung) return <Navigate to="/dang-nhap" />;
+  // Khu quản lý (/clb, /admin) có trang đăng nhập riêng; khu Sinh viên dùng /dang-nhap
+  if (!maNguoiDung)
+    return <Navigate to={/^\/(clb|admin)(\/|$)/.test(pathname) ? "/dang-nhap-clb" : "/dang-nhap"} />;
   if (canThiet && (!vaiTro || !canThiet.includes(vaiTro)))
     return (
       <main className="mx-auto max-w-xl px-4 py-16">

@@ -131,18 +131,12 @@ function ClubLoginPage() {
           <span>
             Bạn là sinh viên?{" "}
             <Link
-              to="/dang-nhap-sinh-vien"
+              to="/dang-nhap"
               className="font-extrabold text-primary underline-offset-2 hover:underline"
             >
               Đăng nhập tại đây
             </Link>
           </span>
-          <Link
-            to="/dang-nhap"
-            className="text-xs font-bold text-primary underline-offset-2 hover:underline"
-          >
-            ← Quay lại chọn đối tượng
-          </Link>
         </div>
       </div>
     </main>

@@ -97,7 +97,7 @@ export function AppNav() {
                 size="sm"
                 onClick={async () => {
                   await signOut();
-                  navigate({ to: "/dang-nhap", replace: true });
+                  navigate({ to: "/dang-nhap-clb", replace: true });
                 }}
               >
                 <LogOut className="h-4 w-4" />
@@ -110,7 +110,7 @@ export function AppNav() {
               size="sm"
               className="bg-accent font-bold text-accent-foreground hover:bg-accent/90"
             >
-              <Link to="/dang-nhap">
+              <Link to="/dang-nhap-clb">
                 <LogIn className="h-4 w-4" /> Đăng nhập
               </Link>
             </Button>

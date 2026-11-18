@@ -124,7 +124,7 @@ export function StudentNav() {
               size="sm"
               className="bg-accent font-bold text-accent-foreground hover:bg-accent/90"
             >
-              <Link to="/dang-nhap-sinh-vien">
+              <Link to="/dang-nhap">
                 <LogIn className="h-4 w-4" /> Đăng nhập
               </Link>
             </Button>
