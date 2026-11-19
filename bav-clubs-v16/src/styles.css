@@ -1,0 +1,273 @@
+@import "tailwindcss" source(none);
+@source "../src";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --font-sans: "Be Vietnam Pro", system-ui, sans-serif;
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary-dark: var(--primary-dark);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-ring-offset-background: var(--background);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --shadow-soft: 0 4px 18px -8px color-mix(in oklab, var(--primary) 25%, transparent);
+}
+
+:root {
+  --radius: 0.875rem;
+  /* #F6F7FC */
+  --background: oklch(0.98 0.006 265); /* #F6F8FC */
+  /* #14163F */
+  --foreground: oklch(0.24 0.035 265); /* #182033 */
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.24 0.035 265);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.24 0.035 265);
+  /* #292B75 */
+  --primary: #292d78; /* đúng màu nền logo trường */
+  --primary-dark: #1f235f;
+  --primary-foreground: oklch(1 0 0);
+  /* #F9A61A */
+  --accent: oklch(0.8 0.16 72); /* #F7A81B */
+  --accent-foreground: oklch(0.24 0.035 265);
+  --secondary: #e9ebf7;
+  --secondary-foreground: #292d78;
+  --muted: #eff1f7;
+  --muted-foreground: oklch(0.52 0.03 265); /* #667085 */
+  --destructive: oklch(0.58 0.22 27);
+  --destructive-foreground: oklch(1 0 0);
+  --success: oklch(0.62 0.15 150);
+  --success-foreground: oklch(1 0 0);
+  --warning: oklch(0.85 0.15 85);
+  --warning-foreground: oklch(0.3 0.07 60);
+  /* #DADCEF */
+  --border: oklch(0.935 0.012 265); /* #E7EAF2 */
+  --input: oklch(0.935 0.012 265);
+  --ring: #292d78;
+  --chart-1: #292d78;
+  --chart-2: oklch(0.79 0.16 70);
+  --chart-3: #5a6bb8;
+  --chart-4: oklch(0.62 0.15 150);
+  --chart-5: oklch(0.58 0.22 27);
+  --sidebar: oklch(1 0 0);
+  --sidebar-foreground: #1f235f;
+  --sidebar-primary: #292d78;
+  --sidebar-primary-foreground: oklch(1 0 0);
+  --sidebar-accent: #e9ebf7;
+  --sidebar-accent-foreground: #292d78;
+  --sidebar-border: #dfe2ef;
+  --sidebar-ring: #292d78;
+}
+
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    font-family: var(--font-sans);
+    font-weight: 500;
+  }
+  h1, h2, h3, h4 {
+    font-weight: 800;
+    letter-spacing: -0.01em;
+  }
+}
+
+@utility scrollbar-none {
+  scrollbar-width: none;
+  &::-webkit-scrollbar { display: none; }
+}
+
+/* ------------------------------------------------------------------ */
+/* BAV CLUBS – Galaxy theme (giao diện Sinh viên)                      */
+/* Bám theo design system: Primary #292D78, Primary Dark #1F235F,      */
+/* Accent #F7A81B, Background #F6F8FC.                                 */
+/* ------------------------------------------------------------------ */
+
+:root {
+  --galaxy-deep: #0f1238;    /* nền vũ trụ sâu, tối hơn Primary Dark */
+  --galaxy-indigo: #1f235f;  /* Primary Dark */
+  --galaxy-primary: #292d78; /* Primary */
+  --galaxy-blue: #2f4a9e;    /* xanh tinh vân, cùng họ màu logo (không tím) */
+  --galaxy-amber: #f7a81b;   /* Accent */
+}
+
+/* Nền sáng cho toàn trang: tinh vân nhạt + bụi sao rất mờ, chữ vẫn dễ đọc */
+.bg-nebula {
+  background-color: #f6f8fc;
+  background-image:
+    radial-gradient(1.5px 1.5px at 12% 18%, rgb(41 45 120 / 0.18) 50%, transparent 51%),
+    radial-gradient(1px 1px at 72% 12%, rgb(41 45 120 / 0.16) 50%, transparent 51%),
+    radial-gradient(1.5px 1.5px at 38% 64%, rgb(247 168 27 / 0.28) 50%, transparent 51%),
+    radial-gradient(1px 1px at 86% 58%, rgb(41 45 120 / 0.16) 50%, transparent 51%),
+    radial-gradient(1px 1px at 22% 88%, rgb(47 74 158 / 0.18) 50%, transparent 51%),
+    radial-gradient(60rem 40rem at 105% -10%, rgb(47 74 158 / 0.18), transparent 60%),
+    radial-gradient(50rem 36rem at -10% 30%, rgb(41 45 120 / 0.16), transparent 60%),
+    radial-gradient(40rem 30rem at 70% 105%, rgb(247 168 27 / 0.16), transparent 60%),
+    linear-gradient(180deg, #f6f8fc 0%, #eef2f9 55%, #f8f6f1 100%);
+  background-size: 340px 340px, 280px 280px, 420px 420px, 380px 380px, 300px 300px, auto, auto, auto, auto;
+  background-attachment: fixed;
+}
+
+/* Nền tối "giữa tinh hà" cho banner / header nổi bật */
+.bg-galaxy {
+  position: relative;
+  isolation: isolate;
+  background:
+    radial-gradient(42rem 26rem at 85% 10%, rgb(47 74 158 / 0.75), transparent 65%),
+    radial-gradient(36rem 24rem at 8% 95%, rgb(41 45 120 / 0.95), transparent 60%),
+    radial-gradient(22rem 14rem at 62% 78%, rgb(247 168 27 / 0.22), transparent 70%),
+    radial-gradient(28rem 18rem at 30% 15%, rgb(80 120 210 / 0.25), transparent 70%),
+    linear-gradient(125deg, var(--galaxy-deep) 0%, var(--galaxy-indigo) 38%, var(--galaxy-primary) 70%, var(--galaxy-blue) 100%);
+}
+
+/* Lớp sao lấp lánh, đặt trong .bg-galaxy */
+.galaxy-stars,
+.galaxy-stars::after {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background-image:
+    radial-gradient(1.5px 1.5px at 10% 20%, #fff 50%, transparent 51%),
+    radial-gradient(1px 1px at 25% 70%, #fff 50%, transparent 51%),
+    radial-gradient(2px 2px at 40% 35%, rgb(255 255 255 / 0.9) 50%, transparent 51%),
+    radial-gradient(1px 1px at 55% 85%, #fff 50%, transparent 51%),
+    radial-gradient(1.5px 1.5px at 68% 25%, rgb(247 168 27 / 0.95) 50%, transparent 51%),
+    radial-gradient(1px 1px at 80% 60%, #fff 50%, transparent 51%),
+    radial-gradient(2px 2px at 92% 15%, #fff 50%, transparent 51%),
+    radial-gradient(1px 1px at 5% 90%, #fff 50%, transparent 51%);
+  background-size: 260px 260px;
+  opacity: 0.7;
+}
+.galaxy-stars::after {
+  content: "";
+  background-size: 410px 410px;
+  background-position: 120px 80px;
+  animation: galaxy-twinkle 6s ease-in-out infinite alternate;
+}
+
+/* Dải ngân hà chéo mờ */
+.galaxy-milkyway {
+  position: absolute;
+  z-index: -1;
+  inset: -20% -10%;
+  pointer-events: none;
+  background: linear-gradient(115deg, transparent 35%, rgb(255 255 255 / 0.07) 45%, rgb(247 168 27 / 0.08) 50%, rgb(255 255 255 / 0.06) 55%, transparent 65%);
+  filter: blur(8px);
+}
+
+@keyframes galaxy-twinkle {
+  from { opacity: 0.25; }
+  to { opacity: 0.85; }
+}
+
+/* Kính mờ cho thanh điều hướng nằm trên nền tinh vân */
+.glass-nav {
+  background: rgb(255 255 255 / 0.72);
+  backdrop-filter: blur(14px) saturate(1.4);
+  -webkit-backdrop-filter: blur(14px) saturate(1.4);
+}
+
+/* ------------------------------------------------------------------ */
+/* Chuông thông báo: rung khi có thông báo chưa đọc (không có âm thanh) */
+/* ------------------------------------------------------------------ */
+@keyframes bell-ring {
+  0%   { transform: rotate(0); }
+  4%   { transform: rotate(18deg); }
+  8%   { transform: rotate(-16deg); }
+  12%  { transform: rotate(13deg); }
+  16%  { transform: rotate(-10deg); }
+  20%  { transform: rotate(6deg); }
+  24%  { transform: rotate(-3deg); }
+  28%, 100% { transform: rotate(0); }
+}
+.bell-ringing {
+  transform-origin: 50% 8%;
+  animation: bell-ring 2.6s ease-in-out infinite;
+}
+@keyframes bell-dot-ping {
+  0%   { transform: scale(1); opacity: 0.75; }
+  80%, 100% { transform: scale(2.4); opacity: 0; }
+}
+.bell-dot-ping {
+  animation: bell-dot-ping 1.6s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+
+/* Thanh tiến trình của banner tự động lướt */
+@keyframes banner-progress {
+  from { transform: scaleX(0); }
+  to   { transform: scaleX(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bell-ringing,
+  .bell-dot-ping,
+  .galaxy-stars::after { animation: none; }
+}
+
+/* ------------------------------------------------------------------ */
+/* Nội dung bài đăng dạng trang tin (dùng chung cho ô soạn thảo và trang đọc bài) */
+/* ------------------------------------------------------------------ */
+.noi-dung-bai { line-height: 1.75; color: var(--foreground); overflow-wrap: anywhere; }
+.noi-dung-bai > * + * { margin-top: 0.9em; }
+.noi-dung-bai h2 { font-size: 1.45em; line-height: 1.3; font-weight: 800; color: var(--primary); margin-top: 1.4em; }
+.noi-dung-bai h3 { font-size: 1.2em; line-height: 1.35; font-weight: 800; margin-top: 1.2em; }
+.noi-dung-bai a { color: var(--primary); text-decoration: underline; text-underline-offset: 2px; }
+.noi-dung-bai ul { list-style: disc; padding-left: 1.5em; }
+.noi-dung-bai ol { list-style: decimal; padding-left: 1.5em; }
+.noi-dung-bai li + li { margin-top: 0.3em; }
+.noi-dung-bai blockquote {
+  border-left: 4px solid var(--accent);
+  background: color-mix(in oklab, var(--accent) 10%, transparent);
+  padding: 0.75em 1em;
+  border-radius: 0 0.75rem 0.75rem 0;
+  font-style: italic;
+}
+.noi-dung-bai hr { border: 0; border-top: 1px solid var(--border); margin: 1.5em 0; }
+.noi-dung-bai figure { margin: 1.25em 0; text-align: center; }
+.noi-dung-bai img { display: inline-block; max-width: 100%; height: auto; border-radius: 0.75rem; }
+.noi-dung-bai figcaption { margin-top: 0.4em; font-size: 0.85em; font-style: italic; color: var(--muted-foreground); }
+.noi-dung-bai[contenteditable="true"] img { cursor: default; outline-offset: 2px; }
+.noi-dung-bai[contenteditable="true"] img:hover { outline: 2px solid var(--ring); }
