@@ -57,6 +57,13 @@
       "when": 1794998519768,
       "tag": "0007_restrict_role_and_media_reads",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1795094495322,
+      "tag": "0008_create_luot_yeu_thich_clb",
+      "breakpoints": true
     }
   ]
 }
