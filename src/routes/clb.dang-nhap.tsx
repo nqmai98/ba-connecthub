@@ -1,6 +1,6 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
-import { ShieldCheck } from "lucide-react";
+import { Info, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 import logo from "@/assets/bav-logo.png.asset.json";
 import { supabase } from "@/integrations/supabase/client";
@@ -38,6 +38,7 @@ function ClubLoginPage() {
   const [loginId, setLoginId] = useState("");
   const [password, setPassword] = useState("");
   const [err, setErr] = useState("");
+  const [quenMk, setQuenMk] = useState(false);
   const [busy, setBusy] = useState(false);
   // Chỉ tự đăng xuất khi chính form này vừa đăng nhập bằng tài khoản không phải CLB,
   // để sinh viên / quản trị viên lỡ mở trang này không bị đăng xuất khỏi khu của họ.
@@ -124,9 +125,18 @@ function ClubLoginPage() {
             />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="pw" className="font-bold">
-              Mật khẩu
-            </Label>
+            <div className="flex items-center justify-between">
+              <Label htmlFor="pw" className="font-bold">
+                Mật khẩu
+              </Label>
+              <button
+                type="button"
+                onClick={() => setQuenMk((v) => !v)}
+                className="text-sm font-bold text-primary underline-offset-2 hover:underline"
+              >
+                Quên mật khẩu?
+              </button>
+            </div>
             <Input
               id="pw"
               type="password"
@@ -139,6 +149,14 @@ function ClubLoginPage() {
               placeholder="••••••••"
             />
           </div>
+          {quenMk && (
+            <div className="flex gap-2 rounded-xl border border-primary/20 bg-primary/5 p-3 text-sm font-semibold text-foreground">
+              <Info className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+              <span>
+                Tài khoản CLB do Quản trị viên cấp. Vui lòng liên hệ Quản trị viên để được cấp lại mật khẩu.
+              </span>
+            </div>
+          )}
           {err && <p className="text-sm font-semibold text-destructive">{err}</p>}
           <Button
             type="submit"
@@ -148,17 +166,6 @@ function ClubLoginPage() {
             {busy ? "Đang xử lý..." : "Đăng nhập"}
           </Button>
         </form>
-        <div className="mt-6 flex flex-col items-center gap-1 border-t pt-4 text-center text-sm font-semibold text-muted-foreground">
-          <span>
-            Bạn là sinh viên?{" "}
-            <Link
-              to="/dang-nhap"
-              className="font-extrabold text-primary underline-offset-2 hover:underline"
-            >
-              Đăng nhập tại đây
-            </Link>
-          </span>
-        </div>
       </div>
     </main>
   );

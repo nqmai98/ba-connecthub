@@ -20,6 +20,7 @@ import { Route as SuKienRouteImport } from './routes/su-kien'
 import { Route as ThongBaoRouteImport } from './routes/thong-bao'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as AdminClbRouteImport } from './routes/admin.clb'
+import { Route as AdminDatLaiMatKhauRouteImport } from './routes/admin.dat-lai-mat-khau'
 import { Route as BaiVietIdRouteImport } from './routes/bai-viet.$id'
 import { Route as ClbHoSoRouteImport } from './routes/clb.ho-so'
 import { Route as ClbThongBaoRouteImport } from './routes/clb.thong-bao'
@@ -93,6 +94,11 @@ const AdminIndexRoute = AdminIndexRouteImport.update({
 const AdminClbRoute = AdminClbRouteImport.update({
   id: '/admin/clb',
   path: '/admin/clb',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminDatLaiMatKhauRoute = AdminDatLaiMatKhauRouteImport.update({
+  id: '/admin/dat-lai-mat-khau',
+  path: '/admin/dat-lai-mat-khau',
   getParentRoute: () => rootRouteImport,
 } as any)
 const BaiVietIdRoute = BaiVietIdRouteImport.update({
@@ -202,6 +208,7 @@ export interface FileRoutesByFullPath {
   '/su-kien': typeof SuKienRoute
   '/thong-bao': typeof ThongBaoRoute
   '/admin/clb': typeof AdminClbRoute
+  '/admin/dat-lai-mat-khau': typeof AdminDatLaiMatKhauRoute
   '/bai-viet/$id': typeof BaiVietIdRoute
   '/clb/ho-so': typeof ClbHoSoRoute
   '/clb/thong-bao': typeof ClbThongBaoRoute
@@ -234,6 +241,7 @@ export interface FileRoutesByTo {
   '/su-kien': typeof SuKienRoute
   '/thong-bao': typeof ThongBaoRoute
   '/admin/clb': typeof AdminClbRoute
+  '/admin/dat-lai-mat-khau': typeof AdminDatLaiMatKhauRoute
   '/bai-viet/$id': typeof BaiVietIdRoute
   '/clb/ho-so': typeof ClbHoSoRoute
   '/clb/thong-bao': typeof ClbThongBaoRoute
@@ -267,6 +275,7 @@ export interface FileRoutesById {
   '/su-kien': typeof SuKienRoute
   '/thong-bao': typeof ThongBaoRoute
   '/admin/clb': typeof AdminClbRoute
+  '/admin/dat-lai-mat-khau': typeof AdminDatLaiMatKhauRoute
   '/bai-viet/$id': typeof BaiVietIdRoute
   '/clb/ho-so': typeof ClbHoSoRoute
   '/clb/thong-bao': typeof ClbThongBaoRoute
@@ -301,6 +310,7 @@ export interface FileRouteTypes {
     | '/su-kien'
     | '/thong-bao'
     | '/admin/clb'
+    | '/admin/dat-lai-mat-khau'
     | '/bai-viet/$id'
     | '/clb/ho-so'
     | '/clb/thong-bao'
@@ -333,6 +343,7 @@ export interface FileRouteTypes {
     | '/su-kien'
     | '/thong-bao'
     | '/admin/clb'
+    | '/admin/dat-lai-mat-khau'
     | '/bai-viet/$id'
     | '/clb/ho-so'
     | '/clb/thong-bao'
@@ -365,6 +376,7 @@ export interface FileRouteTypes {
     | '/su-kien'
     | '/thong-bao'
     | '/admin/clb'
+    | '/admin/dat-lai-mat-khau'
     | '/bai-viet/$id'
     | '/clb/ho-so'
     | '/clb/thong-bao'
@@ -398,6 +410,7 @@ export interface RootRouteChildren {
   SuKienRoute: typeof SuKienRoute
   ThongBaoRoute: typeof ThongBaoRoute
   AdminClbRoute: typeof AdminClbRoute
+  AdminDatLaiMatKhauRoute: typeof AdminDatLaiMatKhauRoute
   BaiVietIdRoute: typeof BaiVietIdRoute
   ClbHoSoRoute: typeof ClbHoSoRoute
   ClbThongBaoRoute: typeof ClbThongBaoRoute
@@ -497,6 +510,13 @@ declare module '@tanstack/react-router' {
       path: '/admin/clb'
       fullPath: '/admin/clb'
       preLoaderRoute: typeof AdminClbRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/dat-lai-mat-khau': {
+      id: '/admin/dat-lai-mat-khau'
+      path: '/admin/dat-lai-mat-khau'
+      fullPath: '/admin/dat-lai-mat-khau'
+      preLoaderRoute: typeof AdminDatLaiMatKhauRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/bai-viet/$id': {
@@ -646,6 +666,7 @@ const rootRouteChildren: RootRouteChildren = {
   SuKienRoute: SuKienRoute,
   ThongBaoRoute: ThongBaoRoute,
   AdminClbRoute: AdminClbRoute,
+  AdminDatLaiMatKhauRoute: AdminDatLaiMatKhauRoute,
   BaiVietIdRoute: BaiVietIdRoute,
   ClbHoSoRoute: ClbHoSoRoute,
   ClbThongBaoRoute: ClbThongBaoRoute,

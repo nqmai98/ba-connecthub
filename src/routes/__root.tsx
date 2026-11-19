@@ -135,7 +135,7 @@ function AppShell() {
   const { vaiTro, ready, maNguoiDung } = useAuth();
 
   // ---- Khu Quản trị ----
-  if (pathname === "/admin/dang-nhap") return <Outlet />;
+  if (pathname === "/admin/dang-nhap" || pathname === "/admin/dat-lai-mat-khau") return <Outlet />;
   if (/^\/admin(\/|$)/.test(pathname)) {
     if (ready && (!maNguoiDung || vaiTro !== "QuanTriVien"))
       return <Navigate to="/admin/dang-nhap" replace />;
