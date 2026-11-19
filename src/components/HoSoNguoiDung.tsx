@@ -4,6 +4,8 @@ import { toast } from "sonner";
 import {
   Bell,
   CalendarHeart,
+  Eye,
+  EyeOff,
   KeyRound,
   LogOut,
   Mail,
@@ -191,13 +193,13 @@ export function HoSoNguoiDung({ khu = "sinh-vien" }: { khu?: "sinh-vien" | "clb"
                 {laTaiKhoanCLB ? <UserRound className="h-4 w-4 shrink-0" /> : <Mail className="h-4 w-4 shrink-0" />}
                 <span className="truncate">{tenDangNhap}</span>
               </div>
-              <p className="text-xs font-medium text-muted-foreground">
-                {laTaiKhoanCLB
-                  ? "Tên đăng nhập do Quản trị viên cấp khi tạo tài khoản CLB. Muốn đổi tên đăng nhập, hãy liên hệ Quản trị viên; mật khẩu bạn tự đổi được ở mục Tài khoản bên cạnh."
-                  : laGoogle
+              {!laTaiKhoanCLB && (
+                <p className="text-xs font-medium text-muted-foreground">
+                  {laGoogle
                     ? "Email gắn với tài khoản Google của trường nên không thay đổi được."
                     : "Email đăng nhập do Quản trị viên quản lý nên không đổi được tại đây."}
-              </p>
+                </p>
+              )}
             </div>
           </div>
           <div className="mt-6 flex justify-end gap-2">
@@ -292,35 +294,70 @@ function Dong({ nhan, giaTri }: { nhan: string; giaTri: string }) {
   );
 }
 
-/** Đổi mật khẩu – chỉ cho tài khoản đăng nhập bằng email + mật khẩu (Quản trị viên, Đại diện CLB). */
+/**
+ * Đổi mật khẩu – chỉ cho tài khoản đăng nhập bằng email + mật khẩu (Quản trị viên, Đại diện CLB).
+ * Lovable Cloud bật "yêu cầu mật khẩu hiện tại khi đổi mật khẩu", nên phải nhập mật khẩu hiện tại:
+ * kiểm tra trước bằng cách đăng nhập lại, rồi gửi kèm current_password khi cập nhật.
+ */
 function DoiMatKhau() {
+  const { session } = useAuth();
   const [mo, setMo] = useState(false);
+  const [cu, setCu] = useState("");
   const [mk, setMk] = useState("");
   const [mk2, setMk2] = useState("");
   const [loi, setLoi] = useState("");
   const [busy, setBusy] = useState(false);
 
+  const dong = () => {
+    setMo(false);
+    setCu("");
+    setMk("");
+    setMk2("");
+    setLoi("");
+  };
+
   const luu = async () => {
+    if (!cu) {
+      setLoi("Vui lòng nhập mật khẩu hiện tại");
+      return;
+    }
     if (mk.length < 8) {
       setLoi("Mật khẩu mới tối thiểu 8 ký tự");
       return;
     }
     if (mk !== mk2) {
-      setLoi("Hai mật khẩu không khớp");
+      setLoi("Hai mật khẩu mới không khớp");
+      return;
+    }
+    if (mk === cu) {
+      setLoi("Mật khẩu mới phải khác mật khẩu hiện tại");
+      return;
+    }
+    const email = session?.user.email;
+    if (!email) {
+      setLoi("Không xác định được tài khoản, vui lòng đăng nhập lại");
       return;
     }
     setBusy(true);
-    const { error } = await supabase.auth.updateUser({ password: mk });
+    // 1) Kiểm tra mật khẩu hiện tại
+    const kiemTra = await supabase.auth.signInWithPassword({ email, password: cu });
+    if (kiemTra.error) {
+      setBusy(false);
+      setLoi("Mật khẩu hiện tại không đúng");
+      return;
+    }
+    // 2) Đổi mật khẩu, gửi kèm mật khẩu hiện tại theo yêu cầu của máy chủ
+    const { error } = await supabase.auth.updateUser({
+      password: mk,
+      current_password: cu,
+    } as Parameters<typeof supabase.auth.updateUser>[0]);
     setBusy(false);
     if (error) {
       setLoi("Đổi mật khẩu thất bại: " + error.message);
       return;
     }
     toast.success("Đã đổi mật khẩu");
-    setMo(false);
-    setMk("");
-    setMk2("");
-    setLoi("");
+    dong();
   };
 
   if (!mo)
@@ -330,19 +367,62 @@ function DoiMatKhau() {
       </Button>
     );
   return (
-    <div className="mt-5 space-y-2 rounded-xl border p-3">
-      <Label htmlFor="mk-moi" className="font-bold">Mật khẩu mới</Label>
-      <Input id="mk-moi" type="password" autoComplete="new-password" value={mk} maxLength={72} onChange={(e) => { setMk(e.target.value); setLoi(""); }} />
-      <Label htmlFor="mk-lai" className="font-bold">Nhập lại mật khẩu mới</Label>
-      <Input id="mk-lai" type="password" autoComplete="new-password" value={mk2} maxLength={72} onChange={(e) => { setMk2(e.target.value); setLoi(""); }} />
+    <div className="mt-5 space-y-3 rounded-xl border p-3">
+      <O id="mk-cu" nhan="Mật khẩu hiện tại" value={cu} autoComplete="current-password" onChange={(v) => { setCu(v); setLoi(""); }} />
+      <O id="mk-moi" nhan="Mật khẩu mới" value={mk} autoComplete="new-password" onChange={(v) => { setMk(v); setLoi(""); }} />
+      <O id="mk-lai" nhan="Nhập lại mật khẩu mới" value={mk2} autoComplete="new-password" onChange={(v) => { setMk2(v); setLoi(""); }} />
       {loi && <p className="text-sm font-semibold text-destructive">{loi}</p>}
       <div className="flex justify-end gap-2 pt-1">
-        <Button size="sm" variant="outline" onClick={() => setMo(false)}>
+        <Button size="sm" variant="outline" onClick={dong}>
           Hủy
         </Button>
         <Button size="sm" disabled={busy} className="bg-primary font-bold" onClick={luu}>
           {busy ? "Đang lưu..." : "Lưu mật khẩu"}
         </Button>
+      </div>
+    </div>
+  );
+}
+
+/** Ô mật khẩu có nút hiện / ẩn. */
+function O({
+  id,
+  nhan,
+  value,
+  onChange,
+  autoComplete,
+}: {
+  id: string;
+  nhan: string;
+  value: string;
+  onChange: (v: string) => void;
+  autoComplete: string;
+}) {
+  const [hien, setHien] = useState(false);
+  return (
+    <div className="space-y-1.5">
+      <Label htmlFor={id} className="font-bold">
+        {nhan}
+      </Label>
+      <div className="relative">
+        <Input
+          id={id}
+          type={hien ? "text" : "password"}
+          autoComplete={autoComplete}
+          value={value}
+          maxLength={72}
+          onChange={(e) => onChange(e.target.value)}
+          className="pr-10"
+        />
+        <button
+          type="button"
+          aria-label={hien ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
+          title={hien ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
+          onClick={() => setHien((v) => !v)}
+          className="absolute right-2 top-1/2 grid h-7 w-7 -translate-y-1/2 place-items-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"
+        >
+          {hien ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+        </button>
       </div>
     </div>
   );
