@@ -23,6 +23,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { ConfirmDialog } from "@/components/common";
 import { cn } from "@/lib/utils";
 import { RichTextEditor } from "@/components/RichTextEditor";
+import { ChonNam } from "@/components/ChonNam";
 import { LUA_CHON_DON_VI } from "@/lib/so-do-to-chuc";
 import { anhTrongBai, lamSachHtml, vanBanThuan } from "@/lib/noi-dung";
 
@@ -468,13 +469,7 @@ export function ClubForm({
         </div>
         <div className="space-y-1.5">
           <Label>{NHAN_TRUONG_CLB.NamThanhLap}</Label>
-          <Input
-            type="number"
-            min={1900}
-            max={2200}
-            value={f.NamThanhLap ?? ""}
-            onChange={(e) => set("NamThanhLap", e.target.value ? Number(e.target.value) : null)}
-          />
+          <ChonNam value={f.NamThanhLap} onChange={(v) => set("NamThanhLap", v)} />
         </div>
         <div className="space-y-1.5">
           <Label>{NHAN_TRUONG_CLB.DonViTrucThuoc}</Label>
