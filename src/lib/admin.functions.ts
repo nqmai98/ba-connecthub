@@ -186,3 +186,40 @@ export const deleteClub = createServerFn({ method: "POST" })
     }
     return { ok: true as const, removedAccounts: xoaTaiKhoan ? 1 : 0 };
   });
+
+/**
+ * Xóa tài khoản người dùng khỏi BAV CLUBS (chỉ Quản trị viên):
+ *  - Xóa bản ghi trong hệ thống đăng nhập (auth.users); nguoi_dung và dữ liệu cá nhân đi kèm
+ *    (theo dõi CLB, yêu thích sự kiện, thông báo, nhật ký) bị xóa theo nhờ ON DELETE CASCADE.
+ *  - KHÔNG ảnh hưởng tài khoản Google của sinh viên: nếu họ đăng nhập lại bằng Google sẽ được
+ *    tạo một tài khoản Sinh viên mới, trống. Muốn chặn hẳn thì dùng "Khóa" thay vì xóa.
+ *  - Không cho xóa chính mình và không cho xóa Quản trị viên (lịch sử kiểm duyệt gắn với họ).
+ *  - Xóa tài khoản Đại diện CLB: CLB vẫn giữ nguyên, chỉ chuyển sang "chưa có tài khoản".
+ */
+export const deleteUserAccount = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ maNguoiDung: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { data: isAdmin } = await context.supabase.rpc("la_quan_tri_vien", {
+      _ma_nguoi_dung: context.userId,
+    });
+    if (!isAdmin) throw new Error("Bạn không có quyền thực hiện thao tác này");
+    if (data.maNguoiDung === context.userId) throw new Error("Không thể tự xóa tài khoản của chính mình");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const u = await supabaseAdmin
+      .from("nguoi_dung")
+      .select("MaNguoiDung, vai_tro(TenVaiTro)")
+      .eq("MaNguoiDung", data.maNguoiDung)
+      .maybeSingle();
+    const row = u.data as unknown as { vai_tro: { TenVaiTro: string } | null } | null;
+    if (!row) throw new Error("Không tìm thấy tài khoản (có thể đã được xóa)");
+    if (row.vai_tro?.TenVaiTro === "QuanTriVien")
+      throw new Error("Không thể xóa tài khoản Quản trị viên. Hãy đổi vai trò hoặc khóa tài khoản.");
+
+    const { error } = await supabaseAdmin.auth.admin.deleteUser(data.maNguoiDung);
+    if (error) throw new Error("Xóa tài khoản thất bại: " + error.message);
+    // Phòng trường hợp bản ghi nguoi_dung chưa bị xóa theo (không có cascade)
+    await supabaseAdmin.from("nguoi_dung").delete().eq("MaNguoiDung", data.maNguoiDung);
+    return { ok: true as const };
+  });

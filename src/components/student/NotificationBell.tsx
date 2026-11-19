@@ -4,7 +4,7 @@ import { useState } from "react";
 import { formatDateTime, useDanhDauDaDoc, useThongBao, type ThongBaoCuaToi } from "@/lib/data";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
-import { NoiDungThongBao } from "@/components/ThongBaoList";
+import { AnhThuNho, NoiDungThongBao, useAnhThongBao } from "@/components/ThongBaoList";
 
 /**
  * Chuông thông báo thay cho mục "Thông báo" trên thanh điều hướng.
@@ -23,6 +23,7 @@ export function NotificationBell({
   const [open, setOpen] = useState(false);
   const unread = data?.filter((n) => !n.DaDoc).length ?? 0;
   const latest = (data ?? []).slice(0, 5);
+  const anhThongBao = useAnhThongBao(latest);
 
   const openItem = async (n: ThongBaoCuaToi) => {
     setOpen(false);
@@ -72,18 +73,14 @@ export function NotificationBell({
                     !n.DaDoc && "bg-accent/10",
                   )}
                 >
-                  <span
-                    className={cn(
-                      "mt-1.5 h-2 w-2 shrink-0 rounded-full",
-                      n.DaDoc ? "bg-transparent" : "bg-destructive",
-                    )}
-                  />
+                  <AnhThuNho n={n} anh={anhThongBao.get(n.MaThongBao)} nho />
                   <span className="min-w-0 flex-1">
                     <NoiDungThongBao n={n} gon />
                     <span className="mt-1 block text-xs font-semibold text-muted-foreground">
                       {formatDateTime(n.ThoiGianTao)}
                     </span>
                   </span>
+                  {!n.DaDoc && <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-destructive" aria-label="Chưa đọc" />}
                 </button>
               </li>
             ))}

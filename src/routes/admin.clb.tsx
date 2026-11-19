@@ -380,7 +380,7 @@ function ThemTaiKhoanDialog({
 }) {
   const create = useServerFn(createClubAccount);
   const qc = useQueryClient();
-  const chuaCoTK = clubs.filter((c) => !taiKhoan[c.MaCLB]);
+  // "co-san" chỉ dùng khi bấm "Chưa có tài khoản – cấp ngay" ở một dòng CLB cụ thể
   const [cheDo, setCheDo] = useState<"moi" | "co-san">("moi");
   const [maCLB, setMaCLB] = useState<number | null>(null);
   const [form, setForm] = useState({ clubName: "", username: "", password: "" });
@@ -457,7 +457,9 @@ function ThemTaiKhoanDialog({
     <Dialog open={!!mo} onOpenChange={(o) => !o && onClose()}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{done ? "Tạo tài khoản thành công" : "Thêm tài khoản CLB"}</DialogTitle>
+          <DialogTitle>
+            {done ? "Tạo tài khoản thành công" : cheDo === "co-san" ? "Cấp tài khoản cho CLB" : "Thêm tài khoản CLB"}
+          </DialogTitle>
         </DialogHeader>
         {done ? (
           <div className="space-y-3">
@@ -491,28 +493,6 @@ function ThemTaiKhoanDialog({
         ) : (
           <>
             <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-1 rounded-xl bg-secondary p-1">
-                {(
-                  [
-                    ["moi", "CLB mới"],
-                    ["co-san", `CLB đã có (${chuaCoTK.length})`],
-                  ] as const
-                ).map(([v, ten]) => (
-                  <button
-                    key={v}
-                    type="button"
-                    disabled={v === "co-san" && !chuaCoTK.length}
-                    onClick={() => setCheDo(v)}
-                    className={cn(
-                      "rounded-lg py-2 text-sm font-bold transition disabled:opacity-40",
-                      cheDo === v ? "bg-primary text-primary-foreground" : "text-primary",
-                    )}
-                  >
-                    {ten}
-                  </button>
-                ))}
-              </div>
-
               {cheDo === "moi" ? (
                 <div className="space-y-1.5">
                   <Label>Tên đầy đủ CLB *</Label>
@@ -525,19 +505,10 @@ function ThemTaiKhoanDialog({
                 </div>
               ) : (
                 <div className="space-y-1.5">
-                  <Label>Chọn CLB chưa có tài khoản *</Label>
-                  <select
-                    className="h-10 w-full rounded-md border bg-background px-3 text-sm"
-                    value={maCLB ?? ""}
-                    onChange={(e) => setMaCLB(e.target.value ? Number(e.target.value) : null)}
-                  >
-                    <option value="">-- Chọn CLB --</option>
-                    {chuaCoTK.map((c) => (
-                      <option key={c.MaCLB} value={c.MaCLB}>
-                        {c.TenCLB}
-                      </option>
-                    ))}
-                  </select>
+                  <Label>Câu lạc bộ</Label>
+                  <div className="flex h-10 items-center rounded-md border bg-muted px-3 text-sm font-bold">
+                    {clbChon?.TenCLB}
+                  </div>
                 </div>
               )}
 
@@ -658,18 +629,22 @@ function DanhMucLinhVucDialog({
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-xl">
+      {/* Khung cố định chiều cao: danh sách cuộn bên trong, ô thêm mới luôn nằm ở đáy */}
+      <DialogContent className="flex max-h-[85vh] w-[calc(100vw-2rem)] max-w-2xl flex-col gap-4 overflow-hidden p-5 sm:p-6">
         <DialogHeader>
           <DialogTitle>Danh mục lĩnh vực</DialogTitle>
+          <p className="text-sm font-semibold text-muted-foreground">
+            {(linhVuc ?? []).length} lĩnh vực · lĩnh vực đang có CLB sử dụng thì không xóa được
+          </p>
         </DialogHeader>
-        <ul className="divide-y rounded-xl border">
+        <ul className="min-h-0 flex-1 divide-y overflow-y-auto rounded-xl border">
           {(linhVuc ?? []).map((lv) => {
             const dangSua = sua[lv.MaLinhVuc];
             const so = dem(lv.MaLinhVuc);
             return (
               <li key={lv.MaLinhVuc} className="p-3">
                 {dangSua ? (
-                  <div className="space-y-2">
+                  <div className="grid gap-2 sm:grid-cols-[1fr_1.4fr_auto] sm:items-center">
                     <Input
                       value={dangSua.ten}
                       maxLength={100}
@@ -692,10 +667,10 @@ function DanhMucLinhVucDialog({
                 ) : (
                   <div className="flex items-center gap-3">
                     <div className="min-w-0 flex-1">
-                      <div className="font-bold">{lv.TenLinhVuc}</div>
-                      {lv.MoTa && <div className="truncate text-xs text-muted-foreground">{lv.MoTa}</div>}
+                      <div className="break-words font-bold">{lv.TenLinhVuc}</div>
+                      {lv.MoTa && <div className="line-clamp-2 text-xs text-muted-foreground">{lv.MoTa}</div>}
                     </div>
-                    <span className="rounded-full bg-secondary px-2 py-0.5 text-xs font-bold text-secondary-foreground">
+                    <span className="shrink-0 whitespace-nowrap rounded-full bg-secondary px-2 py-0.5 text-xs font-bold text-secondary-foreground">
                       {so} CLB
                     </span>
                     <Button
@@ -723,12 +698,12 @@ function DanhMucLinhVucDialog({
             );
           })}
         </ul>
-        <div className="space-y-2 rounded-xl border border-dashed p-3">
+        <div className="shrink-0 rounded-xl border border-dashed bg-muted/40 p-3">
           <Label className="font-bold">Thêm lĩnh vực mới</Label>
-          <Input value={moi.ten} maxLength={100} placeholder="Tên lĩnh vực" onChange={(e) => setMoi({ ...moi, ten: e.target.value })} />
-          <Input value={moi.moTa} placeholder="Mô tả (không bắt buộc)" onChange={(e) => setMoi({ ...moi, moTa: e.target.value })} />
-          <div className="flex justify-end">
-            <Button size="sm" disabled={busy} onClick={them} className="bg-primary font-bold">
+          <div className="mt-2 grid gap-2 sm:grid-cols-[1fr_1.4fr_auto]">
+            <Input value={moi.ten} maxLength={100} placeholder="Tên lĩnh vực" onChange={(e) => setMoi({ ...moi, ten: e.target.value })} />
+            <Input value={moi.moTa} placeholder="Mô tả (không bắt buộc)" onChange={(e) => setMoi({ ...moi, moTa: e.target.value })} />
+            <Button disabled={busy} onClick={them} className="bg-primary font-bold">
               <Plus className="h-4 w-4" /> Thêm
             </Button>
           </div>

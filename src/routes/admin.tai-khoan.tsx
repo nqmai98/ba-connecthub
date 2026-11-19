@@ -1,4 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
+import { Trash2 } from "lucide-react";
+import { deleteUserAccount } from "@/lib/admin.functions";
+import { ConfirmDialog } from "@/components/common";
+import { FilterChip } from "@/components/student/Filters";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -46,6 +51,9 @@ function Accounts() {
   const { maNguoiDung } = useAuth();
   const qc = useQueryClient();
   const [search, setSearch] = useState("");
+  const [vaiTroLoc, setVaiTroLoc] = useState<string | null>(null);
+  const [xoa, setXoa] = useState<DongTaiKhoan | null>(null);
+  const xoaTaiKhoan = useServerFn(deleteUserAccount);
 
   const vaiTroList = useQuery({
     queryKey: ["vai_tro"],
@@ -102,7 +110,19 @@ function Accounts() {
     qc.invalidateQueries({ queryKey: ["admin-accounts"] });
   };
 
-  const rows = useMemo(() => {
+  const xacNhanXoa = async (u: DongTaiKhoan) => {
+    try {
+      await xoaTaiKhoan({ data: { maNguoiDung: u.MaNguoiDung } });
+      toast.success("Đã xóa tài khoản " + (u.HoTen || u.TenDangNhap || u.EmailTruong));
+      qc.invalidateQueries({ queryKey: ["admin-accounts"] });
+      qc.invalidateQueries({ queryKey: ["dai-dien-clb"] });
+    } catch (e) {
+      toast.error((e as Error).message);
+    }
+  };
+
+  // Lọc theo từ khóa trước, rồi theo vai trò (để số đếm trên từng vai trò khớp với từ khóa)
+  const theoTuKhoa = useMemo(() => {
     const k = search.trim().toLowerCase();
     if (!k) return q.data ?? [];
     return (q.data ?? []).filter((u) =>
@@ -112,11 +132,11 @@ function Accounts() {
         .includes(k),
     );
   }, [q.data, search]);
+  const rows = vaiTroLoc ? theoTuKhoa.filter((u) => u.vai_tro?.TenVaiTro === vaiTroLoc) : theoTuKhoa;
 
   return (
     <Page
       title="Quản lý tài khoản"
-      subtitle="Mỗi tài khoản có đúng một vai trò theo thiết kế phân quyền"
       actions={
         <Input
           className="w-72"
@@ -126,10 +146,28 @@ function Accounts() {
         />
       }
     >
+      {/* Lọc theo vai trò */}
+      <div className="mb-4 flex flex-wrap items-center gap-2">
+        <span className="mr-1 text-sm font-bold text-muted-foreground">Vai trò</span>
+        <FilterChip active={!vaiTroLoc} count={theoTuKhoa.length} onClick={() => setVaiTroLoc(null)}>
+          Tất cả
+        </FilterChip>
+        {(vaiTroList.data ?? []).map((v) => (
+          <FilterChip
+            key={v.MaVaiTro}
+            active={vaiTroLoc === v.TenVaiTro}
+            count={theoTuKhoa.filter((u) => u.vai_tro?.TenVaiTro === v.TenVaiTro).length}
+            onClick={() => setVaiTroLoc(vaiTroLoc === v.TenVaiTro ? null : v.TenVaiTro)}
+          >
+            {NHAN_VAI_TRO[v.TenVaiTro as TenVaiTro] ?? v.TenVaiTro}
+          </FilterChip>
+        ))}
+      </div>
+
       {q.isLoading ? (
         <GridSkeleton n={3} />
       ) : !rows.length ? (
-        <Empty text="Không có tài khoản" />
+        <Empty text="Không có tài khoản phù hợp" />
       ) : (
         <div className="overflow-x-auto rounded-2xl border bg-card">
           <table className="w-full min-w-[900px] text-sm">
@@ -179,17 +217,30 @@ function Accounts() {
                       <span className="font-bold text-success">Hoạt động</span>
                     )}
                   </td>
-                  <td className="p-3 text-right">
+                  <td className="p-3">
                     {u.MaNguoiDung !== maNguoiDung && (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() =>
-                          doiTrangThai(u.MaNguoiDung, u.TrangThaiTaiKhoan !== "BiKhoa")
-                        }
-                      >
-                        {u.TrangThaiTaiKhoan === "BiKhoa" ? "Mở khóa" : "Khóa"}
-                      </Button>
+                      <div className="flex justify-end gap-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() =>
+                            doiTrangThai(u.MaNguoiDung, u.TrangThaiTaiKhoan !== "BiKhoa")
+                          }
+                        >
+                          {u.TrangThaiTaiKhoan === "BiKhoa" ? "Mở khóa" : "Khóa"}
+                        </Button>
+                        {u.vai_tro?.TenVaiTro !== "QuanTriVien" && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            aria-label={"Xóa tài khoản " + (u.HoTen || u.EmailTruong)}
+                            className="border-destructive/40 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                            onClick={() => setXoa(u)}
+                          >
+                            <Trash2 className="h-3.5 w-3.5" /> Xóa
+                          </Button>
+                        )}
+                      </div>
                     )}
                   </td>
                 </tr>
@@ -198,6 +249,19 @@ function Accounts() {
           </table>
         </div>
       )}
+      <ConfirmDialog
+        open={!!xoa}
+        onOpenChange={(o) => !o && setXoa(null)}
+        title={`Xóa tài khoản ${xoa?.HoTen || xoa?.TenDangNhap || xoa?.EmailTruong || ""}?`}
+        description={
+          xoa?.vai_tro?.TenVaiTro === "DaiDienCLB"
+            ? `Tài khoản đại diện sẽ bị xóa vĩnh viễn; CLB ${xoa?.cau_lac_bo?.TenCLB ?? ""} vẫn được giữ lại và có thể cấp tài khoản mới.`
+            : "Tài khoản và dữ liệu cá nhân trên BAV CLUBS (CLB đang theo dõi, sự kiện yêu thích, thông báo) sẽ bị xóa vĩnh viễn. Tài khoản Google của sinh viên không bị ảnh hưởng: nếu họ đăng nhập lại sẽ có tài khoản mới trống. Muốn chặn hẳn, hãy dùng “Khóa”."
+        }
+        confirmText="Xóa vĩnh viễn"
+        destructive
+        onConfirm={() => xoa && xacNhanXoa(xoa)}
+      />
     </Page>
   );
 }
