@@ -10,7 +10,7 @@ import {
   type KhoiToChuc,
   type NhomToChuc,
 } from "@/lib/data";
-import { DON_VI_MAC_DINH, maNhomCuaCLB, useSoDoToChuc } from "@/lib/so-do-to-chuc";
+import { DON_VI_MAC_DINH, khoiCuaCLB, maNhomCuaCLB, useSoDoToChuc } from "@/lib/so-do-to-chuc";
 import { ClubCard, Empty, EventCard, GridSkeleton } from "@/components/common";
 import { HotEventsBanner } from "@/components/student/HotEventsBanner";
 import { ClubSearchBox } from "@/components/student/Filters";
@@ -123,10 +123,8 @@ function KhoiCard({
   clubs: CauLacBo[];
 }) {
   const maNhom = new Set(nhom.map((n) => n.MaNhom));
-  const tong = clubs.filter((c) => {
-    const ma = maNhomCuaCLB(c, DON_VI_MAC_DINH);
-    return ma != null && maNhom.has(ma);
-  }).length;
+  // Tổng theo khối (ô "Đơn vị trực thuộc"), gồm cả CLB chưa xếp được vào ô xanh nào
+  const tong = clubs.filter((c) => khoiCuaCLB(c, DON_VI_MAC_DINH) === khoi).length;
   return (
     <div className="rounded-2xl border bg-card p-4">
       <Link

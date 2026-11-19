@@ -2,7 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useMemo } from "react";
 import { z } from "zod";
 import { NHAN_KHOI, useCauLacBo, type KhoiToChuc } from "@/lib/data";
-import { maNhomCuaCLB, useSoDoToChuc } from "@/lib/so-do-to-chuc";
+import { khoiCuaCLB, maNhomCuaCLB, useSoDoToChuc } from "@/lib/so-do-to-chuc";
 import { ClubCard, Empty, GridSkeleton, Page } from "@/components/common";
 import { Button } from "@/components/ui/button";
 import { FilterChip, FilterGroup, ResultBar, SearchBar, boDau } from "@/components/student/Filters";
@@ -57,11 +57,10 @@ function ClubList() {
     () =>
       (clubs ?? [])
         .filter((c) => c.TrangThaiHoatDong !== "NgungHoatDong")
-        .map((c) => ({ ...c, MaNhom: maNhomCuaCLB(c, dsNhom) })),
+        .map((c) => ({ ...c, MaNhom: maNhomCuaCLB(c, dsNhom), Khoi: khoiCuaCLB(c, dsNhom) })),
     [clubs, dsNhom],
   );
-  const khoiCua = (maNhom: number | null | undefined) =>
-    maNhom != null ? nhomTheoMa.get(maNhom)?.Khoi : undefined;
+
 
   // Bước 1: từ khóa
   const theoTuKhoa = useMemo(() => {
@@ -78,9 +77,9 @@ function ClubList() {
   const theoKhoi = useMemo(
     () =>
       theoTuKhoa.filter(
-        (c) => !khoi || (c.MaNhom != null && nhomTheoMa.get(c.MaNhom)?.Khoi === khoi),
+        (c) => !khoi || c.Khoi === khoi,
       ),
-    [theoTuKhoa, khoi, nhomTheoMa],
+    [theoTuKhoa, khoi],
   );
   // Bước 3: cấp 2 (ô xanh trong sơ đồ)
   const theoNhom = useMemo(
@@ -120,7 +119,7 @@ function ClubList() {
                 <FilterChip
                   key={k}
                   active={khoi === k}
-                  count={theoTuKhoa.filter((c) => khoiCua(c.MaNhom) === k).length}
+                  count={theoTuKhoa.filter((c) => c.Khoi === k).length}
                   onClick={() => chonKhoi(khoi === k ? undefined : k)}
                 >
                   {NHAN_KHOI[k]}

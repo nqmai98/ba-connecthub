@@ -24,7 +24,7 @@ import {
 } from "@/components/ui/dialog";
 import { useViecChoXuLy } from "@/components/admin/AdminLayout";
 import { NHAN_KHOI, useCauLacBo, type KhoiToChuc } from "@/lib/data";
-import { maNhomCuaCLB, useSoDoToChuc } from "@/lib/so-do-to-chuc";
+import { khoiCuaCLB, maNhomCuaCLB, useSoDoToChuc } from "@/lib/so-do-to-chuc";
 import { cn } from "@/lib/utils";
 import { danhSachNamHoc, khoangHocKi, namHocCua, NHAN_HOC_KI, type HocKi } from "@/lib/hoc-ki";
 import { BoLocHocKi } from "@/components/BoLocHocKi";
@@ -160,7 +160,20 @@ function Dashboard() {
       baiGanDay: cl.reduce((s, c) => s + tongTheoCLB(c.MaCLB), 0),
     };
   });
-  const chuaPhanLoai = clbKemNhom.filter((c) => c.MaNhom == null);
+  // CLB đã chọn Đoàn / Hội nhưng chưa xếp được vào ô xanh nào -> dòng "Đơn vị khác" của khối đó
+  (Object.keys(NHAN_KHOI) as KhoiToChuc[]).forEach((k, i) => {
+    const cl = clbKemNhom.filter((c) => c.MaNhom == null && khoiCuaCLB(c, dsNhom) === k);
+    if (cl.length)
+      donVi.push({
+        MaNhom: -1 - i,
+        Khoi: k,
+        TenNhom: "Đơn vị khác",
+        ThuTu: 99,
+        soCLB: cl.length,
+        baiGanDay: cl.reduce((s2, c) => s2 + tongTheoCLB(c.MaCLB), 0),
+      });
+  });
+  const chuaPhanLoai = clbKemNhom.filter((c) => c.MaNhom == null && khoiCuaCLB(c, dsNhom) == null);
   const maxBai = Math.max(1, ...donVi.map((x) => x.baiGanDay));
 
   // ---- Top CLB & CLB im lặng ----
@@ -294,7 +307,11 @@ function Dashboard() {
                     .filter((x) => x.Khoi === k)
                     .map((x) => (
                       <li key={x.MaNhom} title={`${x.TenNhom}: ${x.soCLB} CLB, ${x.baiGanDay} bài viết và sự kiện`}>
-                        <Link to="/admin/clb" search={{ khoi: k, nhom: x.MaNhom }} className="group block">
+                        <Link
+                          to="/admin/clb"
+                          search={x.MaNhom > 0 ? { khoi: k, nhom: x.MaNhom } : { khoi: k }}
+                          className="group block"
+                        >
                           <div className="flex items-baseline justify-between gap-2 text-sm">
                             <span className="truncate font-semibold group-hover:text-primary">{x.TenNhom}</span>
                             <span className="shrink-0 text-xs font-bold text-muted-foreground">
@@ -316,7 +333,7 @@ function Dashboard() {
           </div>
           {chuaPhanLoai.length > 0 && (
             <p className="mt-4 text-xs font-semibold text-muted-foreground">
-              {chuaPhanLoai.length} CLB chưa được xếp vào đơn vị nào –{" "}
+              {chuaPhanLoai.length} CLB thuộc “Khác” hoặc chưa chọn đơn vị trực thuộc –{" "}
               <Link to="/admin/clb" search={{ khoi: "ChuaPhanLoai" }} className="font-bold text-primary hover:underline">
                 xem danh sách
               </Link>

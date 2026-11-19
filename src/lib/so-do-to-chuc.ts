@@ -62,20 +62,48 @@ export function useSoDoToChuc() {
   return { data: DON_VI_MAC_DINH, isLoading: false };
 }
 
-/** Giá trị lưu vào cột cau_lac_bo.DonViTrucThuoc khi chọn từ danh sách, VD "Hội Sinh viên – Liên chi hội". */
+/** Lựa chọn ở ô "Đơn vị trực thuộc" (trang Thông tin CLB và form Quản lý CLB). */
+export const LUA_CHON_DON_VI = ["Đoàn Thanh niên", "Hội Sinh viên", "Khác"] as const;
+
+/** Giá trị kiểu cũ "Khối – Đơn vị" (bản trước cho chọn chi tiết tới ô xanh) vẫn được hiểu. */
 export const nhanDonVi = (n: NhomToChuc) => `${NHAN_KHOI[n.Khoi]} – ${n.TenNhom}`;
 
+/** Khối theo ô "Đơn vị trực thuộc": "Khac" = không thuộc Đoàn/Hội, undefined = chưa chọn. */
+export function khoiTuDonVi(dv: string | null | undefined): NhomToChuc["Khoi"] | "Khac" | undefined {
+  const v = dv?.trim().toLowerCase();
+  if (!v) return undefined;
+  if (v.startsWith("đoàn thanh niên")) return "DoanThanhNien";
+  if (v.startsWith("hội sinh viên")) return "HoiSinhVien";
+  if (v === "khác") return "Khac";
+  return undefined;
+}
+
 /**
- * Mã đơn vị của một CLB:
- *  1. theo "Đơn vị trực thuộc" CLB đã chọn trong trang Thông tin CLB (chính xác nhất);
- *  2. nếu chưa chọn, suy ra từ tên CLB theo QUY_TAC ở trên.
+ * Đơn vị (ô xanh cấp 2) của một CLB:
+ *  - giá trị kiểu cũ "Khối – Đơn vị" khớp chính xác -> dùng luôn;
+ *  - còn lại suy ra từ tên CLB theo QUY_TAC, nhưng phải cùng khối với "Đơn vị trực thuộc" đã chọn;
+ *  - chọn "Khác" -> không thuộc đơn vị nào.
  */
 export function maNhomCuaCLB(c: CauLacBo, ds: NhomToChuc[]): number | null {
   const donVi = c.DonViTrucThuoc?.trim();
-  const theoDonVi = donVi ? ds.find((n) => nhanDonVi(n) === donVi) : undefined;
-  if (theoDonVi) return theoDonVi.MaNhom;
+  const chinhXac = donVi ? ds.find((n) => nhanDonVi(n) === donVi) : undefined;
+  if (chinhXac) return chinhXac.MaNhom;
+  const khoi = khoiTuDonVi(donVi);
+  if (khoi === "Khac") return null;
   const ten = boDau(c.TenCLB);
-  const quyTac = QUY_TAC.find((q) => q.tuKhoa.test(ten));
+  const quyTac = QUY_TAC.find((q) => (!khoi || q.khoi === khoi) && q.tuKhoa.test(ten));
   if (!quyTac) return null;
   return ds.find((n) => n.Khoi === quyTac.khoi && n.TenNhom === quyTac.tenNhom)?.MaNhom ?? null;
+}
+
+/**
+ * Khối (cấp 1) của một CLB: ưu tiên ô "Đơn vị trực thuộc" CLB tự chọn; nếu chưa chọn thì
+ * lấy theo đơn vị suy ra từ tên. null = "Khác" hoặc chưa phân loại.
+ */
+export function khoiCuaCLB(c: CauLacBo, ds: NhomToChuc[]): NhomToChuc["Khoi"] | null {
+  const k = khoiTuDonVi(c.DonViTrucThuoc);
+  if (k === "Khac") return null;
+  if (k) return k;
+  const ma = maNhomCuaCLB(c, ds);
+  return ma != null ? (ds.find((n) => n.MaNhom === ma)?.Khoi ?? null) : null;
 }

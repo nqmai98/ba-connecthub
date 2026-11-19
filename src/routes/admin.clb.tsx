@@ -15,7 +15,7 @@ import {
   type KhoiToChuc,
   type NhomToChuc,
 } from "@/lib/data";
-import { maNhomCuaCLB, useSoDoToChuc } from "@/lib/so-do-to-chuc";
+import { khoiCuaCLB, khoiTuDonVi, maNhomCuaCLB, useSoDoToChuc } from "@/lib/so-do-to-chuc";
 import { createClubAccount, deleteClub } from "@/lib/admin.functions";
 import { USERNAME_HINT, USERNAME_REGEX } from "@/lib/club-account";
 import { Card, ClubLogo, Empty, GridSkeleton, Page, RoleGate } from "@/components/common";
@@ -55,7 +55,7 @@ export const Route = createFileRoute("/admin/clb")({
   ),
 });
 
-type CLBKemNhom = CauLacBo & { MaNhom: number | null };
+type CLBKemNhom = CauLacBo & { MaNhom: number | null; Khoi: KhoiToChuc | null };
 
 /**
  * Quản lý CLB (PTTKHT Hình 14):
@@ -95,11 +95,10 @@ function ManageClubs() {
 
   const nhomTheoMa = useMemo(() => new Map(dsNhom.map((n) => [n.MaNhom, n])), [dsNhom]);
   const tatCa: CLBKemNhom[] = useMemo(
-    () => (clubs ?? []).map((c) => ({ ...c, MaNhom: maNhomCuaCLB(c, dsNhom) })),
+    () => (clubs ?? []).map((c) => ({ ...c, MaNhom: maNhomCuaCLB(c, dsNhom), Khoi: khoiCuaCLB(c, dsNhom) })),
     [clubs, dsNhom],
   );
-  const khoiCua = (c: CLBKemNhom) =>
-    c.MaNhom != null ? (nhomTheoMa.get(c.MaNhom)?.Khoi ?? null) : null;
+  const khoiCua = (c: CLBKemNhom) => c.Khoi;
 
   const theoTuKhoa = useMemo(() => {
     const k = boDau(q.trim());
@@ -108,7 +107,7 @@ function ManageClubs() {
       : tatCa;
   }, [tatCa, q, reps.data]);
   const theoKhoi = theoTuKhoa.filter((c) =>
-    !khoi ? true : khoi === "ChuaPhanLoai" ? c.MaNhom == null : khoiCua(c) === khoi,
+    !khoi ? true : khoi === "ChuaPhanLoai" ? c.Khoi == null : khoiCua(c) === khoi,
   );
   const list = theoKhoi.filter((c) => !nhom || c.MaNhom === nhom);
   const chuaCoTK = tatCa.filter((c) => !reps.data?.[c.MaCLB]).length;
@@ -126,8 +125,15 @@ function ManageClubs() {
         clubs: list.filter((c) => c.MaNhom === n.MaNhom),
       }))
       .filter((g) => g.clubs.length);
-    const chua = list.filter((c) => c.MaNhom == null);
-    if (chua.length) ds.push({ key: "chua", tieuDe: "Chưa phân loại", clubs: chua });
+    // Thuộc Đoàn / Hội nhưng chưa xếp được vào ô xanh nào
+    for (const k of Object.keys(NHAN_KHOI) as KhoiToChuc[]) {
+      const cl = list.filter((c) => c.MaNhom == null && c.Khoi === k);
+      if (cl.length) ds.push({ key: "khac-" + k, tieuDe: "Đơn vị khác", phu: NHAN_KHOI[k], clubs: cl });
+    }
+    const khac = list.filter((c) => c.Khoi == null && khoiTuDonVi(c.DonViTrucThuoc) === "Khac");
+    if (khac.length) ds.push({ key: "khac", tieuDe: "Khác (không thuộc Đoàn / Hội)", clubs: khac });
+    const chua = list.filter((c) => c.Khoi == null && khoiTuDonVi(c.DonViTrucThuoc) !== "Khac");
+    if (chua.length) ds.push({ key: "chua", tieuDe: "Chưa chọn đơn vị trực thuộc", clubs: chua });
     return ds;
   }, [list, dsNhom]);
 
@@ -174,10 +180,10 @@ function ManageClubs() {
           ))}
           <FilterChip
             active={khoi === "ChuaPhanLoai"}
-            count={theoTuKhoa.filter((c) => c.MaNhom == null).length}
+            count={theoTuKhoa.filter((c) => c.Khoi == null).length}
             onClick={() => dat({ khoi: khoi === "ChuaPhanLoai" ? undefined : "ChuaPhanLoai", nhom: undefined })}
           >
-            Chưa phân loại
+            Khác / chưa chọn
           </FilterChip>
         </FilterGroup>
         {khoi && khoi !== "ChuaPhanLoai" && (

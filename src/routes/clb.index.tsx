@@ -8,6 +8,7 @@ import {
   ClipboardList,
   ExternalLink,
   FileText,
+  Heart,
   Hourglass,
   Plus,
   Settings,
@@ -80,7 +81,12 @@ function Overview() {
     queryKey: ["tong-quan-clb", maCLB],
     enabled: !!maCLB,
     queryFn: async () => {
-      const [theoDoi, baiDang, yeuCau] = await Promise.all([
+      // Hàm luot_yeu_thich_clb (sql/0008) gọi không qua kiểu sinh sẵn để code vẫn chạy khi hàm chưa có
+      const goiRpc = supabase.rpc as unknown as (
+        fn: string,
+        args: Record<string, unknown>,
+      ) => Promise<{ data: { MaBaiDang: number; NgayYeuThich: string }[] | null; error: unknown }>;
+      const [theoDoi, baiDang, yeuCau, yeuThich] = await Promise.all([
         supabase.from("theo_doi_clb").select("NgayTheoDoi").eq("MaCLB", maCLB!),
         supabase
           .from("bai_dang")
@@ -89,11 +95,14 @@ function Overview() {
           )
           .eq("MaCLB", maCLB!),
         supabase.from("yeu_cau_cap_nhat").select("TrangThaiXuLy").eq("MaCLB", maCLB!),
+        goiRpc.call(supabase, "luot_yeu_thich_clb", { _ma_clb: maCLB! }),
       ]);
       return {
         theoDoi: (theoDoi.data ?? []).map((t) => t.NgayTheoDoi),
         bai: (baiDang.data ?? []) as unknown as BaiTK[],
         yeuCauCho: (yeuCau.data ?? []).filter((x) => x.TrangThaiXuLy === "ChoDuyet").length,
+        // null = hàm đếm lượt yêu thích chưa được tạo trên CSDL
+        yeuThich: yeuThich.error ? null : (yeuThich.data ?? []),
       };
     },
   });
@@ -116,7 +125,7 @@ function Overview() {
       </Page>
     );
 
-  const { theoDoi, bai, yeuCauCho } = q.data;
+  const { theoDoi, bai, yeuCauCho, yeuThich } = q.data;
   const now = Date.now();
   const [tu, den] = khoangHocKi(namHoc, hocKi);
   const tenKy = `${NHAN_HOC_KI[hocKi]} · ${namHoc}–${namHoc + 1}`;
@@ -131,6 +140,15 @@ function Overview() {
   const tinBaiKy = duyetKy.filter((b) => b.LoaiBaiDang !== "SuKien");
   const suKienKy = duyetKy.filter((b) => b.LoaiBaiDang === "SuKien");
   const theoDoiMoi = theoDoi.filter(trong).length;
+
+  // ---- Lượt yêu thích (sinh viên bấm ☆ Yêu thích sự kiện) ----
+  const yeuThichKy = yeuThich?.filter((y) => trong(y.NgayYeuThich)) ?? [];
+  const yeuThichTheoBai = new Map<number, number>();
+  (yeuThich ?? []).forEach((y) => yeuThichTheoBai.set(y.MaBaiDang, (yeuThichTheoBai.get(y.MaBaiDang) ?? 0) + 1));
+  const topYeuThich = bai
+    .filter((b) => yeuThichTheoBai.get(b.MaBaiDang))
+    .sort((a, b) => (yeuThichTheoBai.get(b.MaBaiDang) ?? 0) - (yeuThichTheoBai.get(a.MaBaiDang) ?? 0))
+    .slice(0, 3);
 
   // ---- Kiểm duyệt ----
   const daXuLy = baiKy.filter((b) => b.TrangThaiKiemDuyet !== "ChoDuyet");
@@ -222,8 +240,18 @@ function Overview() {
       )}
 
       {/* KPI */}
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
         <KPI icon={Users} nhan="Người theo dõi" so={theoDoi.length} phu={`+${theoDoiMoi} mới · ${NHAN_HOC_KI[hocKi]}`} />
+        <KPI
+          icon={Heart}
+          nhan="Lượt yêu thích"
+          so={yeuThich === null ? "—" : yeuThichKy.length}
+          phu={
+            yeuThich === null
+              ? "Cần bật hàm đếm trên CSDL"
+              : `${NHAN_HOC_KI[hocKi]} · tổng ${yeuThich.length} lượt`
+          }
+        />
         <KPI icon={FileText} nhan="Tin bài được duyệt" so={tinBaiKy.length} phu={tenKy} />
         <KPI icon={CalendarDays} nhan="Sự kiện được duyệt" so={suKienKy.length} phu={`${sapToi.length ? "Có" : "Chưa có"} sự kiện sắp diễn ra`} />
         <KPI
@@ -321,6 +349,12 @@ function Overview() {
                     <span className="mt-1 flex items-center gap-1.5 text-xs font-semibold text-muted-foreground">
                       <CalendarDays className="h-3.5 w-3.5 text-primary" />
                       {formatKhoangThoiGian(b.su_kien!.ThoiGianBatDau, b.su_kien!.ThoiGianKetThuc)}
+                      {yeuThich !== null && (
+                        <span className="ml-auto inline-flex items-center gap-1 text-accent-foreground">
+                          <Heart className="h-3.5 w-3.5 fill-accent text-accent" />
+                          {yeuThichTheoBai.get(b.MaBaiDang) ?? 0}
+                        </span>
+                      )}
                     </span>
                   </Link>
                 </li>
@@ -332,6 +366,25 @@ function Overview() {
               <Link to="/clb/dang-bai" className="font-bold text-primary hover:underline">
                 Đăng sự kiện mới
               </Link>
+            </div>
+          )}
+          {topYeuThich.length > 0 && (
+            <div className="mt-4 border-t pt-3">
+              <div className="mb-2 text-xs font-extrabold uppercase tracking-wide text-muted-foreground">
+                Được yêu thích nhiều nhất
+              </div>
+              <ol className="space-y-1.5">
+                {topYeuThich.map((b, i) => (
+                  <li key={b.MaBaiDang} className="flex items-center gap-2 text-sm">
+                    <span className="w-4 text-center text-xs font-extrabold text-muted-foreground">{i + 1}</span>
+                    <span className="line-clamp-1 flex-1 font-semibold">{b.TieuDe}</span>
+                    <span className="inline-flex items-center gap-1 text-xs font-bold">
+                      <Heart className="h-3.5 w-3.5 fill-accent text-accent" />
+                      {yeuThichTheoBai.get(b.MaBaiDang)}
+                    </span>
+                  </li>
+                ))}
+              </ol>
             </div>
           )}
           {choDuyet.length > 0 && (

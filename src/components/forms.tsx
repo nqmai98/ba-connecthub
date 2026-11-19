@@ -15,8 +15,6 @@ import {
   type LoaiBaiDang,
   type LoaiSuKien,
   type TruongCLBCoTheSua,
-  NHAN_KHOI,
-  type KhoiToChuc,
 } from "@/lib/data";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -25,7 +23,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { ConfirmDialog } from "@/components/common";
 import { cn } from "@/lib/utils";
 import { RichTextEditor } from "@/components/RichTextEditor";
-import { DON_VI_MAC_DINH, nhanDonVi } from "@/lib/so-do-to-chuc";
+import { LUA_CHON_DON_VI } from "@/lib/so-do-to-chuc";
 import { anhTrongBai, lamSachHtml, vanBanThuan } from "@/lib/noi-dung";
 
 function ImageField({
@@ -219,7 +217,7 @@ export function PostForm({
           value={f.NoiDung}
           loi={!!errs["NoiDung"]}
           onChange={(html) => setF((cu) => ({ ...cu, NoiDung: html }))}
-          placeholder="Viết nội dung bài đăng – định dạng chữ, chèn nhiều ảnh xen giữa bài như một trang tin..."
+          placeholder="Viết nội dung đăng bài..."
         />
       </div>
 
@@ -480,24 +478,20 @@ export function ClubForm({
         </div>
         <div className="space-y-1.5">
           <Label>{NHAN_TRUONG_CLB.DonViTrucThuoc}</Label>
-          {/* Chọn theo sơ đồ tổ chức Đoàn Thanh niên – Hội Sinh viên (giống bộ lọc bên Sinh viên) */}
+          {/* Đơn vị trực thuộc: Đoàn Thanh niên / Hội Sinh viên / Khác – quyết định khối trong bộ lọc Tổ chức */}
           <select
             className="h-10 w-full rounded-md border bg-background px-3 text-sm"
             value={f.DonViTrucThuoc ?? ""}
             onChange={(e) => set("DonViTrucThuoc", e.target.value || null)}
           >
             <option value="">-- Chọn đơn vị trực thuộc --</option>
-            {f.DonViTrucThuoc && !DON_VI_MAC_DINH.some((n) => nhanDonVi(n) === f.DonViTrucThuoc) && (
+            {f.DonViTrucThuoc && !(LUA_CHON_DON_VI as readonly string[]).includes(f.DonViTrucThuoc) && (
               <option value={f.DonViTrucThuoc}>{f.DonViTrucThuoc} (giá trị cũ)</option>
             )}
-            {(Object.keys(NHAN_KHOI) as KhoiToChuc[]).map((k) => (
-              <optgroup key={k} label={NHAN_KHOI[k]}>
-                {DON_VI_MAC_DINH.filter((n) => n.Khoi === k).map((n) => (
-                  <option key={n.MaNhom} value={nhanDonVi(n)}>
-                    {n.TenNhom}
-                  </option>
-                ))}
-              </optgroup>
+            {LUA_CHON_DON_VI.map((dv) => (
+              <option key={dv} value={dv}>
+                {dv}
+              </option>
             ))}
           </select>
         </div>
