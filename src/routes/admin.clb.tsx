@@ -10,12 +10,11 @@ import {
   NHAN_KHOI,
   NHAN_TRANG_THAI_HOAT_DONG,
   useCauLacBo,
-  useLinhVuc,
   type CauLacBo,
   type KhoiToChuc,
   type NhomToChuc,
 } from "@/lib/data";
-import { khoiCuaCLB, khoiTuDonVi, maNhomCuaCLB, useSoDoToChuc } from "@/lib/so-do-to-chuc";
+import { khoiCuaCLB, maNhomCuaCLB, useSoDoToChuc } from "@/lib/so-do-to-chuc";
 import { createClubAccount, deleteClub } from "@/lib/admin.functions";
 import { USERNAME_HINT, USERNAME_REGEX } from "@/lib/club-account";
 import { Card, ClubLogo, Empty, GridSkeleton, Page, RoleGate } from "@/components/common";
@@ -62,7 +61,7 @@ type CLBKemNhom = CauLacBo & { MaNhom: number | null; Khoi: KhoiToChuc | null };
  *  - Một nút duy nhất "Thêm tài khoản CLB": tạo tài khoản đại diện (kèm hồ sơ CLB mới nếu CLB chưa có).
  *    Thông tin chi tiết của CLB do đại diện tự cập nhật; Quản trị viên sửa được bất kỳ lúc nào.
  *  - Phân nhóm theo sơ đồ tổ chức Đoàn Thanh niên – Hội Sinh viên giống giao diện Sinh viên.
- *  - Quản lý danh mục lĩnh vực (bảng linh_vuc) – chức năng "quản lý danh mục" trong PTTKHT.
+ *  - Quản lý danh mục đơn vị trong sơ đồ tổ chức (bảng don_vi_to_chuc) – chức năng "quản lý danh mục".
  */
 function ManageClubs() {
   const { q = "", khoi, nhom } = Route.useSearch();
@@ -125,15 +124,9 @@ function ManageClubs() {
         clubs: list.filter((c) => c.MaNhom === n.MaNhom),
       }))
       .filter((g) => g.clubs.length);
-    // Thuộc Đoàn / Hội nhưng chưa xếp được vào ô xanh nào
-    for (const k of Object.keys(NHAN_KHOI) as KhoiToChuc[]) {
-      const cl = list.filter((c) => c.MaNhom == null && c.Khoi === k);
-      if (cl.length) ds.push({ key: "khac-" + k, tieuDe: "Đơn vị khác", phu: NHAN_KHOI[k], clubs: cl });
-    }
-    const khac = list.filter((c) => c.Khoi == null && khoiTuDonVi(c.DonViTrucThuoc) === "Khac");
-    if (khac.length) ds.push({ key: "khac", tieuDe: "Khác (không thuộc Đoàn / Hội)", clubs: khac });
-    const chua = list.filter((c) => c.Khoi == null && khoiTuDonVi(c.DonViTrucThuoc) !== "Khac");
-    if (chua.length) ds.push({ key: "chua", tieuDe: "Chưa chọn đơn vị trực thuộc", clubs: chua });
+    const khac = list.filter((c) => c.MaNhom == null);
+    if (khac.length)
+      ds.push({ key: "khac", tieuDe: "Khác / chưa xếp vào sơ đồ Đoàn – Hội", clubs: khac });
     return ds;
   }, [list, dsNhom]);
 
@@ -147,7 +140,7 @@ function ManageClubs() {
       actions={
         <div className="flex flex-wrap gap-2">
           <Button variant="outline" className="rounded-xl font-bold" onClick={() => setDanhMuc(true)}>
-            <ListTree className="h-4 w-4" /> Danh mục lĩnh vực
+            <ListTree className="h-4 w-4" /> Sơ đồ tổ chức
           </Button>
           <Button
             onClick={() => setThemTK({})}
@@ -289,7 +282,7 @@ function ManageClubs() {
         onClose={() => setToDelete(null)}
         onDeleted={(id) => setFresh((f) => (f === id ? null : f))}
       />
-      <DanhMucLinhVucDialog open={danhMuc} onClose={() => setDanhMuc(false)} clubs={tatCa} />
+      <DanhMucDonViDialog open={danhMuc} onClose={() => setDanhMuc(false)} clubs={tatCa} />
     </Page>
   );
 }
@@ -326,7 +319,7 @@ function DongCLB({
             )}
           </div>
           <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted-foreground">
-            {c.linh_vuc?.TenLinhVuc && <span>{c.linh_vuc.TenLinhVuc}</span>}
+            <span>{c.don_vi_to_chuc?.TenDonVi ?? "Khác"}</span>
             <span>· {NHAN_TRANG_THAI_HOAT_DONG[c.TrangThaiHoatDong]}</span>
             <span>·</span>
             {taiKhoan ? (
@@ -566,8 +559,12 @@ function ThemTaiKhoanDialog({
   );
 }
 
-/** Quản lý danh mục lĩnh vực (bảng linh_vuc) – PTTKHT: Quản trị viên quản lý danh mục. */
-function DanhMucLinhVucDialog({
+/**
+ * Quản lý danh mục đơn vị trong sơ đồ tổ chức Đoàn Thanh niên – Hội Sinh viên (bảng don_vi_to_chuc).
+ * Mặc định có 9 đơn vị theo sơ đồ; đổi tên đơn vị thì nhãn "Đơn vị trực thuộc" của các CLB tự cập nhật.
+ * Xóa đơn vị đang có CLB: các CLB đó chuyển về "Khác" (CSDL: on delete set null) – nên chặn trên giao diện.
+ */
+function DanhMucDonViDialog({
   open,
   onClose,
   clubs,
@@ -576,141 +573,164 @@ function DanhMucLinhVucDialog({
   onClose: () => void;
   clubs: CauLacBo[];
 }) {
-  const { data: linhVuc } = useLinhVuc();
+  const { data: dsDonVi } = useSoDoToChuc();
   const qc = useQueryClient();
-  const [moi, setMoi] = useState({ ten: "", moTa: "" });
-  const [sua, setSua] = useState<Record<number, { ten: string; moTa: string }>>({});
+  const [moi, setMoi] = useState<{ khoi: KhoiToChuc; ten: string }>({ khoi: "HoiSinhVien", ten: "" });
+  const [sua, setSua] = useState<Record<number, string>>({});
   const [busy, setBusy] = useState(false);
-  const dem = (ma: number) => clubs.filter((c) => c.MaLinhVuc === ma).length;
-  const lamMoi = () => qc.invalidateQueries({ queryKey: ["linh_vuc"] });
+  const dem = (ma: number) => clubs.filter((c) => c.MaDonVi === ma).length;
+  const lamMoi = () => {
+    qc.invalidateQueries({ queryKey: ["don_vi_to_chuc"] });
+    qc.invalidateQueries({ queryKey: ["cau_lac_bo"] });
+  };
+  const trung = (e: { message: string; code?: string }) => e.code === "23505" || e.message.includes("duplicate");
 
   const them = async () => {
     if (!moi.ten.trim()) {
-      toast.error("Vui lòng nhập tên lĩnh vực");
+      toast.error("Vui lòng nhập tên đơn vị");
       return;
     }
     setBusy(true);
+    const thuTu = Math.max(0, ...dsDonVi.filter((d) => d.Khoi === moi.khoi).map((d) => d.ThuTu)) + 1;
     const { error } = await supabase
-      .from("linh_vuc")
-      .insert({ TenLinhVuc: moi.ten.trim().slice(0, 100), MoTa: moi.moTa.trim() || null });
+      .from("don_vi_to_chuc")
+      .insert({ Khoi: moi.khoi, TenDonVi: moi.ten.trim().slice(0, 100), ThuTu: thuTu });
     setBusy(false);
     if (error) {
-      toast.error(error.message.includes("duplicate") ? "Lĩnh vực này đã tồn tại" : "Thêm thất bại: " + error.message);
+      toast.error(trung(error) ? "Đơn vị này đã có trong khối" : "Chưa thêm được đơn vị, vui lòng thử lại");
       return;
     }
-    toast.success("Đã thêm lĩnh vực");
-    setMoi({ ten: "", moTa: "" });
+    toast.success("Đã thêm đơn vị");
+    setMoi({ ...moi, ten: "" });
     lamMoi();
   };
 
   const luu = async (ma: number) => {
-    const v = sua[ma];
-    if (!v?.ten.trim()) {
-      toast.error("Tên lĩnh vực không được để trống");
+    const ten = sua[ma]?.trim();
+    if (!ten) {
+      toast.error("Tên đơn vị không được để trống");
       return;
     }
-    const { error } = await supabase
-      .from("linh_vuc")
-      .update({ TenLinhVuc: v.ten.trim().slice(0, 100), MoTa: v.moTa.trim() || null })
-      .eq("MaLinhVuc", ma);
+    const { error } = await supabase.from("don_vi_to_chuc").update({ TenDonVi: ten.slice(0, 100) }).eq("MaDonVi", ma);
     if (error) {
-      toast.error("Lưu thất bại: " + error.message);
+      toast.error(trung(error) ? "Tên này đã có trong khối" : "Chưa lưu được, vui lòng thử lại");
       return;
     }
     toast.success("Đã lưu");
     setSua(({ [ma]: _bo, ...rest }) => rest);
     lamMoi();
-    qc.invalidateQueries({ queryKey: ["cau_lac_bo"] });
   };
 
   const xoa = async (ma: number) => {
-    const { error } = await supabase.from("linh_vuc").delete().eq("MaLinhVuc", ma);
+    const { error } = await supabase.from("don_vi_to_chuc").delete().eq("MaDonVi", ma);
     if (error) {
-      toast.error("Không xóa được: lĩnh vực đang được CLB sử dụng");
+      toast.error("Chưa xóa được đơn vị, vui lòng thử lại");
       return;
     }
-    toast.success("Đã xóa lĩnh vực");
+    toast.success("Đã xóa đơn vị");
     lamMoi();
   };
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      {/* Khung cố định chiều cao: danh sách cuộn bên trong, ô thêm mới luôn nằm ở đáy */}
       <DialogContent className="flex max-h-[85vh] w-[calc(100vw-2rem)] max-w-2xl flex-col gap-4 overflow-hidden p-5 sm:p-6">
         <DialogHeader>
-          <DialogTitle>Danh mục lĩnh vực</DialogTitle>
+          <DialogTitle>Sơ đồ tổ chức Đoàn – Hội</DialogTitle>
           <p className="text-sm font-semibold text-muted-foreground">
-            {(linhVuc ?? []).length} lĩnh vực · lĩnh vực đang có CLB sử dụng thì không xóa được
+            {dsDonVi.length} đơn vị · đơn vị đang có CLB thì không xóa được
           </p>
         </DialogHeader>
-        <ul className="min-h-0 flex-1 divide-y overflow-y-auto rounded-xl border">
-          {(linhVuc ?? []).map((lv) => {
-            const dangSua = sua[lv.MaLinhVuc];
-            const so = dem(lv.MaLinhVuc);
-            return (
-              <li key={lv.MaLinhVuc} className="p-3">
-                {dangSua ? (
-                  <div className="grid gap-2 sm:grid-cols-[1fr_1.4fr_auto] sm:items-center">
-                    <Input
-                      value={dangSua.ten}
-                      maxLength={100}
-                      onChange={(e) => setSua({ ...sua, [lv.MaLinhVuc]: { ...dangSua, ten: e.target.value } })}
-                    />
-                    <Input
-                      value={dangSua.moTa}
-                      placeholder="Mô tả (không bắt buộc)"
-                      onChange={(e) => setSua({ ...sua, [lv.MaLinhVuc]: { ...dangSua, moTa: e.target.value } })}
-                    />
-                    <div className="flex justify-end gap-2">
-                      <Button size="sm" variant="outline" onClick={() => setSua(({ [lv.MaLinhVuc]: _bo, ...r }) => r)}>
-                        Hủy
-                      </Button>
-                      <Button size="sm" className="bg-primary font-bold" onClick={() => luu(lv.MaLinhVuc)}>
-                        <Save className="h-4 w-4" /> Lưu
-                      </Button>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-3">
-                    <div className="min-w-0 flex-1">
-                      <div className="break-words font-bold">{lv.TenLinhVuc}</div>
-                      {lv.MoTa && <div className="line-clamp-2 text-xs text-muted-foreground">{lv.MoTa}</div>}
-                    </div>
-                    <span className="shrink-0 whitespace-nowrap rounded-full bg-secondary px-2 py-0.5 text-xs font-bold text-secondary-foreground">
-                      {so} CLB
-                    </span>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      aria-label={"Sửa " + lv.TenLinhVuc}
-                      onClick={() => setSua({ ...sua, [lv.MaLinhVuc]: { ten: lv.TenLinhVuc, moTa: lv.MoTa ?? "" } })}
-                    >
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      disabled={so > 0}
-                      title={so > 0 ? "Đang có CLB thuộc lĩnh vực này" : undefined}
-                      aria-label={"Xóa " + lv.TenLinhVuc}
-                      className="text-destructive hover:text-destructive"
-                      onClick={() => xoa(lv.MaLinhVuc)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                )}
-              </li>
-            );
-          })}
-        </ul>
+        <div className="min-h-0 flex-1 space-y-4 overflow-y-auto">
+          {(Object.keys(NHAN_KHOI) as KhoiToChuc[]).map((k) => (
+            <section key={k}>
+              <h3 className="mb-1.5 text-sm font-extrabold uppercase tracking-wide text-primary">{NHAN_KHOI[k]}</h3>
+              <ul className="divide-y rounded-xl border">
+                {dsDonVi
+                  .filter((d) => d.Khoi === k)
+                  .map((d) => {
+                    const dangSua = sua[d.MaNhom];
+                    const so = dem(d.MaNhom);
+                    return (
+                      <li key={d.MaNhom} className="p-3">
+                        {dangSua !== undefined ? (
+                          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                            <Input
+                              aria-label="Tên đơn vị"
+                              value={dangSua}
+                              maxLength={100}
+                              autoFocus
+                              onChange={(e) => setSua({ ...sua, [d.MaNhom]: e.target.value })}
+                              onKeyDown={(e) => e.key === "Enter" && luu(d.MaNhom)}
+                            />
+                            <div className="flex justify-end gap-2">
+                              <Button size="sm" variant="outline" onClick={() => setSua(({ [d.MaNhom]: _bo, ...r }) => r)}>
+                                Hủy
+                              </Button>
+                              <Button size="sm" className="bg-primary font-bold" onClick={() => luu(d.MaNhom)}>
+                                <Save className="h-4 w-4" /> Lưu tên
+                              </Button>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-3">
+                            <div className="min-w-0 flex-1 break-words font-bold">{d.TenNhom}</div>
+                            <span className="shrink-0 whitespace-nowrap rounded-full bg-secondary px-2 py-0.5 text-xs font-bold text-secondary-foreground">
+                              {so} CLB
+                            </span>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              aria-label={"Đổi tên " + d.TenNhom}
+                              title="Đổi tên"
+                              onClick={() => setSua({ ...sua, [d.MaNhom]: d.TenNhom })}
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              disabled={so > 0}
+                              title={so > 0 ? "Đang có CLB thuộc đơn vị này" : "Xóa đơn vị"}
+                              aria-label={"Xóa " + d.TenNhom}
+                              className="text-destructive hover:text-destructive"
+                              onClick={() => xoa(d.MaNhom)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        )}
+                      </li>
+                    );
+                  })}
+              </ul>
+            </section>
+          ))}
+        </div>
         <div className="shrink-0 rounded-xl border border-dashed bg-muted/40 p-3">
-          <Label className="font-bold">Thêm lĩnh vực mới</Label>
-          <div className="mt-2 grid gap-2 sm:grid-cols-[1fr_1.4fr_auto]">
-            <Input value={moi.ten} maxLength={100} placeholder="Tên lĩnh vực" onChange={(e) => setMoi({ ...moi, ten: e.target.value })} />
-            <Input value={moi.moTa} placeholder="Mô tả (không bắt buộc)" onChange={(e) => setMoi({ ...moi, moTa: e.target.value })} />
+          <Label htmlFor="ten-don-vi-moi" className="font-bold">
+            Thêm đơn vị mới
+          </Label>
+          <div className="mt-2 grid gap-2 sm:grid-cols-[auto_1fr_auto]">
+            <select
+              aria-label="Khối"
+              className="h-10 rounded-md border bg-background px-3 text-sm"
+              value={moi.khoi}
+              onChange={(e) => setMoi({ ...moi, khoi: e.target.value as KhoiToChuc })}
+            >
+              {(Object.keys(NHAN_KHOI) as KhoiToChuc[]).map((k) => (
+                <option key={k} value={k}>
+                  {NHAN_KHOI[k]}
+                </option>
+              ))}
+            </select>
+            <Input
+              id="ten-don-vi-moi"
+              value={moi.ten}
+              maxLength={100}
+              onChange={(e) => setMoi({ ...moi, ten: e.target.value })}
+            />
             <Button disabled={busy} onClick={them} className="bg-primary font-bold">
-              <Plus className="h-4 w-4" /> Thêm
+              <Plus className="h-4 w-4" /> Thêm đơn vị
             </Button>
           </div>
         </div>

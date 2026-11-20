@@ -1,25 +1,33 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
-import { Calendar, ChevronLeft, ChevronRight, Flame, Heart, MapPin, Search, Users } from "lucide-react";
+import { Calendar, ChevronLeft, ChevronRight, Eye, Flame, Heart, MapPin, MessageCircle, Search, Users } from "lucide-react";
 import logo from "@/assets/bav-logo.png.asset.json";
-import { formatKhoangThoiGian, useSuKienNoiBat, type SuKienNoiBat } from "@/lib/data";
+import {
+  formatDateTime,
+  formatKhoangThoiGian,
+  NHAN_LOAI_BAI_DANG,
+  useBaiVietNoiBat,
+  type BaiVietNoiBat,
+} from "@/lib/data";
 import { FavoriteButton } from "@/components/common";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { vanBanThuan } from "@/lib/noi-dung";
 
-/** Thời gian mỗi slide (ms) trước khi tự lướt sang sự kiện tiếp theo. */
+/** Thời gian mỗi slide (ms) trước khi tự lướt sang bài tiếp theo. */
 const THOI_GIAN_SLIDE = 6000;
 
 /**
- * Banner trang chủ Sinh viên: tự động lướt qua 5–7 sự kiện nổi bật nhất.
- * Danh sách được hệ thống chọn tự động theo độ hot, không ai phải chỉnh tay.
+ * Banner trang chủ Sinh viên: tự động lướt qua 5–7 bài viết / sự kiện nổi bật nhất.
+ * Danh sách do CSDL chọn tự động theo lượt xem, lượt bình luận và lượt yêu thích
+ * (hàm bai_viet_noi_bat), không ai phải chỉnh tay.
  * - Dừng khi rê chuột / chạm vào banner, hoặc khi người dùng bật "giảm chuyển động".
  * - Có nút trước/sau, chấm chuyển trang, vuốt trên điện thoại, phím mũi tên.
  */
 export function HotEventsBanner() {
-  const { data: suKien, isLoading } = useSuKienNoiBat(7);
+  const { data, isLoading } = useBaiVietNoiBat(7);
+  const suKien = data ?? [];
   const [index, setIndex] = useState(0);
   const [paused, setPaused] = useState(false);
   const [reduceMotion, setReduceMotion] = useState(false);
@@ -55,7 +63,7 @@ export function HotEventsBanner() {
       <div
         role="region"
         aria-roledescription="carousel"
-        aria-label="Sự kiện nổi bật"
+        aria-label="Bài viết nổi bật"
         tabIndex={0}
         className="relative outline-none"
         onMouseEnter={() => setPaused(true)}
@@ -103,13 +111,13 @@ export function HotEventsBanner() {
 
         {n > 1 && (
           <div className="mt-6 flex items-center justify-between gap-4">
-            <div className="flex items-center gap-2" role="tablist" aria-label="Chọn sự kiện">
+            <div className="flex items-center gap-2" role="tablist" aria-label="Chọn bài viết">
               {suKien.map((e, i) => (
                 <button
                   key={e.MaBaiDang}
                   role="tab"
                   aria-selected={i === index}
-                  aria-label={`Sự kiện ${i + 1}: ${e.TieuDe}`}
+                  aria-label={`Bài ${i + 1}: ${e.TieuDe}`}
                   onClick={() => go(i)}
                   className={cn(
                     "relative h-2 overflow-hidden rounded-full bg-white/25 transition-all duration-500",
@@ -132,14 +140,14 @@ export function HotEventsBanner() {
             </div>
             <div className="flex gap-2">
               <button
-                aria-label="Sự kiện trước"
+                aria-label="Bài trước"
                 onClick={() => go(index - 1)}
                 className="grid h-10 w-10 place-items-center rounded-full border border-white/25 bg-white/10 text-white backdrop-blur transition hover:bg-white/20"
               >
                 <ChevronLeft className="h-5 w-5" />
               </button>
               <button
-                aria-label="Sự kiện tiếp theo"
+                aria-label="Bài tiếp theo"
                 onClick={() => go(index + 1)}
                 className="grid h-10 w-10 place-items-center rounded-full border border-white/25 bg-white/10 text-white backdrop-blur transition hover:bg-white/20"
               >
@@ -163,7 +171,8 @@ function BannerShell({ children }: { children: ReactNode }) {
   );
 }
 
-function Slide({ e, active, total }: { e: SuKienNoiBat; active: boolean; total: number }) {
+function Slide({ e, active, total }: { e: BaiVietNoiBat; active: boolean; total: number }) {
+  const sk = e.su_kien;
   return (
     <article
       aria-hidden={!active}
@@ -180,12 +189,10 @@ function Slide({ e, active, total }: { e: SuKienNoiBat; active: boolean; total: 
           <span className="inline-flex items-center gap-1.5 rounded-full bg-accent px-3 py-1 text-xs font-extrabold uppercase tracking-wide text-accent-foreground shadow-[0_0_24px_rgb(247_168_27/0.55)]">
             <Flame className="h-3.5 w-3.5" /> Nổi bật #{e.Hang}
           </span>
-          {e.LuotYeuThich > 0 && (
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-bold backdrop-blur">
-              <Heart className="h-3.5 w-3.5 fill-current text-accent" /> {e.LuotYeuThich} lượt quan tâm
-            </span>
-          )}
-          {e.TrangThaiDienRa === "DangDienRa" && (
+          <span className="rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-bold backdrop-blur">
+            {NHAN_LOAI_BAI_DANG[e.LoaiBaiDang]}
+          </span>
+          {sk?.TrangThaiDienRa === "DangDienRa" && (
             <span className="rounded-full bg-success px-3 py-1 text-xs font-bold text-success-foreground">
               Đang diễn ra
             </span>
@@ -202,12 +209,12 @@ function Slide({ e, active, total }: { e: SuKienNoiBat; active: boolean; total: 
         <ul className="mt-5 space-y-2 text-sm font-semibold text-white/90">
           <li className="flex items-start gap-2">
             <Calendar className="mt-0.5 h-4 w-4 shrink-0 text-accent" />
-            {formatKhoangThoiGian(e.ThoiGianBatDau, e.ThoiGianKetThuc)}
+            {sk ? formatKhoangThoiGian(sk.ThoiGianBatDau, sk.ThoiGianKetThuc) : `Đăng ${formatDateTime(e.NgayDang)}`}
           </li>
-          {e.DiaDiem && (
+          {sk?.DiaDiem && (
             <li className="flex items-start gap-2">
               <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-accent" />
-              <span className="line-clamp-1">{e.DiaDiem}</span>
+              <span className="line-clamp-1">{sk.DiaDiem}</span>
             </li>
           )}
           {e.cau_lac_bo && (
@@ -231,10 +238,18 @@ function Slide({ e, active, total }: { e: SuKienNoiBat; active: boolean; total: 
               </Link>
             </Button>
           )}
-          <div className="[&_button]:h-11 [&_button]:px-5">
-            <FavoriteButton maBaiDang={e.MaBaiDang} />
-          </div>
+          {sk && (
+            <div className="[&_button]:h-11 [&_button]:px-5">
+              <FavoriteButton maBaiDang={e.MaBaiDang} />
+            </div>
+          )}
         </div>
+
+        <dl className="mt-5 flex flex-wrap gap-x-5 gap-y-1 text-xs font-bold text-white/75">
+          <ChiSo icon={Eye} so={e.LuotXem} nhan="lượt xem" />
+          <ChiSo icon={MessageCircle} so={e.LuotBinhLuan} nhan="bình luận" />
+          {sk && <ChiSo icon={Heart} so={e.LuotYeuThich} nhan="lượt yêu thích" />}
+        </dl>
       </div>
 
       <div className="order-1 md:order-2">
@@ -258,7 +273,19 @@ function Slide({ e, active, total }: { e: SuKienNoiBat; active: boolean; total: 
   );
 }
 
-/** Hiển thị khi chưa có sự kiện nào sắp diễn ra. */
+function ChiSo({ icon: Icon, so, nhan }: { icon: typeof Eye; so: number; nhan: string }) {
+  return (
+    <div className="inline-flex items-center gap-1.5">
+      <Icon className="h-3.5 w-3.5 text-accent" aria-hidden />
+      <dt className="sr-only">{nhan}</dt>
+      <dd>
+        {so.toLocaleString("vi-VN")} <span aria-hidden>{nhan}</span>
+      </dd>
+    </div>
+  );
+}
+
+/** Hiển thị khi chưa có bài viết nào. */
 function IntroSlide() {
   return (
     <div className="grid items-center gap-8 md:grid-cols-[1fr_auto]">

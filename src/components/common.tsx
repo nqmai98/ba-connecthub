@@ -333,7 +333,7 @@ export function ClubCard({ club }: { club: CauLacBo }) {
         <h3 className="line-clamp-2 text-base leading-snug text-primary">{club.TenCLB}</h3>
         <div className="flex flex-wrap items-center gap-1.5">
           <span className="w-fit rounded-full bg-secondary px-2.5 py-0.5 text-xs font-bold text-secondary-foreground">
-            {club.linh_vuc?.TenLinhVuc ?? "Khác"}
+            {club.don_vi_to_chuc?.TenDonVi ?? "Khác"}
           </span>
           {club.TrangThaiHoatDong === "TamNgung" && (
             <span className="w-fit rounded-full bg-warning px-2.5 py-0.5 text-xs font-bold text-warning-foreground">

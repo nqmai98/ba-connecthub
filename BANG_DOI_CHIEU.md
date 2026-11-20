@@ -190,3 +190,39 @@ qua `theo_doi_clb`; trang `/admin/tai-khoan` phải chỉ rõ `cau_lac_bo!nguoi_
 
 Các lỗi ESLint còn lại đều nằm ở những file **tự sinh, không chỉnh sửa** (`src/integrations/supabase/*`)
 và đã tồn tại từ trước — bản `types.ts` gốc cũng báo 299 lỗi định dạng tương tự.
+
+---
+
+## 10. Migration 0009 — Tương tác bài viết và phân loại CLB theo sơ đồ Đoàn – Hội
+
+File: `drizzle/migrations/0009_tuong_tac_va_so_do_to_chuc.sql` (đã thêm vào `_journal.json`).
+
+### 10.1 Bỏ "lĩnh vực", thay bằng sơ đồ tổ chức
+
+| Trước | Sau |
+|---|---|
+| Bảng `linh_vuc` + `cau_lac_bo.MaLinhVuc NOT NULL` (phân loại Học thuật / Nghệ thuật / Thể thao… do người dùng tự đặt, không thống nhất) | **Xoá** bảng `linh_vuc` và cột `MaLinhVuc` |
+| `DonViTrucThuoc` là chuỗi tự do (“Đoàn Thanh niên”, “Hội Sinh viên”, “Khác”) | Bảng mới `don_vi_to_chuc (MaDonVi, Khoi, TenDonVi, MoTa, ThuTu)` + `cau_lac_bo.MaDonVi` (khoá ngoại, NULL = khác / chưa phân loại). `DonViTrucThuoc` nay do trigger **tự sinh** dạng “Hội Sinh viên – CLB cụm Học thuật” |
+
+Số bảng thiết kế vẫn là 13 (`don_vi_to_chuc` thay chỗ `linh_vuc`). Dữ liệu mặc định gồm 9 đơn vị theo sơ đồ:
+
+- **Đoàn Thanh niên:** Bộ phận hành chính · Đội trực thuộc · Ban chuyên môn · LCĐ, CĐ trực thuộc
+- **Hội Sinh viên:** CLB cụm Tình nguyện – Sở thích · Liên chi hội · CLB cụm Học thuật · CLB cụm Kỹ năng · Đội trực thuộc
+
+CLB hiện có được **tự xếp** vào đơn vị theo tên (hàm `doan_don_vi`, đã kiểm thử đúng cả 51 đơn vị trong sơ đồ);
+CLB tạo mới chưa chọn đơn vị cũng được đoán tự động. Quản trị viên sửa lại trong *Quản lý CLB* và quản lý danh
+sách đơn vị qua nút *Sơ đồ tổ chức*. Yêu cầu cập nhật của Đại diện CLB nay đề xuất `MaDonVi` thay vì `MaLinhVuc`.
+
+### 10.2 Bảng và hàm mới cho số liệu tương tác
+
+| Đối tượng | Mục đích |
+|---|---|
+| `luot_xem_bai_dang (MaLuotXem, MaBaiDang, MaNguoiDung NULL, ThoiGianXem)` | Mỗi lần mở bài đã duyệt; cùng tài khoản trong 30 phút chỉ tính 1 lượt |
+| `binh_luan (MaBinhLuan, MaBaiDang, MaNguoiDung, NoiDung ≤ 1000 ký tự, ThoiGianTao)` | Bình luận dưới bài; chỉ bài đã duyệt, tối đa 5 bình luận/phút; người viết, Đại diện CLB của bài và Quản trị viên được xoá |
+| `ghi_luot_xem(bai)` | Ghi lượt xem (gọi được cả khi chưa đăng nhập) |
+| `binh_luan_cua_bai(bai)` | Danh sách bình luận kèm tên người viết (bảng `nguoi_dung` bị RLS khoá) |
+| `bai_viet_noi_bat(gioi_han, so_ngay)` | Banner trang chủ: điểm = lượt xem + 5 × bình luận + 3 × yêu thích trong 30 ngày |
+| `dem_tuong_tac(ds_bai)` | Tổng lượt xem / bình luận / yêu thích của các bài |
+| `tuong_tac_clb(clb)` | Số liệu theo ngày cho trang *Tổng quan CLB* (chỉ Đại diện của CLB đó hoặc Quản trị viên) |
+
+Các hàm thống kê là `SECURITY DEFINER` và chỉ trả về **con số**, không lộ ai đã xem / yêu thích gì.

@@ -57,26 +57,11 @@ export const createClubAccount = createServerFn({ method: "POST" })
       if (dup.data)
         throw new Error("Đã có CLB trùng tên. Hãy cấp tài khoản từ danh sách CLB bên dưới");
 
-      // MaLinhVuc NOT NULL: CLB mới tạo nhanh được gán lĩnh vực "Khác", Quản trị viên sửa lại sau
-      const lv = await supabaseAdmin
-        .from("linh_vuc")
-        .select("MaLinhVuc")
-        .eq("TenLinhVuc", "Khác")
-        .maybeSingle();
-      let maLinhVuc = lv.data?.MaLinhVuc;
-      if (!maLinhVuc) {
-        const tao = await supabaseAdmin
-          .from("linh_vuc")
-          .insert({ TenLinhVuc: "Khác" })
-          .select("MaLinhVuc")
-          .single();
-        if (tao.error || !tao.data) throw new Error("Không tạo được lĩnh vực mặc định");
-        maLinhVuc = tao.data.MaLinhVuc;
-      }
-
+      // Đơn vị trong sơ đồ Đoàn – Hội được CSDL tự đoán theo tên CLB (trigger cau_lac_bo_don_vi_trg);
+      // Quản trị viên chỉnh lại trong Quản lý CLB nếu cần.
       const ins = await supabaseAdmin
         .from("cau_lac_bo")
-        .insert({ TenCLB: data.clubName, MaLinhVuc: maLinhVuc })
+        .insert({ TenCLB: data.clubName })
         .select("MaCLB")
         .single();
       if (ins.error || !ins.data)

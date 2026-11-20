@@ -121,7 +121,7 @@ export function FilterChip({
   );
 }
 
-/** Một nhóm bộ lọc có nhãn, ví dụ "Lĩnh vực", "Loại sự kiện". */
+/** Một nhóm bộ lọc có nhãn, ví dụ "Tổ chức", "Loại sự kiện". */
 export function FilterGroup({ label, children }: { label: string; children: ReactNode }) {
   return (
     <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
