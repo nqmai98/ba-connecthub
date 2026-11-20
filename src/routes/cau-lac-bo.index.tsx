@@ -13,7 +13,6 @@ const search = z.object({
   khoi: z.enum(["DoanThanhNien", "HoiSinhVien"]).optional(),
   /** Cấp 2: nhóm trong sơ đồ tổ chức */
   nhom: z.coerce.number().int().optional(),
-  linh_vuc: z.coerce.number().int().optional(),
 });
 
 type SearchCLB = z.infer<typeof search>;
@@ -68,7 +67,7 @@ function ClubList() {
     if (!k) return conHoatDong;
     return conHoatDong.filter((c) =>
       boDau(
-        `${c.TenCLB} ${c.GioiThieuNgan ?? ""} ${c.MoTa ?? ""} ${c.DonViTrucThuoc ?? ""} ${c.linh_vuc?.TenLinhVuc ?? ""}`,
+        `${c.TenCLB} ${c.GioiThieuNgan ?? ""} ${c.MoTa ?? ""} ${c.DonViTrucThuoc ?? ""} ${c.don_vi_to_chuc?.TenDonVi ?? ""}`,
       ).includes(k),
     );
   }, [conHoatDong, q]);

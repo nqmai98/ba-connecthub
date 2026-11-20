@@ -4,6 +4,8 @@ import { useQuery } from "@tanstack/react-query";
 import { Building2, CalendarClock, Facebook, Mail, Users } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import {
+  CHON_DON_VI,
+  NHAN_KHOI,
   NHAN_TRANG_THAI_HOAT_DONG,
   formatDateTime,
   useBaiDangCuaCLB,
@@ -51,7 +53,7 @@ function ClubDetail() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("cau_lac_bo")
-        .select("*, linh_vuc(TenLinhVuc)")
+        .select(`*, ${CHON_DON_VI}`)
         .eq("MaCLB", maCLB)
         .maybeSingle();
       if (error) throw error;
@@ -114,9 +116,15 @@ function ClubDetail() {
             <div className="min-w-0">
               <h1 className="text-2xl sm:text-3xl">{c.TenCLB}</h1>
               <div className="mt-1 flex flex-wrap items-center gap-2 text-sm font-semibold text-muted-foreground">
-                <span className="rounded-full bg-secondary px-2 py-0.5 font-bold text-secondary-foreground">
-                  {c.linh_vuc?.TenLinhVuc}
-                </span>
+                {c.don_vi_to_chuc && (
+                  <Link
+                    to="/cau-lac-bo"
+                    search={{ khoi: c.don_vi_to_chuc.Khoi, nhom: c.don_vi_to_chuc.MaDonVi }}
+                    className="rounded-full bg-secondary px-2 py-0.5 font-bold text-secondary-foreground hover:underline"
+                  >
+                    {NHAN_KHOI[c.don_vi_to_chuc.Khoi]} · {c.don_vi_to_chuc.TenDonVi}
+                  </Link>
+                )}
                 {c.TrangThaiHoatDong !== "DangHoatDong" && (
                   <span className="rounded-full bg-warning px-2 py-0.5 font-bold text-warning-foreground">
                     {NHAN_TRANG_THAI_HOAT_DONG[c.TrangThaiHoatDong]}
