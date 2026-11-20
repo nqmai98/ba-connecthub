@@ -71,6 +71,13 @@
       "when": 1795200000000,
       "tag": "0009_tuong_tac_va_so_do_to_chuc",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1795300000000,
+      "tag": "0010_nhap_so_do_to_chuc",
+      "breakpoints": true
     }
   ]
 }

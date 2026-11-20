@@ -16,6 +16,24 @@
 -- =====================================================================
 
 -- ---------------------------------------------------------------------
+-- 0. SAO LƯU TỰ ĐỘNG trước khi đổi lược đồ (bảng linh_vuc sẽ bị xoá ở mục E).
+--    Bản sao nằm trong schema riêng "sao_luu", không mở ra API nên trình duyệt không đọc được.
+--    Khôi phục: insert ... select * from sao_luu.<bang>_truoc_0009
+-- ---------------------------------------------------------------------
+
+create schema if not exists sao_luu;
+revoke all on schema sao_luu from public;
+create table if not exists sao_luu.linh_vuc_truoc_0009          as select * from public.linh_vuc;
+create table if not exists sao_luu.cau_lac_bo_truoc_0009        as select * from public.cau_lac_bo;
+create table if not exists sao_luu.nguoi_dung_truoc_0009        as select * from public.nguoi_dung;
+create table if not exists sao_luu.bai_dang_truoc_0009          as select * from public.bai_dang;
+create table if not exists sao_luu.su_kien_truoc_0009           as select * from public.su_kien;
+create table if not exists sao_luu.kiem_duyet_truoc_0009        as select * from public.kiem_duyet;
+create table if not exists sao_luu.yeu_cau_cap_nhat_truoc_0009  as select * from public.yeu_cau_cap_nhat;
+create table if not exists sao_luu.theo_doi_clb_truoc_0009      as select * from public.theo_doi_clb;
+create table if not exists sao_luu.yeu_thich_su_kien_truoc_0009 as select * from public.yeu_thich_su_kien;
+
+-- ---------------------------------------------------------------------
 -- A. LƯỢT XEM BÀI VIẾT
 -- ---------------------------------------------------------------------
 
