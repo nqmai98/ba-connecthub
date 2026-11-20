@@ -24,13 +24,16 @@ const TOI_DA = 1000;
  */
 export function KhuBinhLuan({ maBaiDang, choPhepGui }: { maBaiDang: number; choPhepGui: boolean }) {
   const { maNguoiDung, requireLogin, biKhoa } = useAuth();
-  const { data, isLoading } = useBinhLuan(maBaiDang);
+  const { data, isLoading, isError } = useBinhLuan(maBaiDang);
   const gui = useGuiBinhLuan(maBaiDang);
   const xoa = useXoaBinhLuan(maBaiDang);
   const [noiDung, setNoiDung] = useState("");
   const [canXoa, setCanXoa] = useState<BinhLuan | null>(null);
   const ds = data ?? [];
   const rong = !noiDung.trim();
+
+  // CSDL chưa có chức năng bình luận (chưa chạy migration 0009): ẩn khu bình luận
+  if (isError) return null;
 
   return (
     <section aria-labelledby="binh-luan" className="mt-8 rounded-3xl border bg-card p-5 sm:p-8">

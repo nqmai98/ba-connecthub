@@ -203,6 +203,20 @@ const CHON_CLB_TOM_TAT = "cau_lac_bo(MaCLB, TenCLB, LogoCLB)";
 /** Đơn vị trong sơ đồ tổ chức, nhúng kèm khi đọc cau_lac_bo. */
 export const CHON_DON_VI = "don_vi_to_chuc(MaDonVi, Khoi, TenDonVi)";
 
+/**
+ * Đọc cau_lac_bo kèm đơn vị trong sơ đồ tổ chức. Nếu CSDL chưa chạy migration 0009
+ * (chưa có bảng don_vi_to_chuc) thì đọc lại không kèm đơn vị, để trang vẫn hoạt động
+ * – CLB khi đó tạm hiện là "Khác" cho tới khi migration được áp dụng.
+ */
+export async function docCLBKemDonVi<T>(
+  truyVan: (cot: string) => PromiseLike<{ data: T | null; error: { message: string } | null }>,
+) {
+  const r = await truyVan(`*, ${CHON_DON_VI}`);
+  if (!r.error) return r;
+  const duPhong = await truyVan("*");
+  return duPhong.error ? r : duPhong;
+}
+
 /* ------------------------------------------------------------------ */
 /* Câu lạc bộ                                                         */
 /* ------------------------------------------------------------------ */
@@ -212,10 +226,9 @@ export function useCauLacBo() {
     queryKey: ["cau_lac_bo"],
     staleTime: 60_000,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("cau_lac_bo")
-        .select(`*, ${CHON_DON_VI}`)
-        .order("TenCLB");
+      const { data, error } = await docCLBKemDonVi((cot) =>
+        supabase.from("cau_lac_bo").select(cot).order("TenCLB"),
+      );
       if (error) throw error;
       return data as unknown as CauLacBo[];
     },
@@ -283,8 +296,10 @@ export function useBaiVietNoiBat(gioiHan = 7) {
     queryFn: async (): Promise<BaiVietNoiBat[]> => {
       await supabase.rpc("lam_moi_trang_thai_su_kien");
       const xh = await supabase.rpc("bai_viet_noi_bat", { _gioi_han: gioiHan });
-      if (xh.error) throw xh.error;
-      const ds = xh.data ?? [];
+      // CSDL chưa có hàm xếp hạng (chưa chạy migration 0009): tạm lấy các bài mới đăng nhất
+      const ds = xh.error
+        ? await baiMoiNhat(gioiHan)
+        : (xh.data ?? []);
       if (!ds.length) return [];
       const { data, error } = await supabase
         .from("bai_dang")
@@ -304,6 +319,23 @@ export function useBaiVietNoiBat(gioiHan = 7) {
         .map((b, i) => ({ ...b, Hang: i + 1 }));
     },
   });
+}
+
+/** Dự phòng cho banner khi CSDL chưa có hàm bai_viet_noi_bat. */
+async function baiMoiNhat(gioiHan: number) {
+  const { data } = await supabase
+    .from("bai_dang")
+    .select("MaBaiDang")
+    .eq("TrangThaiKiemDuyet", "DaDuyet")
+    .order("NgayDang", { ascending: false })
+    .limit(gioiHan);
+  return (data ?? []).map((b) => ({
+    MaBaiDang: b.MaBaiDang,
+    LuotXem: 0,
+    LuotBinhLuan: 0,
+    LuotYeuThich: 0,
+    DiemNoiBat: 0,
+  }));
 }
 
 /** Tổng lượt xem / bình luận / yêu thích của một hoặc nhiều bài (hàm dem_tuong_tac). */
