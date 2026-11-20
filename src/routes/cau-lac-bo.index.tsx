@@ -24,12 +24,12 @@ export const Route = createFileRoute("/cau-lac-bo/")({
       { title: "Danh sách câu lạc bộ – BAV CLUBS" },
       {
         name: "description",
-        content: "Tìm kiếm câu lạc bộ theo tên và lĩnh vực tại Học viện Ngân hàng.",
+        content: "Tìm kiếm câu lạc bộ theo tên và theo sơ đồ tổ chức Đoàn Thanh niên – Hội Sinh viên Học viện Ngân hàng.",
       },
       { property: "og:title", content: "Danh sách câu lạc bộ – BAV CLUBS" },
       {
         property: "og:description",
-        content: "Tìm kiếm câu lạc bộ theo tên và lĩnh vực tại Học viện Ngân hàng.",
+        content: "Tìm kiếm câu lạc bộ theo tên và theo sơ đồ tổ chức Đoàn Thanh niên – Hội Sinh viên Học viện Ngân hàng.",
       },
     ],
   }),
@@ -39,7 +39,7 @@ export const Route = createFileRoute("/cau-lac-bo/")({
 /**
  * Danh sách CLB theo kịch bản "Tìm kiếm và xem chi tiết câu lạc bộ" (PTTKHT):
  *  - Luồng con 1: nhập từ khóa -> bấm "Tìm kiếm" -> lọc theo tên/giới thiệu/đơn vị trực thuộc
- *  - Luồng con 2: chọn lĩnh vực hoạt động -> danh sách cập nhật ngay, có thể đổi bộ lọc tiếp
+ *  - Luồng con 2: chọn khối Đoàn / Hội và đơn vị -> danh sách cập nhật ngay, có thể đổi bộ lọc tiếp
  *  - Không có kết quả -> "Không tìm thấy câu lạc bộ phù hợp"
  * Chỉ hiển thị CLB chưa ngừng hoạt động. Bộ lọc được giữ trên URL để chia sẻ/quay lại được.
  */
