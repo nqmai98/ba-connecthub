@@ -52,7 +52,16 @@ export function useSoDoToChuc() {
       }));
     },
   });
-  return { data: q.data ?? DON_VI_MAC_DINH, isLoading: q.isLoading };
+  return {
+    // Chưa có dữ liệu (CSDL chưa chạy phần cấu trúc, hoặc Quản trị viên chưa bấm "Nhập sơ đồ
+    // tổ chức") thì vẫn hiển thị khung sơ đồ mặc định để giao diện không trống.
+    data: q.data?.length ? q.data : DON_VI_MAC_DINH,
+    isLoading: q.isLoading,
+    /** Bảng don_vi_to_chuc đã có nhưng chưa có đơn vị nào -> cần bấm "Nhập sơ đồ tổ chức". */
+    chuaNhap: q.isSuccess && q.data.length === 0,
+    /** CSDL chưa có bảng don_vi_to_chuc (chưa chạy file cấu trúc). */
+    chuaCoCauTruc: q.isError,
+  };
 }
 
 /** "Hội Sinh viên – CLB cụm Học thuật" */

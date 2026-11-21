@@ -193,23 +193,26 @@ và đã tồn tại từ trước — bản `types.ts` gốc cũng báo 299 l�
 
 ---
 
-## 10. Migration 0009 — Tương tác bài viết và phân loại CLB theo sơ đồ Đoàn – Hội
+## 10. Tương tác bài viết và phân loại CLB theo sơ đồ Đoàn – Hội
 
-File: `drizzle/migrations/0009_tuong_tac_va_so_do_to_chuc.sql` (đã thêm vào `_journal.json`).
+File cấu trúc: `sql/0009_cau_truc_tuong_tac_va_so_do_to_chuc.sql` — **chỉ thay đổi lược đồ** (bảng, hàm,
+trigger, RLS), vì công cụ migration của Lovable chỉ nhận thay đổi cấu trúc. Dữ liệu sơ đồ được nhập bằng hàm
+`khoi_tao_so_do_to_chuc()` (chỉ Quản trị viên), chạy qua nút **"Nhập sơ đồ tổ chức"** ở trang Quản lý CLB.
 
 ### 10.1 Bỏ "lĩnh vực", thay bằng sơ đồ tổ chức
 
 | Trước | Sau |
 |---|---|
-| Bảng `linh_vuc` + `cau_lac_bo.MaLinhVuc NOT NULL` (phân loại Học thuật / Nghệ thuật / Thể thao… do người dùng tự đặt, không thống nhất) | **Xoá** bảng `linh_vuc` và cột `MaLinhVuc` |
+| Bảng `linh_vuc` + `cau_lac_bo.MaLinhVuc NOT NULL` (phân loại Học thuật / Nghệ thuật / Thể thao… do người dùng tự đặt, không thống nhất) | Giao diện **không còn dùng** lĩnh vực; `MaLinhVuc` cho phép NULL. Bảng và dữ liệu cũ được giữ lại để không mất dữ liệu (có thể xoá sau) |
 | `DonViTrucThuoc` là chuỗi tự do (“Đoàn Thanh niên”, “Hội Sinh viên”, “Khác”) | Bảng mới `don_vi_to_chuc (MaDonVi, Khoi, TenDonVi, MoTa, ThuTu)` + `cau_lac_bo.MaDonVi` (khoá ngoại, NULL = khác / chưa phân loại). `DonViTrucThuoc` nay do trigger **tự sinh** dạng “Hội Sinh viên – CLB cụm Học thuật” |
 
-Số bảng thiết kế vẫn là 13 (`don_vi_to_chuc` thay chỗ `linh_vuc`). Dữ liệu mặc định gồm 9 đơn vị theo sơ đồ:
+`don_vi_to_chuc` thay vai trò của `linh_vuc` trong thiết kế. Hàm nhập dữ liệu tạo 9 đơn vị theo sơ đồ:
 
 - **Đoàn Thanh niên:** Bộ phận hành chính · Đội trực thuộc · Ban chuyên môn · LCĐ, CĐ trực thuộc
 - **Hội Sinh viên:** CLB cụm Tình nguyện – Sở thích · Liên chi hội · CLB cụm Học thuật · CLB cụm Kỹ năng · Đội trực thuộc
 
-CLB hiện có được **tự xếp** vào đơn vị theo tên (hàm `doan_don_vi`, đã kiểm thử đúng cả 51 đơn vị trong sơ đồ);
+Hàm cũng **tự xếp** CLB đang có vào đơn vị theo tên (hàm `doan_don_vi`, đã kiểm thử đúng cả 51 đơn vị trong sơ đồ)
+và **thêm 60 CLB / đội / ban / LCĐ / LCH** của sơ đồ, bỏ qua đơn vị đã có; bấm lại nhiều lần không tạo trùng.
 CLB tạo mới chưa chọn đơn vị cũng được đoán tự động. Quản trị viên sửa lại trong *Quản lý CLB* và quản lý danh
 sách đơn vị qua nút *Sơ đồ tổ chức*. Yêu cầu cập nhật của Đại diện CLB nay đề xuất `MaDonVi` thay vì `MaLinhVuc`.
 

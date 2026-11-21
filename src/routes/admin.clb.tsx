@@ -4,7 +4,18 @@ import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
-import { Copy, Dices, KeyRound, ListTree, Pencil, Plus, Save, Trash2, UserPlus } from "lucide-react";
+import {
+  Copy,
+  Dices,
+  DownloadCloud,
+  KeyRound,
+  ListTree,
+  Pencil,
+  Plus,
+  Save,
+  Trash2,
+  UserPlus,
+} from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { dbMoi } from "@/lib/db-moi";
 import {
@@ -68,8 +79,26 @@ function ManageClubs() {
   const { q = "", khoi, nhom } = Route.useSearch();
   const navigate = useNavigate();
   const { data: clubs, isLoading } = useCauLacBo();
-  const { data: dsNhom } = useSoDoToChuc();
+  const { data: dsNhom, chuaNhap, chuaCoCauTruc } = useSoDoToChuc();
   const qc = useQueryClient();
+  const [dangNhap, setDangNhap] = useState(false);
+
+  /** Chạy hàm CSDL khoi_tao_so_do_to_chuc: thêm 9 đơn vị, xếp CLB cũ, thêm CLB còn thiếu trong sơ đồ. */
+  const nhapSoDo = async () => {
+    setDangNhap(true);
+    const { data, error } = await dbMoi.rpc("khoi_tao_so_do_to_chuc");
+    setDangNhap(false);
+    if (error) {
+      toast.error("Chưa nhập được sơ đồ tổ chức. Kiểm tra CSDL đã có cấu trúc mới rồi thử lại.");
+      return;
+    }
+    const kq = data as { DonViMoi: number; CLBDuocXep: number; CLBMoi: number };
+    toast.success(
+      `Đã nhập sơ đồ: ${kq.DonViMoi} đơn vị mới · xếp ${kq.CLBDuocXep} CLB đang có · thêm ${kq.CLBMoi} CLB`,
+    );
+    qc.invalidateQueries({ queryKey: ["don_vi_to_chuc"] });
+    qc.invalidateQueries({ queryKey: ["cau_lac_bo"] });
+  };
 
   // Quan hệ 1–1: mỗi CLB có tối đa một tài khoản đại diện (nguoi_dung.MaCLB UNIQUE)
   const reps = useQuery({
@@ -152,6 +181,31 @@ function ManageClubs() {
         </div>
       }
     >
+      {(chuaNhap || chuaCoCauTruc) && (
+        <div className="mb-5 flex flex-col gap-3 rounded-2xl border border-accent bg-accent/10 p-4 sm:flex-row sm:items-center sm:p-5">
+          <div className="min-w-0 flex-1">
+            <p className="font-extrabold text-primary">
+              {chuaCoCauTruc ? "CSDL chưa có cấu trúc sơ đồ tổ chức" : "Chưa nhập sơ đồ tổ chức Đoàn – Hội"}
+            </p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              {chuaCoCauTruc
+                ? "Cần chạy file sql/0009_cau_truc_tuong_tac_va_so_do_to_chuc.sql trên CSDL trước. CLB tạm hiện ở nhóm “Khác”."
+                : "Thêm 9 đơn vị của sơ đồ, tự xếp các CLB đang có vào đúng ô và thêm các CLB, đội, ban, LCĐ, LCH còn thiếu. Bấm lại nhiều lần cũng không tạo trùng."}
+            </p>
+          </div>
+          {chuaNhap && (
+            <Button
+              onClick={nhapSoDo}
+              disabled={dangNhap}
+              className="shrink-0 rounded-xl bg-accent font-bold text-accent-foreground hover:bg-accent/90"
+            >
+              <DownloadCloud className="h-4 w-4" />
+              {dangNhap ? "Đang nhập…" : "Nhập sơ đồ tổ chức"}
+            </Button>
+          )}
+        </div>
+      )}
+
       <div className="mb-5 space-y-4 rounded-2xl border bg-card p-4 shadow-[var(--shadow-soft)] sm:p-5">
         <SearchBar
           value={q}
