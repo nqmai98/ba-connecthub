@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { supabase } from "@/integrations/supabase/client";
+import { dbMoi } from "@/lib/db-moi";
 import { ClubLogo, Empty, GridSkeleton, Page, RoleGate } from "@/components/common";
 import { BoLocHocKi } from "@/components/BoLocHocKi";
 import { useAuth } from "@/lib/auth";
@@ -51,6 +52,15 @@ export const Route = createFileRoute("/clb/")({
 
 /** Cùng bảng màu 2 chuỗi với Dashboard Quản trị (đã kiểm tra tương phản & mù màu). */
 const MAU = { tinBai: "#4152b8", suKien: "#c98208" };
+
+/** Một dòng của hàm tuong_tac_clb: tương tác của một bài trong một ngày. */
+type TuongTacNgay = {
+  MaBaiDang: number;
+  Ngay: string;
+  LuotXem: number;
+  LuotBinhLuan: number;
+  LuotYeuThich: number;
+};
 
 type BaiTK = {
   MaBaiDang: number;
@@ -93,14 +103,14 @@ function Overview() {
           .eq("MaCLB", maCLB!),
         supabase.from("yeu_cau_cap_nhat").select("TrangThaiXuLy").eq("MaCLB", maCLB!),
         // Lượt xem / bình luận / yêu thích theo ngày (hàm tuong_tac_clb – migration 0009)
-        supabase.rpc("tuong_tac_clb", { _ma_clb: maCLB! }),
+        dbMoi.rpc("tuong_tac_clb", { _ma_clb: maCLB! }),
       ]);
       return {
         theoDoi: (theoDoi.data ?? []).map((t) => t.NgayTheoDoi),
         bai: (baiDang.data ?? []) as unknown as BaiTK[],
         yeuCauCho: (yeuCau.data ?? []).filter((x) => x.TrangThaiXuLy === "ChoDuyet").length,
         // null = chưa đọc được số liệu tương tác (lỗi mạng / CSDL)
-        tuongTac: tuongTac.error ? null : (tuongTac.data ?? []),
+        tuongTac: tuongTac.error ? null : ((tuongTac.data ?? []) as TuongTacNgay[]),
       };
     },
   });

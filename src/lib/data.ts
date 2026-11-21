@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { dbMoi } from "@/lib/db-moi";
 import { useAuth } from "./auth";
 
 /* ------------------------------------------------------------------ */
@@ -295,11 +296,11 @@ export function useBaiVietNoiBat(gioiHan = 7) {
     staleTime: 2 * 60_000,
     queryFn: async (): Promise<BaiVietNoiBat[]> => {
       await supabase.rpc("lam_moi_trang_thai_su_kien");
-      const xh = await supabase.rpc("bai_viet_noi_bat", { _gioi_han: gioiHan });
+      const xh = await dbMoi.rpc("bai_viet_noi_bat", { _gioi_han: gioiHan });
       // CSDL chưa có hàm xếp hạng (chưa chạy migration 0009): tạm lấy các bài mới đăng nhất
-      const ds = xh.error
+      const ds: XepHangBai[] = xh.error
         ? await baiMoiNhat(gioiHan)
-        : (xh.data ?? []);
+        : ((xh.data ?? []) as XepHangBai[]);
       if (!ds.length) return [];
       const { data, error } = await supabase
         .from("bai_dang")
@@ -321,8 +322,11 @@ export function useBaiVietNoiBat(gioiHan = 7) {
   });
 }
 
+/** Một dòng kết quả của hàm bai_viet_noi_bat. */
+type XepHangBai = TuongTac & { MaBaiDang: number; DiemNoiBat: number };
+
 /** Dự phòng cho banner khi CSDL chưa có hàm bai_viet_noi_bat. */
-async function baiMoiNhat(gioiHan: number) {
+async function baiMoiNhat(gioiHan: number): Promise<XepHangBai[]> {
   const { data } = await supabase
     .from("bai_dang")
     .select("MaBaiDang")
@@ -346,10 +350,10 @@ export function useTuongTac(dsMaBaiDang: number[]) {
     enabled: ds.length > 0,
     staleTime: 60_000,
     queryFn: async () => {
-      const { data, error } = await supabase.rpc("dem_tuong_tac", { _ds_bai_dang: ds });
+      const { data, error } = await dbMoi.rpc("dem_tuong_tac", { _ds_bai_dang: ds });
       if (error) throw error;
       return new Map(
-        (data ?? []).map((r) => [
+        ((data ?? []) as (TuongTac & { MaBaiDang: number })[]).map((r) => [
           r.MaBaiDang,
           { LuotXem: r.LuotXem, LuotBinhLuan: r.LuotBinhLuan, LuotYeuThich: r.LuotYeuThich } as TuongTac,
         ]),
@@ -370,7 +374,7 @@ export async function ghiLuotXem(maBaiDang: number) {
   } catch {
     /* trình duyệt chặn sessionStorage: vẫn ghi, CSDL tự chống lặp với tài khoản đã đăng nhập */
   }
-  const { error } = await supabase.rpc("ghi_luot_xem", { _ma_bai_dang: maBaiDang });
+  const { error } = await dbMoi.rpc("ghi_luot_xem", { _ma_bai_dang: maBaiDang });
   return !error;
 }
 
@@ -389,7 +393,7 @@ export function useBinhLuan(maBaiDang: number) {
   return useQuery({
     queryKey: ["binh_luan", maBaiDang, maNguoiDung],
     queryFn: async () => {
-      const { data, error } = await supabase.rpc("binh_luan_cua_bai", { _ma_bai_dang: maBaiDang });
+      const { data, error } = await dbMoi.rpc("binh_luan_cua_bai", { _ma_bai_dang: maBaiDang });
       if (error) throw error;
       return (data ?? []) as BinhLuan[];
     },
@@ -401,7 +405,7 @@ export function useGuiBinhLuan(maBaiDang: number) {
   const { maNguoiDung } = useAuth();
   return useMutation({
     mutationFn: async (noiDung: string) => {
-      const { error } = await supabase
+      const { error } = await dbMoi
         .from("binh_luan")
         .insert({ MaBaiDang: maBaiDang, MaNguoiDung: maNguoiDung!, NoiDung: noiDung.trim() });
       if (error) throw error;
@@ -423,7 +427,7 @@ export function useXoaBinhLuan(maBaiDang: number) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (maBinhLuan: number) => {
-      const { error } = await supabase.from("binh_luan").delete().eq("MaBinhLuan", maBinhLuan);
+      const { error } = await dbMoi.from("binh_luan").delete().eq("MaBinhLuan", maBinhLuan);
       if (error) throw error;
     },
     onSuccess: () => {
