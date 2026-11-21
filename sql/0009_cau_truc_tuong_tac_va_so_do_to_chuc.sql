@@ -1,37 +1,20 @@
 -- =====================================================================
--- 0009 — Tương tác bài viết (lượt xem, bình luận) + phân loại CLB theo
---        SƠ ĐỒ TỔ CHỨC ĐOÀN THANH NIÊN – HỘI SINH VIÊN HỌC VIỆN NGÂN HÀNG
+-- CẤU TRÚC (chỉ thay đổi lược đồ) — Tương tác bài viết + sơ đồ tổ chức Đoàn – Hội
 --
--- A. Bảng luot_xem_bai_dang + hàm ghi_luot_xem: đếm lượt xem bài viết.
--- B. Bảng binh_luan + các hàm đọc/ghi: sinh viên bình luận dưới bài viết.
--- C. Hàm bai_viet_noi_bat: xếp hạng bài cho banner trang chủ theo
---    lượt xem, lượt bình luận, lượt yêu thích.
--- D. Hàm dem_tuong_tac / tuong_tac_clb: số liệu cho trang bài viết và
---    trang Tổng quan của Đại diện CLB.
--- E. Bỏ bảng linh_vuc; thay bằng bảng don_vi_to_chuc (Khối Đoàn / Hội
---    -> các ô xanh của sơ đồ) và cột cau_lac_bo.MaDonVi.
+-- File này CHỈ gồm thay đổi cấu trúc: bảng, cột, hàm, trigger, quyền, RLS.
+-- Không thêm / sửa / xoá dữ liệu nào, không xoá bảng nào.
 --
--- Mọi số liệu tổng hợp đi qua hàm SECURITY DEFINER chỉ trả về CON SỐ,
--- không lộ ai đã xem / yêu thích gì (RLS các bảng gốc vẫn khép kín).
+-- A. Bảng luot_xem_bai_dang + hàm ghi_luot_xem
+-- B. Bảng binh_luan + các hàm đọc/ghi bình luận
+-- C/D. Hàm bai_viet_noi_bat, dem_tuong_tac, tuong_tac_clb (số liệu tương tác)
+-- E. Bảng don_vi_to_chuc + cột cau_lac_bo.MaDonVi (phân loại theo sơ đồ Đoàn – Hội)
+-- F. Hàm khoi_tao_so_do_to_chuc(): NHẬP DỮ LIỆU sơ đồ (9 đơn vị, xếp CLB cũ, thêm 60
+--    đơn vị). Hàm chỉ được TẠO ở đây; Quản trị viên chạy nó bằng nút
+--    "Nhập sơ đồ tổ chức" ở trang Quản lý CLB.
+--
+-- Bảng linh_vuc và cột cau_lac_bo.MaLinhVuc được GIỮ LẠI (không còn dùng, cột cho phép NULL)
+-- để không mất dữ liệu cũ.
 -- =====================================================================
-
--- ---------------------------------------------------------------------
--- 0. SAO LƯU TỰ ĐỘNG trước khi đổi lược đồ (bảng linh_vuc sẽ bị xoá ở mục E).
---    Bản sao nằm trong schema riêng "sao_luu", không mở ra API nên trình duyệt không đọc được.
---    Khôi phục: insert ... select * from sao_luu.<bang>_truoc_0009
--- ---------------------------------------------------------------------
-
-create schema if not exists sao_luu;
-revoke all on schema sao_luu from public;
-create table if not exists sao_luu.linh_vuc_truoc_0009          as select * from public.linh_vuc;
-create table if not exists sao_luu.cau_lac_bo_truoc_0009        as select * from public.cau_lac_bo;
-create table if not exists sao_luu.nguoi_dung_truoc_0009        as select * from public.nguoi_dung;
-create table if not exists sao_luu.bai_dang_truoc_0009          as select * from public.bai_dang;
-create table if not exists sao_luu.su_kien_truoc_0009           as select * from public.su_kien;
-create table if not exists sao_luu.kiem_duyet_truoc_0009        as select * from public.kiem_duyet;
-create table if not exists sao_luu.yeu_cau_cap_nhat_truoc_0009  as select * from public.yeu_cau_cap_nhat;
-create table if not exists sao_luu.theo_doi_clb_truoc_0009      as select * from public.theo_doi_clb;
-create table if not exists sao_luu.yeu_thich_su_kien_truoc_0009 as select * from public.yeu_thich_su_kien;
 
 -- ---------------------------------------------------------------------
 -- A. LƯỢT XEM BÀI VIẾT
@@ -310,19 +293,6 @@ create table public.don_vi_to_chuc (
   unique ("Khoi", "TenDonVi")
 );
 
--- Mã 1–9 giữ nguyên như cấu hình cũ trong code để các đường link ?nhom=... vẫn đúng.
-insert into public.don_vi_to_chuc ("MaDonVi", "Khoi", "TenDonVi", "ThuTu", "MoTa") values
-  (1, 'DoanThanhNien', 'Bộ phận hành chính',              1, 'Văn phòng Đoàn'),
-  (2, 'DoanThanhNien', 'Đội trực thuộc',                  2, 'Các đội trực thuộc Đoàn Thanh niên'),
-  (3, 'DoanThanhNien', 'Ban chuyên môn',                  3, 'Ủy ban Kiểm tra, các Ban của Đoàn'),
-  (4, 'DoanThanhNien', 'LCĐ, CĐ trực thuộc',              4, 'Liên chi đoàn các khoa, chi đoàn trực thuộc'),
-  (5, 'HoiSinhVien',   'CLB cụm Tình nguyện – Sở thích',  1, 'Tình nguyện, văn nghệ, thể thao, sở thích'),
-  (6, 'HoiSinhVien',   'Liên chi hội',                    2, 'Liên chi hội các khoa'),
-  (7, 'HoiSinhVien',   'CLB cụm Học thuật',               3, 'Các CLB chuyên môn, học thuật'),
-  (8, 'HoiSinhVien',   'CLB cụm Kỹ năng',                 4, 'Các CLB kỹ năng, khởi nghiệp'),
-  (9, 'HoiSinhVien',   'Đội trực thuộc',                  5, 'Các đội trực thuộc BCH Hội Sinh viên');
-select setval(pg_get_serial_sequence('public.don_vi_to_chuc', 'MaDonVi'), 9);
-
 alter table public.don_vi_to_chuc enable row level security;
 grant select on public.don_vi_to_chuc to anon, authenticated;
 grant insert, update, delete on public.don_vi_to_chuc to authenticated;
@@ -369,23 +339,6 @@ returns int language sql stable set search_path = public as $$
   limit 1
 $$;
 
--- Xếp các CLB hiện có vào đơn vị:
---   1) "DonViTrucThuoc" dạng "Khối – Đơn vị" khớp chính xác (bản giao diện cũ cho chọn chi tiết);
---   2) còn lại đoán theo tên, trong đúng khối đã chọn ở "DonViTrucThuoc" (nếu có).
---   "DonViTrucThuoc" = 'Khác' -> không thuộc đơn vị nào.
-update public.cau_lac_bo c set "MaDonVi" = dv."MaDonVi"
-from public.don_vi_to_chuc dv
-where btrim(c."DonViTrucThuoc") =
-  (case dv."Khoi" when 'DoanThanhNien' then 'Đoàn Thanh niên' else 'Hội Sinh viên' end) || ' – ' || dv."TenDonVi";
-
-update public.cau_lac_bo c set "MaDonVi" = public.doan_don_vi(
-  c."TenCLB",
-  case
-    when lower(btrim(c."DonViTrucThuoc")) like 'đoàn thanh niên%' then 'DoanThanhNien'
-    when lower(btrim(c."DonViTrucThuoc")) like 'hội sinh viên%' then 'HoiSinhVien'
-  end)
-where c."MaDonVi" is null and coalesce(lower(btrim(c."DonViTrucThuoc")), '') <> 'khác';
-
 -- "DonViTrucThuoc" (thuộc tính trong báo cáo) nay được SINH TỰ ĐỘNG từ MaDonVi
 -- dạng "Hội Sinh viên – CLB cụm Học thuật"; NULL = khác / chưa phân loại.
 create or replace function public.nhan_don_vi(_ma_don_vi int)
@@ -394,8 +347,6 @@ returns varchar language sql stable set search_path = public as $$
   from public.don_vi_to_chuc where "MaDonVi" = _ma_don_vi
 $$;
 
-update public.cau_lac_bo set "DonViTrucThuoc" = public.nhan_don_vi("MaDonVi");
-
 create or replace function public.dong_bo_don_vi_clb()
 returns trigger language plpgsql security definer set search_path = public as $$
 begin
@@ -403,7 +354,11 @@ begin
   if tg_op = 'INSERT' and new."MaDonVi" is null then
     new."MaDonVi" := public.doan_don_vi(new."TenCLB");
   end if;
-  new."DonViTrucThuoc" := public.nhan_don_vi(new."MaDonVi");
+  if new."MaDonVi" is not null then
+    new."DonViTrucThuoc" := public.nhan_don_vi(new."MaDonVi");
+  elsif tg_op = 'UPDATE' and old."MaDonVi" is not null then
+    new."DonViTrucThuoc" := null;  -- chuyển về "Khác"
+  end if;
   return new;
 end $$;
 create trigger cau_lac_bo_don_vi_trg
@@ -477,6 +432,208 @@ begin
   return null;
 end $$;
 
--- Gỡ hẳn lĩnh vực
-alter table public.cau_lac_bo drop column "MaLinhVuc";
-drop table public.linh_vuc;
+-- Lĩnh vực không còn dùng: cho phép NULL để CLB mới không cần lĩnh vực (giữ dữ liệu cũ)
+alter table public.cau_lac_bo alter column "MaLinhVuc" drop not null;
+
+-- ---------------------------------------------------------------------
+-- F. HÀM NHẬP DỮ LIỆU SƠ ĐỒ TỔ CHỨC (chỉ tạo hàm; Quản trị viên bấm nút để chạy)
+--    Chạy lại nhiều lần an toàn: không tạo trùng, không ghi đè lựa chọn của Quản trị viên.
+-- ---------------------------------------------------------------------
+
+create or replace function public.khoi_tao_so_do_to_chuc()
+returns jsonb language plpgsql volatile security definer set search_path = public as $$
+declare
+  v_don_vi int;
+  v_xep int;
+  v_them int;
+begin
+  if not public.la_quan_tri_vien(auth.uid()) then
+    raise exception 'Chỉ Quản trị viên được nhập sơ đồ tổ chức';
+  end if;
+
+  -- 1) 9 đơn vị (ô xanh) theo sơ đồ; mã 1–9 cố định
+  insert into public.don_vi_to_chuc ("MaDonVi", "Khoi", "TenDonVi", "ThuTu", "MoTa")
+  select * from (values
+    (1, 'DoanThanhNien', 'Bộ phận hành chính',             1, 'Văn phòng Đoàn'),
+    (2, 'DoanThanhNien', 'Đội trực thuộc',                 2, 'Các đội trực thuộc Đoàn Thanh niên'),
+    (3, 'DoanThanhNien', 'Ban chuyên môn',                 3, 'Ủy ban Kiểm tra, các Ban của Đoàn'),
+    (4, 'DoanThanhNien', 'LCĐ, CĐ trực thuộc',             4, 'Liên chi đoàn các khoa, chi đoàn trực thuộc'),
+    (5, 'HoiSinhVien',   'CLB cụm Tình nguyện – Sở thích', 1, 'Tình nguyện, văn nghệ, thể thao, sở thích'),
+    (6, 'HoiSinhVien',   'Liên chi hội',                   2, 'Liên chi hội các khoa'),
+    (7, 'HoiSinhVien',   'CLB cụm Học thuật',              3, 'Các CLB chuyên môn, học thuật'),
+    (8, 'HoiSinhVien',   'CLB cụm Kỹ năng',                4, 'Các CLB kỹ năng, khởi nghiệp'),
+    (9, 'HoiSinhVien',   'Đội trực thuộc',                 5, 'Các đội trực thuộc BCH Hội Sinh viên')
+  ) as dv(ma, khoi, ten, thu_tu, mo_ta)
+  where not exists (select 1 from public.don_vi_to_chuc x where x."MaDonVi" = dv.ma or (x."Khoi" = dv.khoi and x."TenDonVi" = dv.ten))
+  on conflict do nothing;
+  get diagnostics v_don_vi = row_count;
+  perform setval(pg_get_serial_sequence('public.don_vi_to_chuc', 'MaDonVi'),
+                 greatest((select max("MaDonVi") from public.don_vi_to_chuc), 1));
+
+  -- 2) Xếp các CLB đang có (chưa có đơn vị) vào ô theo tên; "Đoàn Thanh niên"/"Hội Sinh viên"
+  --    ghi ở DonViTrucThuoc kiểu cũ được dùng làm gợi ý khối; "Khác" thì để nguyên.
+  update public.cau_lac_bo c set "MaDonVi" = coalesce(
+    (select dv."MaDonVi" from public.don_vi_to_chuc dv
+      where btrim(c."DonViTrucThuoc") = public.nhan_don_vi(dv."MaDonVi")),
+    public.doan_don_vi(c."TenCLB",
+      case
+        when lower(btrim(c."DonViTrucThuoc")) like 'đoàn thanh niên%' then 'DoanThanhNien'
+        when lower(btrim(c."DonViTrucThuoc")) like 'hội sinh viên%' then 'HoiSinhVien'
+      end))
+  where c."MaDonVi" is null and coalesce(lower(btrim(c."DonViTrucThuoc")), '') <> 'khác'
+    and public.doan_don_vi(c."TenCLB") is not null;
+  get diagnostics v_xep = row_count;
+
+  -- 3) Thêm các CLB / đội / ban / LCĐ / LCH còn thiếu trong sơ đồ (bỏ qua đơn vị đã có)
+  insert into public.cau_lac_bo ("TenCLB", "MaDonVi", "GioiThieuNgan")
+  select n.ten, n.ma_don_vi, n.gioi_thieu
+  from (values
+      -- ===== ĐOÀN THANH NIÊN =====
+      -- 1. Bộ phận hành chính
+      ('Văn phòng Đoàn', 1, 'Bộ phận hành chính của Đoàn Thanh niên Học viện Ngân hàng',
+         '\yvan phong doan\y'),
+      -- 2. Đội trực thuộc
+      ('TLD - Đội Thủ lĩnh Đoàn', 2, 'Đội trực thuộc Đoàn Thanh niên Học viện Ngân hàng',
+         '\y(tld|thu linh doan)\y'),
+      -- 3. Ban chuyên môn
+      ('Ủy ban Kiểm tra', 3, 'Ban chuyên môn của Đoàn Thanh niên Học viện Ngân hàng',
+         '\yuy ban kiem tra\y'),
+      ('Ban TĐKT & Phát triển Đảng', 3, 'Ban Thi đua khen thưởng & Phát triển Đảng – Đoàn Thanh niên Học viện Ngân hàng',
+         '\y(ban tdkt|thi dua khen thuong)\y'),
+      ('Ban Tài chính', 3, 'Ban chuyên môn của Đoàn Thanh niên Học viện Ngân hàng',
+         '^ban tai chinh'),
+      ('Ban Tình nguyện', 3, 'Ban chuyên môn của Đoàn Thanh niên Học viện Ngân hàng',
+         '^ban tinh nguyen'),
+      ('Ban Phong trào', 3, 'Ban chuyên môn của Đoàn Thanh niên Học viện Ngân hàng',
+         '^ban phong trao'),
+      -- 4. LCĐ, CĐ trực thuộc
+      ('LCĐ khoa Ngân hàng', 4, 'Liên chi đoàn khoa Ngân hàng',
+         '\y(lcd|lien chi doan) khoa ngan hang\y'),
+      ('LCĐ khoa Tài chính', 4, 'Liên chi đoàn khoa Tài chính',
+         '\y(lcd|lien chi doan) khoa tai chinh\y'),
+      ('LCĐ khoa Kế toán - Kiểm toán', 4, 'Liên chi đoàn khoa Kế toán - Kiểm toán',
+         '\y(lcd|lien chi doan) khoa ke toan'),
+      ('LCĐ khoa Quản trị kinh doanh', 4, 'Liên chi đoàn khoa Quản trị kinh doanh',
+         '\y(lcd|lien chi doan) khoa quan tri kinh doanh\y'),
+      ('LCĐ khoa Hệ thống thông tin quản lý', 4, 'Liên chi đoàn khoa Hệ thống thông tin quản lý',
+         '\y(lcd|lien chi doan) khoa he thong thong tin'),
+      ('LCĐ khoa Luật', 4, 'Liên chi đoàn khoa Luật',
+         '\y(lcd|lien chi doan) khoa luat\y'),
+      ('LCĐ khoa Ngoại ngữ', 4, 'Liên chi đoàn khoa Ngoại ngữ',
+         '\y(lcd|lien chi doan) khoa ngoai ngu\y'),
+      ('LCĐ khoa Kinh doanh quốc tế', 4, 'Liên chi đoàn khoa Kinh doanh quốc tế',
+         '\y(lcd|lien chi doan) khoa kinh doanh quoc te\y'),
+      ('LCĐ khoa Kinh tế', 4, 'Liên chi đoàn khoa Kinh tế',
+         '\y(lcd|lien chi doan) khoa kinh te$'),
+      ('LCĐ Viện Đào tạo quốc tế', 4, 'Liên chi đoàn Viện Đào tạo quốc tế',
+         '\y(lcd|lien chi doan) vien dao tao quoc te\y'),
+      ('LCĐ chương trình Chất lượng cao', 4, 'Liên chi đoàn chương trình Chất lượng cao',
+         '\y(lcd|lien chi doan) chuong trinh chat luong cao\y'),
+      ('CĐ Phòng ban trung tâm', 4, 'Chi đoàn Phòng ban trung tâm',
+         '\y(cd|chi doan) phong ban trung tam\y'),
+      ('CĐ Viện NCKH', 4, 'Chi đoàn Viện Nghiên cứu khoa học',
+         '\y(cd|chi doan) vien (nckh|nghien cuu khoa hoc)\y'),
+      ('LCĐ cơ sở đào tạo Sơn Tây', 4, 'Liên chi đoàn cơ sở đào tạo Sơn Tây',
+         '\y(lcd|lien chi doan) .*son tay\y'),
+      ('LCĐ Phân viện Bắc Ninh', 4, 'Liên chi đoàn Phân viện Bắc Ninh',
+         '\y(lcd|lien chi doan) .*bac ninh\y'),
+
+      -- ===== HỘI SINH VIÊN =====
+      -- 5. CLB cụm Tình nguyện – Sở thích
+      ('BAVT - Đội Sinh viên Tình nguyện HVNH', 5, 'Đội Sinh viên Tình nguyện Học viện Ngân hàng',
+         '\y(bavt|doi sinh vien tinh nguyen)\y'),
+      ('BBC - CLB Sinh viên tình nguyện Vận động hiến máu', 5, 'CLB Sinh viên tình nguyện Vận động hiến máu',
+         '\y(bbc|hien mau)\y'),
+      ('BAAT - Đội Văn nghệ HVNH', 5, 'Đội Văn nghệ Học viện Ngân hàng',
+         '\y(baat|van nghe)\y'),
+      ('MCC - CLB MC Học viện Ngân hàng', 5, 'CLB MC Học viện Ngân hàng',
+         '\y(mcc|clb mc|cau lac bo mc)\y'),
+      ('GBA - CLB Guitar HVNH', 5, 'CLB Guitar Học viện Ngân hàng',
+         '\y(gba|guitar)\y'),
+      ('SMC - CLB Truyền thông HVNH', 5, 'CLB Truyền thông Học viện Ngân hàng',
+         '\y(smc|clb truyen thong|cau lac bo truyen thong)\y'),
+      ('BKC - CLB Karatedo HVNH', 5, 'CLB Karatedo Học viện Ngân hàng',
+         '\y(bkc|karate|karatedo)\y'),
+      ('BTC - CLB Taekwondo HVNH', 5, 'CLB Taekwondo Học viện Ngân hàng',
+         '\ytaekwondo\y'),
+      ('BAFT - Đội Bóng đá HVNH', 5, 'Đội Bóng đá Học viện Ngân hàng',
+         '\y(baft|bong da)\y'),
+      ('BAC - CLB Cờ vua HVNH', 5, 'CLB Cờ vua Học viện Ngân hàng',
+         '\yco vua\y'),
+      ('BTTC - CLB Bóng bàn HVNH', 5, 'CLB Bóng bàn Học viện Ngân hàng',
+         '\y(bttc|bong ban)\y'),
+      ('BABC - CLB Cầu lông HVNH', 5, 'CLB Cầu lông Học viện Ngân hàng',
+         '\y(babc|cau long)\y'),
+      ('BBA - CLB Sách HVNH', 5, 'CLB Sách Học viện Ngân hàng',
+         '\y(bba|clb sach|cau lac bo sach)\y'),
+      ('Đội Nghi lễ', 5, 'Đội Nghi lễ Học viện Ngân hàng',
+         '\ynghi le\y'),
+      -- 6. Liên chi hội
+      ('LCH khoa Ngân hàng', 6, 'Liên chi hội khoa Ngân hàng',
+         '\y(lch|lien chi hoi) khoa ngan hang\y'),
+      ('Đội CTV khoa Tài chính', 6, 'Đội Cộng tác viên khoa Tài chính',
+         '\yctv khoa tai chinh\y'),
+      ('LCH khoa Kế toán - Kiểm toán', 6, 'Liên chi hội khoa Kế toán - Kiểm toán',
+         '\y(lch|lien chi hoi) khoa ke toan'),
+      ('LCH khoa Quản trị kinh doanh', 6, 'Liên chi hội khoa Quản trị kinh doanh',
+         '\y(lch|lien chi hoi) khoa quan tri kinh doanh\y'),
+      ('LCH khoa Hệ thống thông tin quản lý', 6, 'Liên chi hội khoa Hệ thống thông tin quản lý',
+         '\y(lch|lien chi hoi) khoa he thong thong tin'),
+      ('LCH khoa Luật', 6, 'Liên chi hội khoa Luật',
+         '\y(lch|lien chi hoi) khoa luat\y'),
+      ('LCH khoa Ngoại ngữ', 6, 'Liên chi hội khoa Ngoại ngữ',
+         '\y(lch|lien chi hoi) khoa ngoai ngu\y'),
+      ('LCH khoa Kinh doanh quốc tế', 6, 'Liên chi hội khoa Kinh doanh quốc tế',
+         '\y(lch|lien chi hoi) khoa kinh doanh quoc te\y'),
+      ('LCH khoa Kinh tế', 6, 'Liên chi hội khoa Kinh tế',
+         '\y(lch|lien chi hoi) khoa kinh te$'),
+      -- 7. CLB cụm Học thuật
+      ('AAC - CLB Kế toán - Kiểm toán', 7, 'CLB Kế toán - Kiểm toán',
+         '\y(aac|clb ke toan|cau lac bo ke toan)\y'),
+      ('IBC - CLB Kinh doanh quốc tế', 7, 'CLB Kinh doanh quốc tế',
+         '\y(ibc|clb kinh doanh quoc te|cau lac bo kinh doanh quoc te)\y'),
+      ('ECBA - CLB Tiếng Anh', 7, 'CLB Tiếng Anh Học viện Ngân hàng',
+         '\y(ecba|tieng anh)\y'),
+      ('BIT - CLB Tin học Ngân hàng', 7, 'CLB Tin học Ngân hàng',
+         '\y(bit|tin hoc)\y'),
+      ('SEC - CLB Chứng khoán', 7, 'CLB Chứng khoán Học viện Ngân hàng',
+         '\y(sec|chung khoan)\y'),
+      ('SRC - CLB Nghiên cứu Khoa học', 7, 'CLB Nghiên cứu Khoa học sinh viên',
+         '\y(src|nghien cuu khoa hoc)\y'),
+      ('FJC - CLB Luật gia tương lai', 7, 'CLB Luật gia tương lai',
+         '\y(fjc|luat gia)\y'),
+      ('YEC - CLB Nhà Kinh tế trẻ', 7, 'CLB Nhà Kinh tế trẻ',
+         '\y(yec|kinh te tre)\y'),
+      ('FC - CLB Tài chính', 7, 'CLB Tài chính Học viện Ngân hàng',
+         '(^fc\y|\y(clb|cau lac bo) tai chinh\y)'),
+      -- 8. CLB cụm Kỹ năng
+      ('TBC - CLB Nhà Ngân hàng tương lai', 8, 'CLB Nhà Ngân hàng tương lai',
+         '\y(tbc|nha ngan hang tuong lai)\y'),
+      ('BSC - CLB Kỹ năng kinh doanh', 8, 'CLB Kỹ năng kinh doanh',
+         '\y(bsc|ky nang kinh doanh)\y'),
+      ('SCBA - CLB Thuyết trình', 8, 'CLB Thuyết trình Học viện Ngân hàng',
+         '\y(scba|thuyet trinh)\y'),
+      ('UBC - CLB Ngân hàng và nguồn nhân lực', 8, 'CLB Ngân hàng và nguồn nhân lực',
+         '\y(ubc|nguon nhan luc)\y'),
+      ('STC - CLB Khởi nghiệp', 8, 'CLB Khởi nghiệp Học viện Ngân hàng',
+         '\y(stc|khoi nghiep)\y'),
+      -- 9. Đội trực thuộc Hội
+      ('BlueWings - Đội CTV BCH Hội Sinh viên', 9, 'Đội Cộng tác viên Ban Chấp hành Hội Sinh viên',
+         '\y(bluewings|blue wings|ctv bch)\y')
+  ) as n(ten, ma_don_vi, gioi_thieu, mau_trung)
+  where exists (select 1 from public.don_vi_to_chuc dv where dv."MaDonVi" = n.ma_don_vi)
+    and not exists (
+      select 1 from public.cau_lac_bo c
+      where public.bo_dau(c."TenCLB") ~ n.mau_trung
+         or public.bo_dau(c."TenCLB") = public.bo_dau(n.ten)
+    );
+  get diagnostics v_them = row_count;
+
+  perform public.ghi_nhat_ky('NhapSoDoToChuc', 'don_vi_to_chuc', null, null,
+    format('%s đơn vị · xếp %s CLB · thêm %s CLB', v_don_vi, v_xep, v_them));
+
+  return jsonb_build_object('DonViMoi', v_don_vi, 'CLBDuocXep', v_xep, 'CLBMoi', v_them);
+end $$;
+
+revoke all on function public.khoi_tao_so_do_to_chuc() from public;
+grant execute on function public.khoi_tao_so_do_to_chuc() to authenticated;
