@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Building2, CalendarClock, Facebook, Mail, Users } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import {
-  CHON_DON_VI,
+  docCLBKemDonVi,
   NHAN_KHOI,
   NHAN_TRANG_THAI_HOAT_DONG,
   formatDateTime,
@@ -51,11 +51,9 @@ function ClubDetail() {
     queryKey: ["cau_lac_bo", maCLB],
     enabled: hopLe,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("cau_lac_bo")
-        .select(`*, ${CHON_DON_VI}`)
-        .eq("MaCLB", maCLB)
-        .maybeSingle();
+      const { data, error } = await docCLBKemDonVi((cot) =>
+        supabase.from("cau_lac_bo").select(cot).eq("MaCLB", maCLB).maybeSingle(),
+      );
       if (error) throw error;
       return (data as unknown as CauLacBo | null) ?? null;
     },

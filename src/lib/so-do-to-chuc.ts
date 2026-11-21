@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { dbMoi } from "@/lib/db-moi";
 import { NHAN_KHOI, type CauLacBo, type KhoiToChuc, type NhomToChuc } from "./data";
 
 /**
@@ -36,7 +37,7 @@ export function useSoDoToChuc() {
     queryKey: ["don_vi_to_chuc"],
     staleTime: 5 * 60_000,
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await dbMoi
         .from("don_vi_to_chuc")
         .select("MaDonVi, Khoi, TenDonVi, ThuTu, MoTa")
         .order("Khoi")

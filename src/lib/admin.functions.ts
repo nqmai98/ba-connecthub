@@ -61,7 +61,8 @@ export const createClubAccount = createServerFn({ method: "POST" })
       // Quản trị viên chỉnh lại trong Quản lý CLB nếu cần.
       const ins = await supabaseAdmin
         .from("cau_lac_bo")
-        .insert({ TenCLB: data.clubName })
+        // Không kèm MaDonVi: CSDL tự đoán đơn vị theo tên (sau migration 0009)
+        .insert({ TenCLB: data.clubName } as never)
         .select("MaCLB")
         .single();
       if (ins.error || !ins.data)

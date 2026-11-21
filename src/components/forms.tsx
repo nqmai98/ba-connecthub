@@ -2,6 +2,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { ImagePlus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { dbMoi } from "@/lib/db-moi";
 import { useAuth } from "@/lib/auth";
 import {
   NHAN_KHOI,
@@ -401,8 +402,8 @@ export function ClubForm({
           TenCLB: row.TenCLB.trim(),
         };
         const r = MaCLB
-          ? await supabase.from("cau_lac_bo").update(payload).eq("MaCLB", MaCLB)
-          : await supabase.from("cau_lac_bo").insert(payload);
+          ? await dbMoi.from("cau_lac_bo").update(payload).eq("MaCLB", MaCLB)
+          : await dbMoi.from("cau_lac_bo").insert(payload);
         if (r.error) throw r.error;
         toast.success("Đã lưu thông tin CLB");
       } else {

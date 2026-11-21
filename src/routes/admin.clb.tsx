@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { z } from "zod";
 import { Copy, Dices, KeyRound, ListTree, Pencil, Plus, Save, Trash2, UserPlus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { dbMoi } from "@/lib/db-moi";
 import {
   NHAN_KHOI,
   NHAN_TRANG_THAI_HOAT_DONG,
@@ -592,7 +593,7 @@ function DanhMucDonViDialog({
     }
     setBusy(true);
     const thuTu = Math.max(0, ...dsDonVi.filter((d) => d.Khoi === moi.khoi).map((d) => d.ThuTu)) + 1;
-    const { error } = await supabase
+    const { error } = await dbMoi
       .from("don_vi_to_chuc")
       .insert({ Khoi: moi.khoi, TenDonVi: moi.ten.trim().slice(0, 100), ThuTu: thuTu });
     setBusy(false);
@@ -611,7 +612,7 @@ function DanhMucDonViDialog({
       toast.error("Tên đơn vị không được để trống");
       return;
     }
-    const { error } = await supabase.from("don_vi_to_chuc").update({ TenDonVi: ten.slice(0, 100) }).eq("MaDonVi", ma);
+    const { error } = await dbMoi.from("don_vi_to_chuc").update({ TenDonVi: ten.slice(0, 100) }).eq("MaDonVi", ma);
     if (error) {
       toast.error(trung(error) ? "Tên này đã có trong khối" : "Chưa lưu được, vui lòng thử lại");
       return;
@@ -622,7 +623,7 @@ function DanhMucDonViDialog({
   };
 
   const xoa = async (ma: number) => {
-    const { error } = await supabase.from("don_vi_to_chuc").delete().eq("MaDonVi", ma);
+    const { error } = await dbMoi.from("don_vi_to_chuc").delete().eq("MaDonVi", ma);
     if (error) {
       toast.error("Chưa xóa được đơn vị, vui lòng thử lại");
       return;
