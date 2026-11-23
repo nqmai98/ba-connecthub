@@ -68,6 +68,7 @@ export type CauLacBo = {
   MoTa: string | null;
   LogoCLB: string | null;
   ThongTinLienHe: string | null;
+  EmailLienHe?: string | null;
   Fanpage: string | null;
   TrangThaiHoatDong: TrangThaiHoatDong;
   NgayCapNhat: string;

@@ -1,3 +1,4 @@
+import { laEmailNoiBo } from "@/lib/club-account";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { LayoutDashboard, LogIn, LogOut } from "lucide-react";
 import logo from "@/assets/bav-logo.png.asset.json";
@@ -27,7 +28,7 @@ export function StudentNav() {
   const laQuanLy = vaiTro === "DaiDienCLB" || vaiTro === "QuanTriVien";
   const items = laSinhVien ? SINH_VIEN : CONG_KHAI;
   const anhDaiDien = session?.user.user_metadata?.["avatar_url"] as string | undefined;
-  const tenHienThi = nguoiDung?.HoTen || nguoiDung?.TenDangNhap || nguoiDung?.EmailTruong || "";
+  const tenHienThi = nguoiDung?.HoTen || nguoiDung?.TenDangNhap || (laEmailNoiBo(nguoiDung?.EmailTruong) ? "" : nguoiDung?.EmailTruong) || "";
   const chuCai = tenHienThi
     .split(/\s+/)
     .filter(Boolean)

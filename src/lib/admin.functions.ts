@@ -13,6 +13,14 @@ const schema = z.object({
     .toLowerCase()
     .regex(USERNAME_REGEX, "Username không hợp lệ: " + USERNAME_HINT),
   password: z.string().min(8, "Mật khẩu tối thiểu 8 ký tự").max(72),
+  emailLienHe: z
+    .string()
+    .trim()
+    .toLowerCase()
+    .email("Email liên hệ không hợp lệ")
+    .max(255)
+    .optional()
+    .or(z.literal("").transform(() => undefined)),
 });
 
 export const createClubAccount = createServerFn({ method: "POST" })
@@ -132,6 +140,9 @@ export const createClubAccount = createServerFn({ method: "POST" })
       await supabaseAdmin.auth.admin.deleteUser(uid);
       await removeClubIfNew();
       throw new Error("Gán quyền cho tài khoản CLB thất bại: " + capNhat.error.message);
+    }
+    if (data.emailLienHe) {
+      await supabaseAdmin.from("cau_lac_bo").update({ EmailLienHe: data.emailLienHe }).eq("MaCLB", maCLB!);
     }
     return { ok: true as const, maCLB: maCLB! };
   });
@@ -277,11 +288,19 @@ export const requestClubPasswordReset = createServerFn({ method: "POST" })
 
     const tk = await supabaseAdmin
       .from("nguoi_dung")
-      .select("MaNguoiDung, MaCLB, cau_lac_bo(TenCLB)")
+      .select("MaNguoiDung, MaCLB, cau_lac_bo!nguoi_dung_MaCLB_fkey(TenCLB, EmailLienHe)")
       .eq("TenDangNhap", data.username)
       .not("MaCLB", "is", null)
       .maybeSingle();
+    if (tk.error) throw new Error("Lỗi tra cứu tài khoản: " + tk.error.message);
     if (!tk.data) throw new Error("Không tìm thấy tài khoản CLB với tên tài khoản này");
+    const clbTk = tk.data.cau_lac_bo as
+      | { TenCLB: string; EmailLienHe: string | null }
+      | { TenCLB: string; EmailLienHe: string | null }[]
+      | null;
+    const emailDk = (Array.isArray(clbTk) ? clbTk[0]?.EmailLienHe : clbTk?.EmailLienHe)?.trim().toLowerCase();
+    if (emailDk && emailDk !== data.email)
+      throw new Error("Email không khớp với email liên hệ đã đăng ký của CLB");
 
     const duongDan = `/admin/clb?capLai=${encodeURIComponent(data.username)}&email=${encodeURIComponent(data.email)}`;
 

@@ -1,0 +1,1 @@
+ALTER TABLE public.cau_lac_bo ADD COLUMN IF NOT EXISTS "EmailLienHe" varchar(255);

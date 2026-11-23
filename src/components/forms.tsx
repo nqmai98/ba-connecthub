@@ -24,7 +24,7 @@ import { ConfirmDialog } from "@/components/common";
 import { cn } from "@/lib/utils";
 import { RichTextEditor } from "@/components/RichTextEditor";
 import { ChonNam } from "@/components/ChonNam";
-import { LUA_CHON_DON_VI } from "@/lib/so-do-to-chuc";
+import { DON_VI_MAC_DINH, nhanDonVi } from "@/lib/so-do-to-chuc";
 import { anhTrongBai, lamSachHtml, vanBanThuan } from "@/lib/noi-dung";
 
 function ImageField({
@@ -323,6 +323,7 @@ export type CLBDraft = {
   MoTa: string | null;
   LogoCLB: string | null;
   ThongTinLienHe: string | null;
+  EmailLienHe: string | null;
   Fanpage: string | null;
   GioiThieuNgan: string | null;
   BanChuyenMon: string | null;
@@ -340,6 +341,7 @@ export const CLB_RONG: CLBDraft = {
   MoTa: null,
   LogoCLB: null,
   ThongTinLienHe: null,
+  EmailLienHe: null,
   Fanpage: null,
   GioiThieuNgan: null,
   BanChuyenMon: null,
@@ -359,6 +361,7 @@ export function clbSangDraft(c: CauLacBo): CLBDraft {
     MoTa: c.MoTa,
     LogoCLB: c.LogoCLB,
     ThongTinLienHe: c.ThongTinLienHe,
+    EmailLienHe: c.EmailLienHe ?? null,
     Fanpage: c.Fanpage,
     GioiThieuNgan: c.GioiThieuNgan,
     BanChuyenMon: c.BanChuyenMon,
@@ -401,8 +404,15 @@ export function ClubForm({
     try {
       if (cheDo === "admin") {
         const { MaCLB, ...row } = f;
+        const email = row.EmailLienHe?.trim().toLowerCase() || null;
+        if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+          toast.error("Email liên hệ không hợp lệ");
+          setBusy(false);
+          return;
+        }
         const payload = {
           ...row,
+          EmailLienHe: email,
           TenCLB: row.TenCLB.trim(),
           MaLinhVuc: f.MaLinhVuc,
         };
@@ -480,14 +490,28 @@ export function ClubForm({
             onChange={(e) => set("DonViTrucThuoc", e.target.value || null)}
           >
             <option value="">-- Chọn đơn vị trực thuộc --</option>
-            {f.DonViTrucThuoc && !(LUA_CHON_DON_VI as readonly string[]).includes(f.DonViTrucThuoc) && (
-              <option value={f.DonViTrucThuoc}>{f.DonViTrucThuoc} (giá trị cũ)</option>
-            )}
-            {LUA_CHON_DON_VI.map((dv) => (
-              <option key={dv} value={dv}>
-                {dv}
-              </option>
+            {f.DonViTrucThuoc &&
+              f.DonViTrucThuoc !== "Khác" &&
+              !DON_VI_MAC_DINH.some((n) => nhanDonVi(n) === f.DonViTrucThuoc) && (
+                <option value={f.DonViTrucThuoc}>{f.DonViTrucThuoc}</option>
+              )}
+            {(
+              [
+                ["DoanThanhNien", "Đoàn Thanh niên"],
+                ["HoiSinhVien", "Hội Sinh viên"],
+              ] as const
+            ).map(([khoi, nhan]) => (
+              <optgroup key={khoi} label={nhan}>
+                {DON_VI_MAC_DINH.filter((n) => n.Khoi === khoi)
+                  .sort((a, b) => a.ThuTu - b.ThuTu)
+                  .map((n) => (
+                    <option key={n.MaNhom} value={nhanDonVi(n)}>
+                      {nhanDonVi(n)}
+                    </option>
+                  ))}
+              </optgroup>
             ))}
+            <option value="Khác">Khác</option>
           </select>
         </div>
         <div className="space-y-1.5">
@@ -556,6 +580,18 @@ export function ClubForm({
           onChange={(v) => set("AnhBia", v)}
         />
       </div>
+      {cheDo === "admin" && (
+        <div className="space-y-1.5">
+          <Label>Email liên hệ của CLB</Label>
+          <Input
+            type="email"
+            value={f.EmailLienHe ?? ""}
+            maxLength={255}
+            onChange={(e) => set("EmailLienHe", e.target.value || null)}
+            placeholder="VD: clb@hvnh.edu.vn"
+          />
+        </div>
+      )}
       {cheDo === "admin" && (
         <div className="flex flex-wrap items-end gap-5 text-sm font-semibold">
           <div className="space-y-1.5">

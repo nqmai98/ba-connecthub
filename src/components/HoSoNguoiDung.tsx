@@ -57,7 +57,7 @@ export function HoSoNguoiDung({ khu = "sinh-vien" }: { khu?: "sinh-vien" | "clb"
   const tenDangNhap = laTaiKhoanCLB ? emailToUsername(nguoiDung.EmailTruong) : nguoiDung.EmailTruong;
 
   const anhDaiDien = session?.user.user_metadata?.["avatar_url"] as string | undefined;
-  const tenHienThi = nguoiDung.HoTen || nguoiDung.TenDangNhap || nguoiDung.EmailTruong;
+  const tenHienThi = nguoiDung.HoTen || nguoiDung.TenDangNhap || tenDangNhap;
   const chuCai = tenHienThi
     .split(/\s+/)
     .filter(Boolean)

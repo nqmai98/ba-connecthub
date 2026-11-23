@@ -71,6 +71,13 @@
       "when": 1795409350667,
       "tag": "0009_cau_truc_tuong_tac_va_so_do_to_chuc",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1795457982333,
+      "tag": "0010_them_email_lien_he_clb",
+      "breakpoints": true
     }
   ]
 }

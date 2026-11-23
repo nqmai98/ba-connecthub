@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { laEmailNoiBo } from "@/lib/club-account";
 import { useServerFn } from "@tanstack/react-start";
 import { Trash2 } from "lucide-react";
 import { deleteUserAccount } from "@/lib/admin.functions";
@@ -44,7 +45,7 @@ type DongTaiKhoan = {
   TrangThaiTaiKhoan: string;
   NgayCapTaiKhoan: string;
   vai_tro: { TenVaiTro: string } | null;
-  cau_lac_bo: { TenCLB: string } | null;
+  cau_lac_bo: { TenCLB: string; EmailLienHe: string | null } | null;
 };
 
 function Accounts() {
@@ -75,7 +76,7 @@ function Accounts() {
         .from("nguoi_dung")
         // cau_lac_bo phải chỉ rõ khoá ngoại: giữa nguoi_dung và cau_lac_bo còn một
         // đường quan hệ nhiều-nhiều qua theo_doi_clb nên PostgREST không tự chọn được
-        .select("*, vai_tro(TenVaiTro), cau_lac_bo!nguoi_dung_MaCLB_fkey(TenCLB)")
+        .select("*, vai_tro(TenVaiTro), cau_lac_bo!nguoi_dung_MaCLB_fkey(TenCLB, EmailLienHe)")
         .order("NgayCapTaiKhoan", { ascending: false });
       if (error) throw error;
       return data as unknown as DongTaiKhoan[];
@@ -113,7 +114,7 @@ function Accounts() {
   const xacNhanXoa = async (u: DongTaiKhoan) => {
     try {
       await xoaTaiKhoan({ data: { maNguoiDung: u.MaNguoiDung } });
-      toast.success("Đã xóa tài khoản " + (u.HoTen || u.TenDangNhap || u.EmailTruong));
+      toast.success("Đã xóa tài khoản " + (u.HoTen || u.TenDangNhap || (laEmailNoiBo(u.EmailTruong) ? "" : u.EmailTruong)));
       qc.invalidateQueries({ queryKey: ["admin-accounts"] });
       qc.invalidateQueries({ queryKey: ["dai-dien-clb"] });
     } catch (e) {
@@ -187,9 +188,13 @@ function Accounts() {
                 <tr key={u.MaNguoiDung} className="border-t">
                   <td className="p-3 font-semibold">{u.HoTen || "—"}</td>
                   <td className="p-3">
-                    {u.TenDangNhap ?? u.EmailTruong}
-                    {u.TenDangNhap && (
-                      <div className="text-xs text-muted-foreground">{u.EmailTruong}</div>
+                    {u.TenDangNhap ?? (laEmailNoiBo(u.EmailTruong) ? "—" : u.EmailTruong)}
+                    {(u.TenDangNhap || laEmailNoiBo(u.EmailTruong)) && (
+                      <div className="text-xs text-muted-foreground">
+                        {laEmailNoiBo(u.EmailTruong)
+                          ? (u.cau_lac_bo?.EmailLienHe ?? "—")
+                          : u.EmailTruong}
+                      </div>
                     )}
                   </td>
                   <td className="p-3 text-muted-foreground">{u.cau_lac_bo?.TenCLB ?? "—"}</td>
@@ -233,7 +238,7 @@ function Accounts() {
                           <Button
                             size="sm"
                             variant="outline"
-                            aria-label={"Xóa tài khoản " + (u.HoTen || u.EmailTruong)}
+                            aria-label={"Xóa tài khoản " + (u.HoTen || u.TenDangNhap || "")}
                             className="border-destructive/40 text-destructive hover:bg-destructive/10 hover:text-destructive"
                             onClick={() => setXoa(u)}
                           >
@@ -252,7 +257,7 @@ function Accounts() {
       <ConfirmDialog
         open={!!xoa}
         onOpenChange={(o) => !o && setXoa(null)}
-        title={`Xóa tài khoản ${xoa?.HoTen || xoa?.TenDangNhap || xoa?.EmailTruong || ""}?`}
+        title={`Xóa tài khoản ${xoa?.HoTen || xoa?.TenDangNhap || (laEmailNoiBo(xoa?.EmailTruong) ? "" : xoa?.EmailTruong) || ""}?`}
         description={
           xoa?.vai_tro?.TenVaiTro === "DaiDienCLB"
             ? `Tài khoản đại diện sẽ bị xóa vĩnh viễn; CLB ${xoa?.cau_lac_bo?.TenCLB ?? ""} vẫn được giữ lại.`

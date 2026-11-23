@@ -17,6 +17,11 @@ export function usernameToEmail(username: string) {
   return username.trim().toLowerCase() + CLUB_EMAIL_DOMAIN;
 }
 
+/** true nếu là email nội bộ của tài khoản CLB (không phải email thật, không hiển thị). */
+export function laEmailNoiBo(email: string | null | undefined) {
+  return !!email && email.trim().toLowerCase().endsWith(CLUB_EMAIL_DOMAIN);
+}
+
 /** Email nội bộ -> username, trả về chính nó nếu không phải tài khoản CLB. */
 export function emailToUsername(email: string) {
   const e = email.trim().toLowerCase();

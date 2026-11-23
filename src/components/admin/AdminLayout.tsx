@@ -1,3 +1,4 @@
+import { laEmailNoiBo } from "@/lib/club-account";
 import type { ReactNode } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
@@ -69,7 +70,7 @@ export function AdminLayout({ children }: { children: ReactNode }) {
   const { nguoiDung, vaiTro, signOut, maNguoiDung } = useAuth();
   const navigate = useNavigate();
   const { data: viecCho } = useViecChoXuLy();
-  const tenHienThi = nguoiDung?.HoTen || nguoiDung?.EmailTruong || "Quản trị viên";
+  const tenHienThi = nguoiDung?.HoTen || (laEmailNoiBo(nguoiDung?.EmailTruong) ? "" : nguoiDung?.EmailTruong) || "Quản trị viên";
 
   return (
     <div className="min-h-screen bg-[#f3f5fb]">

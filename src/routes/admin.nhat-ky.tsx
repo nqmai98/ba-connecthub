@@ -1,3 +1,4 @@
+import { laEmailNoiBo, emailToUsername } from "@/lib/club-account";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
@@ -112,7 +113,7 @@ function ActivityLog() {
                   <td className="p-3 font-semibold">
                     {r.nguoi_dung?.HoTen || "—"}
                     <div className="text-xs font-medium text-muted-foreground">
-                      {r.nguoi_dung?.EmailTruong}
+                      {laEmailNoiBo(r.nguoi_dung?.EmailTruong) ? emailToUsername(r.nguoi_dung!.EmailTruong) : r.nguoi_dung?.EmailTruong}
                     </div>
                   </td>
                   <td className="p-3 font-bold text-primary">

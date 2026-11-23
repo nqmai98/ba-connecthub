@@ -585,7 +585,7 @@ function ThemTaiKhoanDialog({
   // "co-san" chỉ dùng khi bấm "Chưa có tài khoản – cấp ngay" ở một dòng CLB cụ thể
   const [cheDo, setCheDo] = useState<"moi" | "co-san">("moi");
   const [maCLB, setMaCLB] = useState<number | null>(null);
-  const [form, setForm] = useState({ clubName: "", username: "", password: "" });
+  const [form, setForm] = useState({ clubName: "", username: "", password: "", emailLienHe: "" });
   const [done, setDone] = useState<{ clubName: string; username: string; password: string } | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -593,7 +593,7 @@ function ThemTaiKhoanDialog({
     if (!mo) return;
     setCheDo(mo.maCLB ? "co-san" : "moi");
     setMaCLB(mo.maCLB ?? null);
-    setForm({ clubName: "", username: "", password: randomPassword() });
+    setForm({ clubName: "", username: "", password: randomPassword(), emailLienHe: "" });
     setDone(null);
   }, [mo]);
 
@@ -618,6 +618,11 @@ function ThemTaiKhoanDialog({
       toast.error("Mật khẩu tối thiểu 8 ký tự");
       return;
     }
+    const emailLienHe = form.emailLienHe.trim().toLowerCase();
+    if (emailLienHe && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailLienHe)) {
+      toast.error("Email liên hệ không hợp lệ");
+      return;
+    }
     setBusy(true);
     try {
       const res = await create({
@@ -626,6 +631,7 @@ function ThemTaiKhoanDialog({
           clubName,
           username,
           password: form.password,
+          ...(emailLienHe ? { emailLienHe } : {}),
         },
       });
       toast.success("Đã tạo tài khoản cho " + clubName);
@@ -721,6 +727,17 @@ function ThemTaiKhoanDialog({
                   placeholder="VD: sec.hvnh"
                 />
                 <p className="text-xs font-medium text-muted-foreground">{USERNAME_HINT}</p>
+              </div>
+              <div className="space-y-1.5">
+                <Label>Email liên hệ của CLB</Label>
+                <Input
+                  type="email"
+                  value={form.emailLienHe}
+                  maxLength={255}
+                  autoComplete="off"
+                  onChange={(e) => setForm({ ...form, emailLienHe: e.target.value })}
+                  placeholder="VD: clb@hvnh.edu.vn"
+                />
               </div>
               <div className="space-y-1.5">
                 <Label>Mật khẩu * (tối thiểu 8 ký tự)</Label>

@@ -1,3 +1,4 @@
+import { laEmailNoiBo } from "@/lib/club-account";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { LogOut, LogIn } from "lucide-react";
 import logo from "@/assets/bav-logo.png.asset.json";
@@ -85,7 +86,7 @@ export function AppNav() {
             <>
               <div className="hidden text-right leading-tight sm:block">
                 <div className="max-w-[160px] truncate text-sm font-bold">
-                  {nguoiDung?.HoTen || nguoiDung?.TenDangNhap || nguoiDung?.EmailTruong}
+                  {nguoiDung?.HoTen || nguoiDung?.TenDangNhap || (laEmailNoiBo(nguoiDung?.EmailTruong) ? "" : nguoiDung?.EmailTruong)}
                 </div>
                 <div className="text-xs font-semibold text-accent-foreground/70">
                   {vaiTro && NHAN_VAI_TRO[vaiTro]}

@@ -112,6 +112,7 @@ export type Database = {
           AnhBia: string | null
           BanChuyenMon: string | null
           DonViTrucThuoc: string | null
+          EmailLienHe: string | null
           Fanpage: string | null
           GioiThieuNgan: string | null
           LogoCLB: string | null
@@ -131,6 +132,7 @@ export type Database = {
           AnhBia?: string | null
           BanChuyenMon?: string | null
           DonViTrucThuoc?: string | null
+          EmailLienHe?: string | null
           Fanpage?: string | null
           GioiThieuNgan?: string | null
           LogoCLB?: string | null
@@ -150,6 +152,7 @@ export type Database = {
           AnhBia?: string | null
           BanChuyenMon?: string | null
           DonViTrucThuoc?: string | null
+          EmailLienHe?: string | null
           Fanpage?: string | null
           GioiThieuNgan?: string | null
           LogoCLB?: string | null
