@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Calendar, Clock, Eye, Heart, MapPin, MessageCircle } from "lucide-react";
+import { ArrowLeft, Calendar, Clock, Eye, Heart, MapPin } from "lucide-react";
 import {
   formatDateTime,
   formatKhoangThoiGian,
@@ -10,7 +10,6 @@ import {
   useBaiViet,
   useTuongTac,
 } from "@/lib/data";
-import { KhuBinhLuan } from "@/components/BinhLuan";
 import { vanBanThuan } from "@/lib/noi-dung";
 import {
   ClubLogo,
@@ -117,10 +116,6 @@ function TrangBaiViet() {
                   <Eye className="h-4 w-4" /> {tt.LuotXem.toLocaleString("vi-VN")}
                   <span className="sr-only">lượt xem</span>
                 </span>
-                <a href="#binh-luan" className="inline-flex items-center gap-1 hover:text-primary" title="Bình luận">
-                  <MessageCircle className="h-4 w-4" /> {tt.LuotBinhLuan.toLocaleString("vi-VN")}
-                  <span className="sr-only">bình luận</span>
-                </a>
                 {bai.su_kien && (
                   <span className="inline-flex items-center gap-1" title="Lượt yêu thích">
                     <Heart className="h-4 w-4" /> {tt.LuotYeuThich.toLocaleString("vi-VN")}
@@ -156,7 +151,6 @@ function TrangBaiViet() {
         </div>
       </article>
 
-      <KhuBinhLuan maBaiDang={bai.MaBaiDang} choPhepGui={daDuyet} />
 
       {khac.length > 0 && (
         <section className="mt-10">
