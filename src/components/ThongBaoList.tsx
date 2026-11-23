@@ -38,6 +38,12 @@ export function trichTieuDe(chu: string): { truoc: string; tieuDe: string; sau: 
   return null;
 }
 
+/** Đường dẫn của thông báo có thể kèm tham số (VD "/admin/clb?capLai=..."): tách thành to + search. */
+export function diemDenThongBao(duongDan: string) {
+  const [to, qs] = duongDan.split("?");
+  return { to: to || "/", search: Object.fromEntries(new URLSearchParams(qs ?? "")) } as { to: string; search: Record<string, string> };
+}
+
 export function phanTichThongBao(n: Pick<ThongBaoCuaToi, "TieuDe" | "NoiDung">) {
   const chuan = (x: string) => x.replace(/\s+/g, " ").trim().toLowerCase();
   const chinh = (n.NoiDung || n.TieuDe).trim();
@@ -154,7 +160,7 @@ export function ThongBaoList() {
 
   const open = async (n: ThongBaoCuaToi) => {
     if (!n.DaDoc) await danhDau.mutateAsync(n.MaThongBao);
-    if (n.DuongDan) navigate({ to: n.DuongDan });
+    if (n.DuongDan) navigate(diemDenThongBao(n.DuongDan) as never);
   };
 
   return (

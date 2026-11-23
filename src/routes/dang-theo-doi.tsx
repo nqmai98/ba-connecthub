@@ -53,7 +53,7 @@ function Following() {
                 <div className="min-w-0">
                   <div className="truncate font-bold text-primary">{c.TenCLB}</div>
                   <div className="truncate text-sm text-muted-foreground">
-                    {c.don_vi_to_chuc?.TenDonVi ?? "Khác"} · Theo dõi từ{" "}
+                    {c.linh_vuc?.TenLinhVuc} · Theo dõi từ{" "}
                     {formatDateTime(theoDoi?.get(c.MaCLB)?.NgayTheoDoi ?? null)}
                   </div>
                 </div>

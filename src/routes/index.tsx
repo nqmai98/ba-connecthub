@@ -10,7 +10,7 @@ import {
   type KhoiToChuc,
   type NhomToChuc,
 } from "@/lib/data";
-import { khoiCuaCLB, maNhomCuaCLB, useSoDoToChuc } from "@/lib/so-do-to-chuc";
+import { DON_VI_MAC_DINH, khoiCuaCLB, maNhomCuaCLB, useSoDoToChuc } from "@/lib/so-do-to-chuc";
 import { ClubCard, Empty, EventCard, GridSkeleton } from "@/components/common";
 import { HotEventsBanner } from "@/components/student/HotEventsBanner";
 import { ClubSearchBox } from "@/components/student/Filters";
@@ -58,7 +58,6 @@ function Home() {
                 key={k}
                 khoi={k}
                 nhom={dsNhom.filter((n) => n.Khoi === k)}
-                dsNhom={dsNhom}
                 clubs={dangHoatDong.map((c) => ({ ...c, MaNhom: maNhomCuaCLB(c, dsNhom) }))}
               />
             ))}
@@ -117,16 +116,15 @@ function SectionHeader({ title, to }: { title: ReactNode; to: "/cau-lac-bo" | "/
 function KhoiCard({
   khoi,
   nhom,
-  dsNhom,
   clubs,
 }: {
   khoi: KhoiToChuc;
   nhom: NhomToChuc[];
-  dsNhom: NhomToChuc[];
   clubs: CauLacBo[];
 }) {
-  // Tổng số CLB, đội nhóm thuộc khối
-  const tong = clubs.filter((c) => khoiCuaCLB(c, dsNhom) === khoi).length;
+  const maNhom = new Set(nhom.map((n) => n.MaNhom));
+  // Tổng theo khối (ô "Đơn vị trực thuộc"), gồm cả CLB chưa xếp được vào ô xanh nào
+  const tong = clubs.filter((c) => khoiCuaCLB(c, DON_VI_MAC_DINH) === khoi).length;
   return (
     <div className="rounded-2xl border bg-card p-4">
       <Link
@@ -147,7 +145,7 @@ function KhoiCard({
           >
             {n.TenNhom}
             <span className="rounded-full bg-secondary px-1.5 text-xs text-secondary-foreground">
-              {clubs.filter((c) => maNhomCuaCLB(c) === n.MaNhom).length}
+              {clubs.filter((c) => maNhomCuaCLB(c, DON_VI_MAC_DINH) === n.MaNhom).length}
             </span>
           </Link>
         ))}

@@ -247,9 +247,6 @@ function AdminLoginPage() {
             </Button>
           </form>
           )}
-          <p className="mt-5 text-center text-xs font-semibold text-muted-foreground">
-            Tài khoản Quản trị viên (superuser) do nhóm phát triển cấp.
-          </p>
       </div>
     </main>
   );

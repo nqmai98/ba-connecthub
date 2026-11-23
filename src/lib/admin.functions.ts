@@ -57,12 +57,26 @@ export const createClubAccount = createServerFn({ method: "POST" })
       if (dup.data)
         throw new Error("Đã có CLB trùng tên. Hãy cấp tài khoản từ danh sách CLB bên dưới");
 
-      // Đơn vị trong sơ đồ Đoàn – Hội được CSDL tự đoán theo tên CLB (trigger cau_lac_bo_don_vi_trg);
-      // Quản trị viên chỉnh lại trong Quản lý CLB nếu cần.
+      // MaLinhVuc NOT NULL: CLB mới tạo nhanh được gán lĩnh vực "Khác", Quản trị viên sửa lại sau
+      const lv = await supabaseAdmin
+        .from("linh_vuc")
+        .select("MaLinhVuc")
+        .eq("TenLinhVuc", "Khác")
+        .maybeSingle();
+      let maLinhVuc = lv.data?.MaLinhVuc;
+      if (!maLinhVuc) {
+        const tao = await supabaseAdmin
+          .from("linh_vuc")
+          .insert({ TenLinhVuc: "Khác" })
+          .select("MaLinhVuc")
+          .single();
+        if (tao.error || !tao.data) throw new Error("Không tạo được lĩnh vực mặc định");
+        maLinhVuc = tao.data.MaLinhVuc;
+      }
+
       const ins = await supabaseAdmin
         .from("cau_lac_bo")
-        // Không kèm MaDonVi: CSDL tự đoán đơn vị theo tên (sau migration 0009)
-        .insert({ TenCLB: data.clubName } as never)
+        .insert({ TenCLB: data.clubName, MaLinhVuc: maLinhVuc })
         .select("MaCLB")
         .single();
       if (ins.error || !ins.data)
@@ -207,5 +221,108 @@ export const deleteUserAccount = createServerFn({ method: "POST" })
     if (error) throw new Error("Xóa tài khoản thất bại: " + error.message);
     // Phòng trường hợp bản ghi nguoi_dung chưa bị xóa theo (không có cascade)
     await supabaseAdmin.from("nguoi_dung").delete().eq("MaNguoiDung", data.maNguoiDung);
+    return { ok: true as const };
+  });
+
+/* ------------------------------ Cấp lại mật khẩu tài khoản CLB ------------------------------ */
+
+/** Quản trị viên đặt mật khẩu mới cho tài khoản đại diện của một CLB. */
+export const resetClubPassword = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z
+      .object({
+        maCLB: z.number().int().positive(),
+        password: z.string().min(8, "Mật khẩu tối thiểu 8 ký tự").max(72),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { data: isAdmin } = await context.supabase.rpc("la_quan_tri_vien", {
+      _ma_nguoi_dung: context.userId,
+    });
+    if (!isAdmin) throw new Error("Bạn không có quyền thực hiện thao tác này");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const tk = await supabaseAdmin
+      .from("nguoi_dung")
+      .select("MaNguoiDung, TenDangNhap")
+      .eq("MaCLB", data.maCLB)
+      .maybeSingle();
+    if (!tk.data) throw new Error("CLB này chưa có tài khoản đại diện");
+
+    const { error } = await supabaseAdmin.auth.admin.updateUserById(tk.data.MaNguoiDung, {
+      password: data.password,
+    });
+    if (error) throw new Error("Cấp lại mật khẩu thất bại: " + error.message);
+    return { ok: true as const, username: tk.data.TenDangNhap };
+  });
+
+/**
+ * Đại diện CLB quên mật khẩu (chưa đăng nhập): gửi yêu cầu cấp lại tới tất cả Quản trị viên
+ * dưới dạng thông báo. Bấm vào thông báo sẽ mở hộp thoại cấp lại mật khẩu ở trang Quản lý CLB.
+ */
+export const requestClubPasswordReset = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) =>
+    z
+      .object({
+        username: z.string().trim().toLowerCase().min(3, "Vui lòng nhập tên tài khoản").max(64),
+        clubName: z.string().trim().min(2, "Vui lòng nhập tên CLB").max(255),
+        email: z.string().trim().toLowerCase().email("Email không hợp lệ").max(255),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const tk = await supabaseAdmin
+      .from("nguoi_dung")
+      .select("MaNguoiDung, MaCLB, cau_lac_bo(TenCLB)")
+      .eq("TenDangNhap", data.username)
+      .not("MaCLB", "is", null)
+      .maybeSingle();
+    if (!tk.data) throw new Error("Không tìm thấy tài khoản CLB với tên tài khoản này");
+
+    const duongDan = `/admin/clb?capLai=${encodeURIComponent(data.username)}&email=${encodeURIComponent(data.email)}`;
+
+    // Chống gửi lặp: mỗi tài khoản chỉ gửi 1 yêu cầu trong 10 phút
+    const truoc = new Date(Date.now() - 10 * 60 * 1000).toISOString();
+    const lap = await supabaseAdmin
+      .from("thong_bao")
+      .select("MaThongBao")
+      .like("DuongDan", `/admin/clb?capLai=${encodeURIComponent(data.username)}&%`)
+      .gte("ThoiGianTao", truoc)
+      .limit(1);
+    if (lap.data?.length) return { ok: true as const };
+
+    const vaiTro = await supabaseAdmin
+      .from("vai_tro")
+      .select("MaVaiTro")
+      .eq("TenVaiTro", "QuanTriVien")
+      .maybeSingle();
+    const admins = vaiTro.data
+      ? await supabaseAdmin.from("nguoi_dung").select("MaNguoiDung").eq("MaVaiTro", vaiTro.data.MaVaiTro)
+      : null;
+    if (!admins?.data?.length) throw new Error("Hệ thống chưa có Quản trị viên để nhận yêu cầu");
+
+    const cl = tk.data.cau_lac_bo as { TenCLB: string } | { TenCLB: string }[] | null;
+    const tenThat = (Array.isArray(cl) ? cl[0]?.TenCLB : cl?.TenCLB) ?? data.clubName;
+
+    const tb = await supabaseAdmin
+      .from("thong_bao")
+      .insert({
+        TieuDe: "Yêu cầu cấp lại mật khẩu",
+        NoiDung: `${tenThat} (tài khoản ${data.username}) yêu cầu cấp lại mật khẩu. Tên CLB khai báo: ${data.clubName}. Email nhận mật khẩu: ${data.email}`,
+        LoaiThongBao: "HeThong",
+        DuongDan: duongDan,
+      })
+      .select("MaThongBao")
+      .single();
+    if (tb.error || !tb.data) throw new Error("Gửi yêu cầu thất bại, vui lòng thử lại");
+
+    const nn = await supabaseAdmin.from("nguoi_nhan_thong_bao").insert(
+      admins.data.map((a) => ({ MaNguoiDung: a.MaNguoiDung, MaThongBao: tb.data.MaThongBao })),
+    );
+    if (nn.error) throw new Error("Gửi yêu cầu thất bại, vui lòng thử lại");
     return { ok: true as const };
   });

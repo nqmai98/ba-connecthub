@@ -24,7 +24,7 @@ import {
 } from "@/components/ui/dialog";
 import { useViecChoXuLy } from "@/components/admin/AdminLayout";
 import { NHAN_KHOI, useCauLacBo, type KhoiToChuc } from "@/lib/data";
-import { maNhomCuaCLB, useSoDoToChuc } from "@/lib/so-do-to-chuc";
+import { khoiCuaCLB, maNhomCuaCLB, useSoDoToChuc } from "@/lib/so-do-to-chuc";
 import { cn } from "@/lib/utils";
 import { danhSachNamHoc, khoangHocKi, namHocCua, NHAN_HOC_KI, type HocKi } from "@/lib/hoc-ki";
 import { BoLocHocKi } from "@/components/BoLocHocKi";
@@ -160,7 +160,20 @@ function Dashboard() {
       baiGanDay: cl.reduce((s, c) => s + tongTheoCLB(c.MaCLB), 0),
     };
   });
-  const chuaPhanLoai = clbKemNhom.filter((c) => c.MaNhom == null);
+  // CLB đã chọn Đoàn / Hội nhưng chưa xếp được vào ô xanh nào -> dòng "Đơn vị khác" của khối đó
+  (Object.keys(NHAN_KHOI) as KhoiToChuc[]).forEach((k, i) => {
+    const cl = clbKemNhom.filter((c) => c.MaNhom == null && khoiCuaCLB(c, dsNhom) === k);
+    if (cl.length)
+      donVi.push({
+        MaNhom: -1 - i,
+        Khoi: k,
+        TenNhom: "Đơn vị khác",
+        ThuTu: 99,
+        soCLB: cl.length,
+        baiGanDay: cl.reduce((s2, c) => s2 + tongTheoCLB(c.MaCLB), 0),
+      });
+  });
+  const chuaPhanLoai = clbKemNhom.filter((c) => c.MaNhom == null && khoiCuaCLB(c, dsNhom) == null);
   const maxBai = Math.max(1, ...donVi.map((x) => x.baiGanDay));
 
   // ---- Top CLB & CLB im lặng ----
@@ -187,7 +200,6 @@ function Dashboard() {
   return (
     <Page
       title="Dashboard"
-      subtitle="Tổng quan hoạt động của các câu lạc bộ trên BAV CLUBS"
       actions={
         <BoLocHocKi dsNamHoc={dsNamHoc} namHoc={namHoc} hocKi={hocKi} onNamHoc={setNamHoc} onHocKi={setHocKi} />
       }
@@ -233,7 +245,7 @@ function Dashboard() {
         </Khung>
 
         {/* Việc cần xử lý */}
-        <Khung tieuDe="Việc cần xử lý" phu="Nội dung CLB gửi lên đang chờ bạn">
+        <Khung tieuDe="Việc cần xử lý">
           <ul className="space-y-2">
             {(
               [
@@ -282,7 +294,7 @@ function Dashboard() {
         {/* Hoạt động theo đơn vị */}
         <Khung
           tieuDe="Hoạt động theo tổ chức"
-          phu={`Số CLB và số bài viết, sự kiện được duyệt · ${tenKy}`}
+          phu={tenKy}
           className="lg:col-span-2"
         >
           <div className="grid gap-5 md:grid-cols-2">
@@ -330,7 +342,7 @@ function Dashboard() {
 
         <div className="space-y-5">
           {/* Top CLB */}
-          <Khung tieuDe="CLB tích cực nhất" phu={`Theo số bài viết và sự kiện được duyệt · ${tenKy}`}>
+          <Khung tieuDe="CLB tích cực nhất" phu={tenKy}>
             {top.length ? (
               <ol className="space-y-2.5">
                 {top.map(({ c, bai, suKien: sk, theoDoi }, i) => (

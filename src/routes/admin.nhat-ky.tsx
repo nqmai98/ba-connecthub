@@ -77,7 +77,6 @@ function ActivityLog() {
   return (
     <Page
       title="Nhật ký hoạt động"
-      subtitle="300 thao tác gần nhất trên hệ thống"
       actions={
         <Input
           className="w-72"

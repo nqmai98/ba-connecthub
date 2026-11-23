@@ -255,8 +255,8 @@ function Accounts() {
         title={`Xóa tài khoản ${xoa?.HoTen || xoa?.TenDangNhap || xoa?.EmailTruong || ""}?`}
         description={
           xoa?.vai_tro?.TenVaiTro === "DaiDienCLB"
-            ? `Tài khoản đại diện sẽ bị xóa vĩnh viễn; CLB ${xoa?.cau_lac_bo?.TenCLB ?? ""} vẫn được giữ lại và có thể cấp tài khoản mới.`
-            : "Tài khoản và dữ liệu cá nhân trên BAV CLUBS (CLB đang theo dõi, sự kiện yêu thích, thông báo) sẽ bị xóa vĩnh viễn. Tài khoản Google của sinh viên không bị ảnh hưởng: nếu họ đăng nhập lại sẽ có tài khoản mới trống. Muốn chặn hẳn, hãy dùng “Khóa”."
+            ? `Tài khoản đại diện sẽ bị xóa vĩnh viễn; CLB ${xoa?.cau_lac_bo?.TenCLB ?? ""} vẫn được giữ lại.`
+            : "Tài khoản và dữ liệu cá nhân trên BAV CLUBS sẽ bị xóa vĩnh viễn."
         }
         confirmText="Xóa vĩnh viễn"
         destructive

@@ -1,15 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect } from "react";
-import { useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Calendar, Clock, Eye, Heart, MapPin } from "lucide-react";
-import {
-  formatDateTime,
-  formatKhoangThoiGian,
-  ghiLuotXem,
-  useBaiDangCuaCLB,
-  useBaiViet,
-  useTuongTac,
-} from "@/lib/data";
+import { ArrowLeft, Calendar, Clock, MapPin } from "lucide-react";
+import { formatDateTime, formatKhoangThoiGian, useBaiDangCuaCLB, useBaiViet } from "@/lib/data";
 import { vanBanThuan } from "@/lib/noi-dung";
 import {
   ClubLogo,
@@ -43,18 +34,6 @@ function TrangBaiViet() {
   const ma = Number(id);
   const { data: bai, isLoading } = useBaiViet(ma);
   const { data: cungCLB } = useBaiDangCuaCLB(bai?.MaCLB ?? 0);
-  const daDuyet = bai?.TrangThaiKiemDuyet === "DaDuyet";
-  const { data: tuongTac } = useTuongTac(daDuyet ? [ma] : []);
-  const tt = tuongTac?.get(ma);
-  const qc = useQueryClient();
-
-  // Ghi một lượt xem khi mở bài đã duyệt (bài chờ duyệt do CLB/Admin xem trước thì không tính)
-  useEffect(() => {
-    if (!daDuyet) return;
-    void ghiLuotXem(ma).then((daGhi) => {
-      if (daGhi) void qc.invalidateQueries({ queryKey: ["tuong_tac"] });
-    });
-  }, [ma, daDuyet, qc]);
 
   if (isLoading)
     return (
@@ -110,20 +89,6 @@ function TrangBaiViet() {
             <span className="inline-flex items-center gap-1 font-semibold text-muted-foreground">
               <Clock className="h-4 w-4" /> {phutDoc} phút đọc
             </span>
-            {tt && (
-              <span className="inline-flex items-center gap-3 font-semibold text-muted-foreground">
-                <span className="inline-flex items-center gap-1" title="Lượt xem">
-                  <Eye className="h-4 w-4" /> {tt.LuotXem.toLocaleString("vi-VN")}
-                  <span className="sr-only">lượt xem</span>
-                </span>
-                {bai.su_kien && (
-                  <span className="inline-flex items-center gap-1" title="Lượt yêu thích">
-                    <Heart className="h-4 w-4" /> {tt.LuotYeuThich.toLocaleString("vi-VN")}
-                    <span className="sr-only">lượt yêu thích</span>
-                  </span>
-                )}
-              </span>
-            )}
             <span className="ml-auto">
               <FollowButton maCLB={bai.MaCLB} />
             </span>
@@ -150,7 +115,6 @@ function TrangBaiViet() {
           <NoiDungBaiViet noiDung={bai.NoiDung} className="mt-6 text-[16px] sm:text-[17px]" />
         </div>
       </article>
-
 
       {khac.length > 0 && (
         <section className="mt-10">

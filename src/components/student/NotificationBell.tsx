@@ -4,7 +4,7 @@ import { useState } from "react";
 import { formatDateTime, useDanhDauDaDoc, useThongBao, type ThongBaoCuaToi } from "@/lib/data";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
-import { AnhThuNho, NoiDungThongBao, useAnhThongBao } from "@/components/ThongBaoList";
+import { AnhThuNho, NoiDungThongBao, useAnhThongBao, diemDenThongBao } from "@/components/ThongBaoList";
 
 /**
  * Chuông thông báo thay cho mục "Thông báo" trên thanh điều hướng.
@@ -28,7 +28,7 @@ export function NotificationBell({
   const openItem = async (n: ThongBaoCuaToi) => {
     setOpen(false);
     if (!n.DaDoc) await danhDau.mutateAsync(n.MaThongBao);
-    navigate({ to: n.DuongDan || tatCa });
+    navigate((n.DuongDan ? diemDenThongBao(n.DuongDan) : { to: tatCa }) as never);
   };
 
   return (

@@ -13,6 +13,7 @@ const search = z.object({
   khoi: z.enum(["DoanThanhNien", "HoiSinhVien"]).optional(),
   /** Cấp 2: nhóm trong sơ đồ tổ chức */
   nhom: z.coerce.number().int().optional(),
+  linh_vuc: z.coerce.number().int().optional(),
 });
 
 type SearchCLB = z.infer<typeof search>;
@@ -24,12 +25,12 @@ export const Route = createFileRoute("/cau-lac-bo/")({
       { title: "Danh sách câu lạc bộ – BAV CLUBS" },
       {
         name: "description",
-        content: "Tìm kiếm câu lạc bộ theo tên và theo sơ đồ tổ chức Đoàn Thanh niên – Hội Sinh viên Học viện Ngân hàng.",
+        content: "Tìm kiếm câu lạc bộ theo tên và lĩnh vực tại Học viện Ngân hàng.",
       },
       { property: "og:title", content: "Danh sách câu lạc bộ – BAV CLUBS" },
       {
         property: "og:description",
-        content: "Tìm kiếm câu lạc bộ theo tên và theo sơ đồ tổ chức Đoàn Thanh niên – Hội Sinh viên Học viện Ngân hàng.",
+        content: "Tìm kiếm câu lạc bộ theo tên và lĩnh vực tại Học viện Ngân hàng.",
       },
     ],
   }),
@@ -39,7 +40,7 @@ export const Route = createFileRoute("/cau-lac-bo/")({
 /**
  * Danh sách CLB theo kịch bản "Tìm kiếm và xem chi tiết câu lạc bộ" (PTTKHT):
  *  - Luồng con 1: nhập từ khóa -> bấm "Tìm kiếm" -> lọc theo tên/giới thiệu/đơn vị trực thuộc
- *  - Luồng con 2: chọn khối Đoàn / Hội và đơn vị -> danh sách cập nhật ngay, có thể đổi bộ lọc tiếp
+ *  - Luồng con 2: chọn lĩnh vực hoạt động -> danh sách cập nhật ngay, có thể đổi bộ lọc tiếp
  *  - Không có kết quả -> "Không tìm thấy câu lạc bộ phù hợp"
  * Chỉ hiển thị CLB chưa ngừng hoạt động. Bộ lọc được giữ trên URL để chia sẻ/quay lại được.
  */
@@ -67,7 +68,7 @@ function ClubList() {
     if (!k) return conHoatDong;
     return conHoatDong.filter((c) =>
       boDau(
-        `${c.TenCLB} ${c.GioiThieuNgan ?? ""} ${c.MoTa ?? ""} ${c.DonViTrucThuoc ?? ""} ${c.don_vi_to_chuc?.TenDonVi ?? ""}`,
+        `${c.TenCLB} ${c.GioiThieuNgan ?? ""} ${c.MoTa ?? ""} ${c.DonViTrucThuoc ?? ""} ${c.linh_vuc?.TenLinhVuc ?? ""}`,
       ).includes(k),
     );
   }, [conHoatDong, q]);

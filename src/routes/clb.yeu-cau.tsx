@@ -4,7 +4,7 @@ import { Settings } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, Empty, GridSkeleton, Page, RoleGate, TrangThaiXuLyBadge } from "@/components/common";
 import { useAuth } from "@/lib/auth";
-import { formatDateTime, type YeuCauCapNhat } from "@/lib/data";
+import { formatDateTime, useLinhVuc, type YeuCauCapNhat } from "@/lib/data";
 import { Button } from "@/components/ui/button";
 import { BangThayDoi } from "@/components/yeu-cau";
 
@@ -32,6 +32,7 @@ export const Route = createFileRoute("/clb/yeu-cau")({
 
 function MyRequests() {
   const { maCLB } = useAuth();
+  const { data: linhVuc } = useLinhVuc();
   const q = useQuery({
     queryKey: ["yeu_cau_cua_clb", maCLB],
     enabled: !!maCLB,
@@ -92,7 +93,7 @@ function MyRequests() {
                 )}
               </div>
               <div className="mt-3">
-                <BangThayDoi noiDung={yc.NoiDungThayDoi} />
+                <BangThayDoi noiDung={yc.NoiDungThayDoi} linhVuc={linhVuc} />
               </div>
               {yc.TrangThaiXuLy === "TuChoi" && (
                 <p className="mt-3 rounded-xl bg-destructive/10 p-3 text-sm font-semibold text-destructive">

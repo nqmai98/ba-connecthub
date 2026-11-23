@@ -2,18 +2,16 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { ImagePlus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { dbMoi } from "@/lib/db-moi";
 import { useAuth } from "@/lib/auth";
 import {
-  NHAN_KHOI,
   NHAN_LOAI_BAI_DANG,
   NHAN_LOAI_SU_KIEN,
   NHAN_TRUONG_CLB,
   TRUONG_CLB_CO_THE_SUA,
   uploadImage,
+  useLinhVuc,
   type BaiDang,
   type CauLacBo,
-  type KhoiToChuc,
   type LoaiBaiDang,
   type LoaiSuKien,
   type TruongCLBCoTheSua,
@@ -26,7 +24,7 @@ import { ConfirmDialog } from "@/components/common";
 import { cn } from "@/lib/utils";
 import { RichTextEditor } from "@/components/RichTextEditor";
 import { ChonNam } from "@/components/ChonNam";
-import { useSoDoToChuc } from "@/lib/so-do-to-chuc";
+import { LUA_CHON_DON_VI } from "@/lib/so-do-to-chuc";
 import { anhTrongBai, lamSachHtml, vanBanThuan } from "@/lib/noi-dung";
 
 function ImageField({
@@ -320,8 +318,8 @@ export type CLBDraft = {
   MaCLB?: number;
   TenCLB: string;
   NamThanhLap: number | null;
-  /** Đơn vị trong sơ đồ tổ chức Đoàn – Hội; null = khác / chưa phân loại. */
-  MaDonVi: number | null;
+  MaLinhVuc: number | null;
+  DonViTrucThuoc: string | null;
   MoTa: string | null;
   LogoCLB: string | null;
   ThongTinLienHe: string | null;
@@ -337,7 +335,8 @@ export type CLBDraft = {
 export const CLB_RONG: CLBDraft = {
   TenCLB: "",
   NamThanhLap: null,
-  MaDonVi: null,
+  MaLinhVuc: null,
+  DonViTrucThuoc: null,
   MoTa: null,
   LogoCLB: null,
   ThongTinLienHe: null,
@@ -355,7 +354,8 @@ export function clbSangDraft(c: CauLacBo): CLBDraft {
     MaCLB: c.MaCLB,
     TenCLB: c.TenCLB,
     NamThanhLap: c.NamThanhLap,
-    MaDonVi: c.MaDonVi,
+    MaLinhVuc: c.MaLinhVuc,
+    DonViTrucThuoc: c.DonViTrucThuoc,
     MoTa: c.MoTa,
     LogoCLB: c.LogoCLB,
     ThongTinLienHe: c.ThongTinLienHe,
@@ -383,7 +383,7 @@ export function ClubForm({
   cheDo: "admin" | "yeu-cau";
   onSaved: () => void;
 }) {
-  const { data: dsDonVi } = useSoDoToChuc();
+  const { data: linhVuc } = useLinhVuc();
   const [f, setF] = useState<CLBDraft>(initial);
   const [busy, setBusy] = useState(false);
   const set = <K extends keyof CLBDraft>(k: K, v: CLBDraft[K]) => setF({ ...f, [k]: v });
@@ -393,6 +393,10 @@ export function ClubForm({
       toast.error("Vui lòng nhập tên CLB");
       return;
     }
+    if (!f.MaLinhVuc) {
+      toast.error("Vui lòng chọn lĩnh vực hoạt động");
+      return;
+    }
     setBusy(true);
     try {
       if (cheDo === "admin") {
@@ -400,10 +404,11 @@ export function ClubForm({
         const payload = {
           ...row,
           TenCLB: row.TenCLB.trim(),
+          MaLinhVuc: f.MaLinhVuc,
         };
         const r = MaCLB
-          ? await dbMoi.from("cau_lac_bo").update(payload).eq("MaCLB", MaCLB)
-          : await dbMoi.from("cau_lac_bo").insert(payload);
+          ? await supabase.from("cau_lac_bo").update(payload).eq("MaCLB", MaCLB)
+          : await supabase.from("cau_lac_bo").insert(payload);
         if (r.error) throw r.error;
         toast.success("Đã lưu thông tin CLB");
       } else {
@@ -448,31 +453,42 @@ export function ClubForm({
           <Input maxLength={255} value={f.TenCLB} onChange={(e) => set("TenCLB", e.target.value)} />
         </div>
         <div className="space-y-1.5">
-          <Label htmlFor="clb-don-vi">{NHAN_TRUONG_CLB.MaDonVi}</Label>
-          {/* Phân loại theo sơ đồ tổ chức Đoàn Thanh niên – Hội Sinh viên (bảng don_vi_to_chuc) */}
+          <Label>{NHAN_TRUONG_CLB.MaLinhVuc} *</Label>
           <select
-            id="clb-don-vi"
             className="h-10 w-full rounded-md border bg-background px-3 text-sm"
-            value={f.MaDonVi ?? ""}
-            onChange={(e) => set("MaDonVi", e.target.value ? Number(e.target.value) : null)}
+            value={f.MaLinhVuc ?? ""}
+            onChange={(e) => set("MaLinhVuc", e.target.value ? Number(e.target.value) : null)}
           >
-            <option value="">Khác / không thuộc Đoàn – Hội</option>
-            {(Object.keys(NHAN_KHOI) as KhoiToChuc[]).map((k) => (
-              <optgroup key={k} label={NHAN_KHOI[k]}>
-                {dsDonVi
-                  .filter((d) => d.Khoi === k)
-                  .map((d) => (
-                    <option key={d.MaNhom} value={d.MaNhom}>
-                      {d.TenNhom}
-                    </option>
-                  ))}
-              </optgroup>
+            <option value="">-- Chọn --</option>
+            {linhVuc?.map((lv) => (
+              <option key={lv.MaLinhVuc} value={lv.MaLinhVuc}>
+                {lv.TenLinhVuc}
+              </option>
             ))}
           </select>
         </div>
         <div className="space-y-1.5">
           <Label>{NHAN_TRUONG_CLB.NamThanhLap}</Label>
           <ChonNam value={f.NamThanhLap} onChange={(v) => set("NamThanhLap", v)} />
+        </div>
+        <div className="space-y-1.5">
+          <Label>{NHAN_TRUONG_CLB.DonViTrucThuoc}</Label>
+          {/* Đơn vị trực thuộc: Đoàn Thanh niên / Hội Sinh viên / Khác – quyết định khối trong bộ lọc Tổ chức */}
+          <select
+            className="h-10 w-full rounded-md border bg-background px-3 text-sm"
+            value={f.DonViTrucThuoc ?? ""}
+            onChange={(e) => set("DonViTrucThuoc", e.target.value || null)}
+          >
+            <option value="">-- Chọn đơn vị trực thuộc --</option>
+            {f.DonViTrucThuoc && !(LUA_CHON_DON_VI as readonly string[]).includes(f.DonViTrucThuoc) && (
+              <option value={f.DonViTrucThuoc}>{f.DonViTrucThuoc} (giá trị cũ)</option>
+            )}
+            {LUA_CHON_DON_VI.map((dv) => (
+              <option key={dv} value={dv}>
+                {dv}
+              </option>
+            ))}
+          </select>
         </div>
         <div className="space-y-1.5">
           <Label>{NHAN_TRUONG_CLB.ThongTinLienHe}</Label>

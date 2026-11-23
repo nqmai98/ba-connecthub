@@ -1,85 +1,109 @@
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import { dbMoi } from "@/lib/db-moi";
-import { NHAN_KHOI, type CauLacBo, type KhoiToChuc, type NhomToChuc } from "./data";
+import { NHAN_KHOI, type CauLacBo, type NhomToChuc } from "./data";
 
 /**
  * SƠ ĐỒ TỔ CHỨC ĐOÀN THANH NIÊN – HỘI SINH VIÊN HỌC VIỆN NGÂN HÀNG
+ * dùng cho bộ lọc CLB 2 cấp (Tổ chức -> Đơn vị).
  *
- * Cấp 1 (Khối): Đoàn Thanh niên / Hội Sinh viên.
- * Cấp 2 (Đơn vị – các ô xanh): lưu ở bảng don_vi_to_chuc; mỗi CLB trỏ tới một đơn vị
- * qua cột cau_lac_bo.MaDonVi (NULL = không thuộc Đoàn/Hội hoặc chưa phân loại).
- * Thay hoàn toàn cách phân loại theo "lĩnh vực" cũ (xem migration 0009).
- *
- * Danh sách dưới đây chỉ là dữ liệu hiển thị tạm trong lúc tải từ CSDL.
+ * Danh sách đơn vị được khai báo sẵn trong code nên bộ lọc chạy được ngay, KHÔNG cần sửa CSDL.
+ * Nếu sau này chạy file sql/0007_nhom_to_chuc.sql thì danh sách và việc gán CLB
+ * sẽ lấy từ CSDL (Admin gán trong form Quản lý CLB) và phần dưới đây chỉ còn là dự phòng.
  */
 export const DON_VI_MAC_DINH: NhomToChuc[] = [
-  { MaNhom: 1, Khoi: "DoanThanhNien", TenNhom: "Bộ phận hành chính", ThuTu: 1, MoTa: null },
-  { MaNhom: 2, Khoi: "DoanThanhNien", TenNhom: "Đội trực thuộc", ThuTu: 2, MoTa: null },
-  { MaNhom: 3, Khoi: "DoanThanhNien", TenNhom: "Ban chuyên môn", ThuTu: 3, MoTa: null },
-  { MaNhom: 4, Khoi: "DoanThanhNien", TenNhom: "LCĐ, CĐ trực thuộc", ThuTu: 4, MoTa: null },
-  {
-    MaNhom: 5,
-    Khoi: "HoiSinhVien",
-    TenNhom: "CLB cụm Tình nguyện – Sở thích",
-    ThuTu: 1,
-    MoTa: null,
-  },
-  { MaNhom: 6, Khoi: "HoiSinhVien", TenNhom: "Liên chi hội", ThuTu: 2, MoTa: null },
-  { MaNhom: 7, Khoi: "HoiSinhVien", TenNhom: "CLB cụm Học thuật", ThuTu: 3, MoTa: null },
-  { MaNhom: 8, Khoi: "HoiSinhVien", TenNhom: "CLB cụm Kỹ năng", ThuTu: 4, MoTa: null },
-  { MaNhom: 9, Khoi: "HoiSinhVien", TenNhom: "Đội trực thuộc", ThuTu: 5, MoTa: null },
+  { MaNhom: 1, Khoi: "DoanThanhNien", TenNhom: "Bộ phận hành chính", ThuTu: 1 },
+  { MaNhom: 2, Khoi: "DoanThanhNien", TenNhom: "Đội trực thuộc", ThuTu: 2 },
+  { MaNhom: 3, Khoi: "DoanThanhNien", TenNhom: "Ban chuyên môn", ThuTu: 3 },
+  { MaNhom: 4, Khoi: "DoanThanhNien", TenNhom: "LCĐ, CĐ trực thuộc", ThuTu: 4 },
+  { MaNhom: 5, Khoi: "HoiSinhVien", TenNhom: "CLB cụm Tình nguyện – Sở thích", ThuTu: 1 },
+  { MaNhom: 6, Khoi: "HoiSinhVien", TenNhom: "Liên chi hội", ThuTu: 2 },
+  { MaNhom: 7, Khoi: "HoiSinhVien", TenNhom: "CLB cụm Học thuật", ThuTu: 3 },
+  { MaNhom: 8, Khoi: "HoiSinhVien", TenNhom: "CLB cụm Kỹ năng", ThuTu: 4 },
+  { MaNhom: 9, Khoi: "HoiSinhVien", TenNhom: "Đội trực thuộc", ThuTu: 5 },
 ];
 
-/** Danh sách đơn vị (ô xanh) đọc từ bảng don_vi_to_chuc, sắp theo khối rồi thứ tự. */
+/**
+ * QUY TẮC XẾP CLB VÀO ĐƠN VỊ THEO TÊN (khi CLB chưa được Admin gán trong CSDL).
+ * So khớp trên tên CLB đã bỏ dấu, viết thường. Quy tắc nào khớp TRƯỚC thì được dùng,
+ * nên các quy tắc cụ thể (VD "ctv khoa") phải đứng trước quy tắc chung (VD "tai chinh").
+ * Thêm CLB mới: thêm từ khóa đặc trưng trong tên vào đúng dòng.
+ */
+const QUY_TAC: { khoi: NhomToChuc["Khoi"]; tenNhom: string; tuKhoa: RegExp }[] = [
+  // ---- Hội Sinh viên ----
+  { khoi: "HoiSinhVien", tenNhom: "Đội trực thuộc", tuKhoa: /\b(bluewings|fintech\w*|ctv bch)\b/ },
+  { khoi: "HoiSinhVien", tenNhom: "Liên chi hội", tuKhoa: /\b(lien chi hoi|lch|ctv khoa)\b/ },
+  // ---- Đoàn Thanh niên ----
+  { khoi: "DoanThanhNien", tenNhom: "LCĐ, CĐ trực thuộc", tuKhoa: /\b(lien chi doan|lcd|chi doan)\b/ },
+  { khoi: "DoanThanhNien", tenNhom: "Ban chuyên môn", tuKhoa: /\b(ban phong trao|ban tinh nguyen|ban tai chinh|uy ban kiem tra)\b/ },
+  { khoi: "DoanThanhNien", tenNhom: "Bộ phận hành chính", tuKhoa: /\b(van phong doan)\b/ },
+  // ---- Hội Sinh viên: các cụm CLB ----
+  {
+    khoi: "HoiSinhVien",
+    tenNhom: "CLB cụm Học thuật",
+    tuKhoa:
+      /\b(chung khoan|sec|ke toan|kiem toan|kinh doanh quoc te|tieng anh|tin hoc|nghien cuu|luat|kinh te tre|finance|clb tai chinh|fc)\b/,
+  },
+  {
+    khoi: "HoiSinhVien",
+    tenNhom: "CLB cụm Kỹ năng",
+    tuKhoa: /\b(ky nang|thuyet trinh|khoi nghiep|nha ngan hang tuong lai|nguon nhan luc)\b/,
+  },
+  {
+    khoi: "HoiSinhVien",
+    tenNhom: "CLB cụm Tình nguyện – Sở thích",
+    tuKhoa:
+      /\b(tinh nguyen|van nghe|mc|mcc|guitar|truyen thong|karate|karatedo|taekwondo|bong chuyen|bong da|bong ban|cau long|sach|nhay|dance)\b/,
+  },
+];
+
+const boDau = (s: string) =>
+  s.normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/đ/g, "d").replace(/Đ/g, "D").toLowerCase();
+
+/** Danh sách đơn vị dùng làm cấu hình giao diện hiện tại. */
 export function useSoDoToChuc() {
-  const q = useQuery({
-    queryKey: ["don_vi_to_chuc"],
-    staleTime: 5 * 60_000,
-    queryFn: async () => {
-      const { data, error } = await dbMoi
-        .from("don_vi_to_chuc")
-        .select("MaDonVi, Khoi, TenDonVi, ThuTu, MoTa")
-        .order("Khoi")
-        .order("ThuTu");
-      if (error) throw error;
-      return (data ?? []).map((d): NhomToChuc => ({
-        MaNhom: d.MaDonVi,
-        Khoi: d.Khoi as KhoiToChuc,
-        TenNhom: d.TenDonVi,
-        ThuTu: d.ThuTu,
-        MoTa: d.MoTa,
-      }));
-    },
-  });
-  return {
-    // Chưa có dữ liệu (CSDL chưa chạy phần cấu trúc, hoặc Quản trị viên chưa bấm "Nhập sơ đồ
-    // tổ chức") thì vẫn hiển thị khung sơ đồ mặc định để giao diện không trống.
-    data: q.data?.length ? q.data : DON_VI_MAC_DINH,
-    isLoading: q.isLoading,
-    /** Bảng don_vi_to_chuc đã có nhưng chưa có đơn vị nào -> cần bấm "Nhập sơ đồ tổ chức". */
-    chuaNhap: q.isSuccess && q.data.length === 0,
-    /** CSDL chưa có bảng don_vi_to_chuc (chưa chạy file cấu trúc). */
-    chuaCoCauTruc: q.isError,
-  };
+  return { data: DON_VI_MAC_DINH, isLoading: false };
 }
 
-/** "Hội Sinh viên – CLB cụm Học thuật" */
+/** Lựa chọn ở ô "Đơn vị trực thuộc" (trang Thông tin CLB và form Quản lý CLB). */
+export const LUA_CHON_DON_VI = ["Đoàn Thanh niên", "Hội Sinh viên", "Khác"] as const;
+
+/** Giá trị kiểu cũ "Khối – Đơn vị" (bản trước cho chọn chi tiết tới ô xanh) vẫn được hiểu. */
 export const nhanDonVi = (n: NhomToChuc) => `${NHAN_KHOI[n.Khoi]} – ${n.TenNhom}`;
 
-/** Đơn vị (ô xanh cấp 2) của một CLB; null = khác / chưa phân loại. */
-export function maNhomCuaCLB(c: CauLacBo, _ds?: NhomToChuc[]): number | null {
-  return c.MaDonVi ?? null;
+/** Khối theo ô "Đơn vị trực thuộc": "Khac" = không thuộc Đoàn/Hội, undefined = chưa chọn. */
+export function khoiTuDonVi(dv: string | null | undefined): NhomToChuc["Khoi"] | "Khac" | undefined {
+  const v = dv?.trim().toLowerCase();
+  if (!v) return undefined;
+  if (v.startsWith("đoàn thanh niên")) return "DoanThanhNien";
+  if (v.startsWith("hội sinh viên")) return "HoiSinhVien";
+  if (v === "khác") return "Khac";
+  return undefined;
 }
 
-/** Khối (cấp 1) của một CLB; null = khác / chưa phân loại. */
-export function khoiCuaCLB(c: CauLacBo, ds: NhomToChuc[]): KhoiToChuc | null {
-  if (c.MaDonVi == null) return null;
-  return ds.find((n) => n.MaNhom === c.MaDonVi)?.Khoi ?? c.don_vi_to_chuc?.Khoi ?? null;
+/**
+ * Đơn vị (ô xanh cấp 2) của một CLB:
+ *  - giá trị kiểu cũ "Khối – Đơn vị" khớp chính xác -> dùng luôn;
+ *  - còn lại suy ra từ tên CLB theo QUY_TAC, nhưng phải cùng khối với "Đơn vị trực thuộc" đã chọn;
+ *  - chọn "Khác" -> không thuộc đơn vị nào.
+ */
+export function maNhomCuaCLB(c: CauLacBo, ds: NhomToChuc[]): number | null {
+  const donVi = c.DonViTrucThuoc?.trim();
+  const chinhXac = donVi ? ds.find((n) => nhanDonVi(n) === donVi) : undefined;
+  if (chinhXac) return chinhXac.MaNhom;
+  const khoi = khoiTuDonVi(donVi);
+  if (khoi === "Khac") return null;
+  const ten = boDau(c.TenCLB);
+  const quyTac = QUY_TAC.find((q) => (!khoi || q.khoi === khoi) && q.tuKhoa.test(ten));
+  if (!quyTac) return null;
+  return ds.find((n) => n.Khoi === quyTac.khoi && n.TenNhom === quyTac.tenNhom)?.MaNhom ?? null;
 }
 
-/** Nhãn đơn vị của CLB để hiển thị trên thẻ / trang chi tiết. */
-export function tenDonViCuaCLB(c: CauLacBo): string | null {
-  const dv = c.don_vi_to_chuc;
-  return dv ? `${NHAN_KHOI[dv.Khoi]} – ${dv.TenDonVi}` : null;
+/**
+ * Khối (cấp 1) của một CLB: ưu tiên ô "Đơn vị trực thuộc" CLB tự chọn; nếu chưa chọn thì
+ * lấy theo đơn vị suy ra từ tên. null = "Khác" hoặc chưa phân loại.
+ */
+export function khoiCuaCLB(c: CauLacBo, ds: NhomToChuc[]): NhomToChuc["Khoi"] | null {
+  const k = khoiTuDonVi(c.DonViTrucThuoc);
+  if (k === "Khac") return null;
+  if (k) return k;
+  const ma = maNhomCuaCLB(c, ds);
+  return ma != null ? (ds.find((n) => n.MaNhom === ma)?.Khoi ?? null) : null;
 }
