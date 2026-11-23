@@ -118,7 +118,17 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <AppShell />
-        <Toaster richColors position="top-center" />
+        {/* Thông báo nổi: góc dưới bên phải để không che thanh điều hướng, có nút × để đóng sớm */}
+        <Toaster
+          richColors
+          closeButton
+          position="bottom-right"
+          duration={5000}
+          offset={{ bottom: 72, right: 24 }}
+          mobileOffset={{ bottom: 16, left: 12, right: 12 }}
+          style={{ "--width": "420px" } as React.CSSProperties}
+          toastOptions={{ closeButtonAriaLabel: "Đóng thông báo" }}
+        />
       </AuthProvider>
     </QueryClientProvider>
   );
