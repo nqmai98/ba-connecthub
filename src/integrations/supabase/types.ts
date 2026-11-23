@@ -68,6 +68,45 @@ export type Database = {
           },
         ]
       }
+      binh_luan: {
+        Row: {
+          MaBaiDang: number
+          MaBinhLuan: number
+          MaNguoiDung: string
+          NoiDung: string
+          ThoiGianTao: string
+        }
+        Insert: {
+          MaBaiDang: number
+          MaBinhLuan?: never
+          MaNguoiDung: string
+          NoiDung: string
+          ThoiGianTao?: string
+        }
+        Update: {
+          MaBaiDang?: number
+          MaBinhLuan?: never
+          MaNguoiDung?: string
+          NoiDung?: string
+          ThoiGianTao?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "binh_luan_MaBaiDang_fkey"
+            columns: ["MaBaiDang"]
+            isOneToOne: false
+            referencedRelation: "bai_dang"
+            referencedColumns: ["MaBaiDang"]
+          },
+          {
+            foreignKeyName: "binh_luan_MaNguoiDung_fkey"
+            columns: ["MaNguoiDung"]
+            isOneToOne: false
+            referencedRelation: "nguoi_dung"
+            referencedColumns: ["MaNguoiDung"]
+          },
+        ]
+      }
       cau_lac_bo: {
         Row: {
           AnhBia: string | null
@@ -77,7 +116,8 @@ export type Database = {
           GioiThieuNgan: string | null
           LogoCLB: string | null
           MaCLB: number
-          MaLinhVuc: number
+          MaDonVi: number | null
+          MaLinhVuc: number | null
           MoTa: string | null
           NamThanhLap: number | null
           NgayCapNhat: string
@@ -95,7 +135,8 @@ export type Database = {
           GioiThieuNgan?: string | null
           LogoCLB?: string | null
           MaCLB?: never
-          MaLinhVuc: number
+          MaDonVi?: number | null
+          MaLinhVuc?: number | null
           MoTa?: string | null
           NamThanhLap?: number | null
           NgayCapNhat?: string
@@ -113,7 +154,8 @@ export type Database = {
           GioiThieuNgan?: string | null
           LogoCLB?: string | null
           MaCLB?: never
-          MaLinhVuc?: number
+          MaDonVi?: number | null
+          MaLinhVuc?: number | null
           MoTa?: string | null
           NamThanhLap?: number | null
           NgayCapNhat?: string
@@ -125,6 +167,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "cau_lac_bo_MaDonVi_fkey"
+            columns: ["MaDonVi"]
+            isOneToOne: false
+            referencedRelation: "don_vi_to_chuc"
+            referencedColumns: ["MaDonVi"]
+          },
+          {
             foreignKeyName: "cau_lac_bo_MaLinhVuc_fkey"
             columns: ["MaLinhVuc"]
             isOneToOne: false
@@ -132,6 +181,30 @@ export type Database = {
             referencedColumns: ["MaLinhVuc"]
           },
         ]
+      }
+      don_vi_to_chuc: {
+        Row: {
+          Khoi: string
+          MaDonVi: number
+          MoTa: string | null
+          TenDonVi: string
+          ThuTu: number
+        }
+        Insert: {
+          Khoi: string
+          MaDonVi?: number
+          MoTa?: string | null
+          TenDonVi: string
+          ThuTu?: number
+        }
+        Update: {
+          Khoi?: string
+          MaDonVi?: number
+          MoTa?: string | null
+          TenDonVi?: string
+          ThuTu?: number
+        }
+        Relationships: []
       }
       kiem_duyet: {
         Row: {
@@ -192,6 +265,42 @@ export type Database = {
           TenLinhVuc?: string
         }
         Relationships: []
+      }
+      luot_xem_bai_dang: {
+        Row: {
+          MaBaiDang: number
+          MaLuotXem: number
+          MaNguoiDung: string | null
+          ThoiGianXem: string
+        }
+        Insert: {
+          MaBaiDang: number
+          MaLuotXem?: never
+          MaNguoiDung?: string | null
+          ThoiGianXem?: string
+        }
+        Update: {
+          MaBaiDang?: number
+          MaLuotXem?: never
+          MaNguoiDung?: string | null
+          ThoiGianXem?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "luot_xem_bai_dang_MaBaiDang_fkey"
+            columns: ["MaBaiDang"]
+            isOneToOne: false
+            referencedRelation: "bai_dang"
+            referencedColumns: ["MaBaiDang"]
+          },
+          {
+            foreignKeyName: "luot_xem_bai_dang_MaNguoiDung_fkey"
+            columns: ["MaNguoiDung"]
+            isOneToOne: false
+            referencedRelation: "nguoi_dung"
+            referencedColumns: ["MaNguoiDung"]
+          },
+        ]
       }
       nguoi_dung: {
         Row: {
@@ -542,12 +651,46 @@ export type Database = {
         Args: { _ma_bai_dang: number; _ma_nguoi_dung: string }
         Returns: boolean
       }
+      bai_viet_noi_bat: {
+        Args: { _gioi_han?: number; _so_ngay?: number }
+        Returns: {
+          DiemNoiBat: number
+          LuotBinhLuan: number
+          LuotXem: number
+          LuotYeuThich: number
+          MaBaiDang: number
+        }[]
+      }
+      binh_luan_cua_bai: {
+        Args: { _ma_bai_dang: number }
+        Returns: {
+          CoTheXoa: boolean
+          CuaToi: boolean
+          HoTen: string
+          MaBinhLuan: number
+          NoiDung: string
+          ThoiGianTao: string
+          VaiTro: string
+        }[]
+      }
+      bo_dau: { Args: { _s: string }; Returns: string }
       clb_phu_trach: { Args: { _ma_nguoi_dung: string }; Returns: number }
       co_vai_tro: {
         Args: { _ma_nguoi_dung: string; _ten_vai_tro: string }
         Returns: boolean
       }
       dem_nguoi_theo_doi: { Args: { _ma_clb: number }; Returns: number }
+      dem_tuong_tac: {
+        Args: { _ds_bai_dang: number[] }
+        Returns: {
+          LuotBinhLuan: number
+          LuotXem: number
+          LuotYeuThich: number
+          MaBaiDang: number
+        }[]
+      }
+      doan_don_vi: { Args: { _khoi?: string; _ten: string }; Returns: number }
+      ghi_luot_xem: { Args: { _ma_bai_dang: number }; Returns: undefined }
       ghi_nhan_truy_cap: { Args: never; Returns: undefined }
       ghi_nhat_ky: {
         Args: {
@@ -569,6 +712,7 @@ export type Database = {
         }
         Returns: number
       }
+      khoi_tao_so_do_to_chuc: { Args: never; Returns: Json }
       la_dai_dien_bai_dang: {
         Args: { _ma_bai_dang: number; _ma_nguoi_dung: string }
         Returns: boolean
@@ -586,6 +730,7 @@ export type Database = {
           NgayYeuThich: string
         }[]
       }
+      nhan_don_vi: { Args: { _ma_don_vi: number }; Returns: string }
       su_kien_noi_bat: {
         Args: { _gioi_han?: number }
         Returns: {
@@ -601,6 +746,16 @@ export type Database = {
       tu_choi_bai_dang: {
         Args: { _ly_do: string; _ma_bai_dang: number }
         Returns: undefined
+      }
+      tuong_tac_clb: {
+        Args: { _ma_clb: number }
+        Returns: {
+          LuotBinhLuan: number
+          LuotXem: number
+          LuotYeuThich: number
+          MaBaiDang: number
+          Ngay: string
+        }[]
       }
     }
     Enums: {
