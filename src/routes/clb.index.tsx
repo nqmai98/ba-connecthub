@@ -11,7 +11,6 @@ import {
   FileText,
   Heart,
   Hourglass,
-  MessageCircle,
   Plus,
   Settings,
   Users,
@@ -102,7 +101,7 @@ function Overview() {
           )
           .eq("MaCLB", maCLB!),
         supabase.from("yeu_cau_cap_nhat").select("TrangThaiXuLy").eq("MaCLB", maCLB!),
-        // Lượt xem / bình luận / yêu thích theo ngày (hàm tuong_tac_clb – migration 0009)
+        // Lượt xem / yêu thích theo ngày (hàm tuong_tac_clb – migration 0009)
         dbMoi.rpc("tuong_tac_clb", { _ma_clb: maCLB! }),
       ]);
       return {
@@ -149,33 +148,31 @@ function Overview() {
   const suKienKy = duyetKy.filter((b) => b.LoaiBaiDang === "SuKien");
   const theoDoiMoi = theoDoi.filter(trong).length;
 
-  // ---- Tương tác: lượt xem, bình luận, yêu thích (đếm theo ngày phát sinh) ----
+  // ---- Tương tác: lượt xem, yêu thích (đếm theo ngày phát sinh) ----
   // "Ngay" là ngày theo giờ Việt Nam dạng YYYY-MM-DD; đặt 12:00 để không lệch ngày khi so khoảng.
   const ttKy = (tuongTac ?? []).filter((r) => trong(`${r.Ngay}T12:00:00+07:00`));
-  const tong = (ds: typeof ttKy, k: "LuotXem" | "LuotBinhLuan" | "LuotYeuThich") =>
+  const tong = (ds: typeof ttKy, k: "LuotXem" | "LuotYeuThich") =>
     ds.reduce((a, r) => a + r[k], 0);
   const xemKy = tong(ttKy, "LuotXem");
-  const binhLuanKy = tong(ttKy, "LuotBinhLuan");
   const yeuThichKy = tong(ttKy, "LuotYeuThich");
   const yeuThichTong = tong(tuongTac ?? [], "LuotYeuThich");
-  const theoBai = new Map<number, { xem: number; bl: number; yt: number }>();
+  const theoBai = new Map<number, { xem: number; yt: number }>();
   (tuongTac ?? []).forEach((r) => {
-    const t = theoBai.get(r.MaBaiDang) ?? { xem: 0, bl: 0, yt: 0 };
-    theoBai.set(r.MaBaiDang, { xem: t.xem + r.LuotXem, bl: t.bl + r.LuotBinhLuan, yt: t.yt + r.LuotYeuThich });
+    const t = theoBai.get(r.MaBaiDang) ?? { xem: 0, yt: 0 };
+    theoBai.set(r.MaBaiDang, { xem: t.xem + r.LuotXem, yt: t.yt + r.LuotYeuThich });
   });
   const yeuThichTheoBai = new Map([...theoBai].map(([k, v]) => [k, v.yt]));
   const topYeuThich = bai
     .filter((b) => yeuThichTheoBai.get(b.MaBaiDang))
     .sort((a, b) => (yeuThichTheoBai.get(b.MaBaiDang) ?? 0) - (yeuThichTheoBai.get(a.MaBaiDang) ?? 0))
     .slice(0, 3);
-  // Bài được quan tâm nhất trong kỳ: lượt xem + 5 × bình luận + 3 × yêu thích (giống banner trang chủ)
-  const diemKy = new Map<number, { xem: number; bl: number; diem: number }>();
+  // Bài được quan tâm nhất trong kỳ: lượt xem + 3 × yêu thích (giống banner trang chủ)
+  const diemKy = new Map<number, { xem: number; diem: number }>();
   ttKy.forEach((r) => {
-    const t = diemKy.get(r.MaBaiDang) ?? { xem: 0, bl: 0, diem: 0 };
+    const t = diemKy.get(r.MaBaiDang) ?? { xem: 0, diem: 0 };
     diemKy.set(r.MaBaiDang, {
       xem: t.xem + r.LuotXem,
-      bl: t.bl + r.LuotBinhLuan,
-      diem: t.diem + r.LuotXem + 5 * r.LuotBinhLuan + 3 * r.LuotYeuThich,
+      diem: t.diem + r.LuotXem + 3 * r.LuotYeuThich,
     });
   });
   const topQuanTam = bai
@@ -281,12 +278,6 @@ function Overview() {
           phu={tuongTac === null ? "Chưa tải được số liệu" : tenKy}
         />
         <KPI
-          icon={MessageCircle}
-          nhan="Bình luận"
-          so={tuongTac === null ? "—" : binhLuanKy.toLocaleString("vi-VN")}
-          phu={tuongTac === null ? "Chưa tải được số liệu" : tenKy}
-        />
-        <KPI
           icon={Heart}
           nhan="Lượt yêu thích sự kiện"
           so={tuongTac === null ? "—" : yeuThichKy.toLocaleString("vi-VN")}
@@ -335,7 +326,7 @@ function Overview() {
 
       {/* Bài được quan tâm nhất trong kỳ */}
       <div className="mt-5">
-        <Khung tieuDe="Bài được quan tâm nhất" phu={`${tenKy} · xếp theo lượt xem, bình luận, yêu thích`}>
+        <Khung tieuDe="Bài được quan tâm nhất" phu={`${tenKy} · xếp theo lượt xem và lượt yêu thích`}>
           {tuongTac === null ? (
             <p className="text-sm text-muted-foreground">Chưa tải được số liệu tương tác. Tải lại trang để thử lại.</p>
           ) : topQuanTam.length ? (
@@ -357,9 +348,6 @@ function Overview() {
                       <span className="inline-flex items-center gap-1" title="Lượt xem">
                         <Eye className="h-3.5 w-3.5" /> {d.xem}
                       </span>
-                      <span className="inline-flex items-center gap-1" title="Bình luận">
-                        <MessageCircle className="h-3.5 w-3.5" /> {d.bl}
-                      </span>
                       {b.LoaiBaiDang === "SuKien" && (
                         <span className="inline-flex items-center gap-1" title="Lượt yêu thích">
                           <Heart className="h-3.5 w-3.5" /> {yt}
@@ -372,7 +360,7 @@ function Overview() {
             </ol>
           ) : (
             <p className="text-sm text-muted-foreground">
-              Chưa có lượt xem hay bình luận nào trong kỳ này. Số liệu sẽ xuất hiện khi sinh viên mở bài của CLB.
+              Chưa có lượt xem hay lượt yêu thích nào trong kỳ này. Số liệu sẽ xuất hiện khi sinh viên mở bài của CLB.
             </p>
           )}
         </Khung>

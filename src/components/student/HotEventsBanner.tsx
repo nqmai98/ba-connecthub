@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
-import { Calendar, ChevronLeft, ChevronRight, Eye, Flame, Heart, MapPin, MessageCircle, Search, Users } from "lucide-react";
+import { Calendar, ChevronLeft, ChevronRight, Eye, Flame, Heart, MapPin, Search, Users } from "lucide-react";
 import logo from "@/assets/bav-logo.png.asset.json";
 import {
   formatDateTime,
@@ -20,7 +20,7 @@ const THOI_GIAN_SLIDE = 6000;
 
 /**
  * Banner trang chủ Sinh viên: tự động lướt qua 5–7 bài viết / sự kiện nổi bật nhất.
- * Danh sách do CSDL chọn tự động theo lượt xem, lượt bình luận và lượt yêu thích
+ * Danh sách do CSDL chọn tự động theo lượt xem và lượt yêu thích
  * (hàm bai_viet_noi_bat), không ai phải chỉnh tay.
  * - Dừng khi rê chuột / chạm vào banner, hoặc khi người dùng bật "giảm chuyển động".
  * - Có nút trước/sau, chấm chuyển trang, vuốt trên điện thoại, phím mũi tên.
@@ -247,7 +247,6 @@ function Slide({ e, active, total }: { e: BaiVietNoiBat; active: boolean; total:
 
         <dl className="mt-5 flex flex-wrap gap-x-5 gap-y-1 text-xs font-bold text-white/75">
           <ChiSo icon={Eye} so={e.LuotXem} nhan="lượt xem" />
-          <ChiSo icon={MessageCircle} so={e.LuotBinhLuan} nhan="bình luận" />
           {sk && <ChiSo icon={Heart} so={e.LuotYeuThich} nhan="lượt yêu thích" />}
         </dl>
       </div>

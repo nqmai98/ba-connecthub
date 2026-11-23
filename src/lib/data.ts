@@ -276,7 +276,7 @@ export function useSuKien(opts: { sapDienRa?: boolean; maCLB?: number } = {}) {
 }
 
 /* ------------------------------------------------------------------ */
-/* Tương tác: lượt xem, bình luận, lượt yêu thích                       */
+/* Tương tác: lượt xem, lượt yêu thích                                  */
 /* ------------------------------------------------------------------ */
 
 export type TuongTac = { LuotXem: number; LuotBinhLuan: number; LuotYeuThich: number };
@@ -286,7 +286,8 @@ export type BaiVietNoiBat = BaiDang & TuongTac & { DiemNoiBat: number; Hang: num
 
 /**
  * 5–7 bài viết nổi bật cho banner trang chủ, chọn TỰ ĐỘNG theo tương tác trong 30 ngày gần nhất:
- *   điểm = lượt xem + 5 × lượt bình luận + 3 × lượt yêu thích
+ *   điểm = lượt xem + 3 × lượt yêu thích
+ * (giao diện không có bình luận nên phần điểm bình luận trong hàm CSDL luôn bằng 0)
  * (hàm CSDL bai_viet_noi_bat – migration 0009). Gồm cả tin bài và sự kiện chưa kết thúc;
  * khi chưa có tương tác thì bài mới đăng đứng trước.
  */
@@ -342,7 +343,7 @@ async function baiMoiNhat(gioiHan: number): Promise<XepHangBai[]> {
   }));
 }
 
-/** Tổng lượt xem / bình luận / yêu thích của một hoặc nhiều bài (hàm dem_tuong_tac). */
+/** Tổng lượt xem / yêu thích của một hoặc nhiều bài (hàm dem_tuong_tac). */
 export function useTuongTac(dsMaBaiDang: number[]) {
   const ds = [...new Set(dsMaBaiDang)].sort((a, b) => a - b);
   return useQuery({
@@ -376,67 +377,6 @@ export async function ghiLuotXem(maBaiDang: number) {
   }
   const { error } = await dbMoi.rpc("ghi_luot_xem", { _ma_bai_dang: maBaiDang });
   return !error;
-}
-
-export type BinhLuan = {
-  MaBinhLuan: number;
-  NoiDung: string;
-  ThoiGianTao: string;
-  HoTen: string;
-  VaiTro: string;
-  CuaToi: boolean;
-  CoTheXoa: boolean;
-};
-
-export function useBinhLuan(maBaiDang: number) {
-  const { maNguoiDung } = useAuth();
-  return useQuery({
-    queryKey: ["binh_luan", maBaiDang, maNguoiDung],
-    queryFn: async () => {
-      const { data, error } = await dbMoi.rpc("binh_luan_cua_bai", { _ma_bai_dang: maBaiDang });
-      if (error) throw error;
-      return (data ?? []) as BinhLuan[];
-    },
-  });
-}
-
-export function useGuiBinhLuan(maBaiDang: number) {
-  const qc = useQueryClient();
-  const { maNguoiDung } = useAuth();
-  return useMutation({
-    mutationFn: async (noiDung: string) => {
-      const { error } = await dbMoi
-        .from("binh_luan")
-        .insert({ MaBaiDang: maBaiDang, MaNguoiDung: maNguoiDung!, NoiDung: noiDung.trim() });
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["binh_luan", maBaiDang] });
-      qc.invalidateQueries({ queryKey: ["tuong_tac"] });
-    },
-    onError: (e: Error) =>
-      toast.error(
-        e.message.includes("quá nhanh")
-          ? e.message
-          : "Chưa gửi được bình luận. Kiểm tra kết nối rồi thử lại.",
-      ),
-  });
-}
-
-export function useXoaBinhLuan(maBaiDang: number) {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: async (maBinhLuan: number) => {
-      const { error } = await dbMoi.from("binh_luan").delete().eq("MaBinhLuan", maBinhLuan);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      toast.success("Đã xóa bình luận");
-      qc.invalidateQueries({ queryKey: ["binh_luan", maBaiDang] });
-      qc.invalidateQueries({ queryKey: ["tuong_tac"] });
-    },
-    onError: () => toast.error("Chưa xóa được bình luận, vui lòng thử lại"),
-  });
 }
 
 /** Toàn bộ bài đăng đã duyệt của một CLB (gồm cả sự kiện), cho trang chi tiết CLB. */
