@@ -3,7 +3,7 @@
  * Kết nối Gmail tạo sẵn biến môi trường GOOGLE_MAIL_API_KEY; LOVABLE_API_KEY do Lovable Cloud quản lý.
  * Thư được gửi từ chính tài khoản Gmail đã ủy quyền khi kết nối.
  */
-const GATEWAY = "https://connector-gateway.lovable.dev/google_mail/gmail/v1/users/me/messages/send";
+const GATEWAY_URL = "https://connector-gateway.lovable.dev/google_mail/gmail/v1";
 
 /** Base64 cho chuỗi UTF-8 (chạy được cả Node lẫn môi trường Worker, không cần Buffer). */
 function base64Utf8(s: string) {
@@ -11,6 +11,12 @@ function base64Utf8(s: string) {
   let bin = "";
   for (const b of bytes) bin += String.fromCharCode(b);
   return btoa(bin);
+}
+
+/** MIME base64 bodies must be wrapped to at most 76 characters per line. */
+function base64MimeUtf8(s: string) {
+  const encoded = base64Utf8(s);
+  return encoded.match(/.{1,76}/g)?.join("\r\n") ?? "";
 }
 
 export function daCauHinhEmail() {
@@ -31,11 +37,11 @@ export async function guiEmail({ to, subject, text }: { to: string; subject: str
     'Content-Type: text/plain; charset="UTF-8"',
     "Content-Transfer-Encoding: base64",
     "",
-    base64Utf8(text),
+    base64MimeUtf8(text),
   ].join("\r\n");
   const raw = base64Utf8(tho).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
 
-  const res = await fetch(GATEWAY, {
+  const res = await fetch(`${GATEWAY_URL}/users/me/messages/send`, {
     method: "POST",
     headers: {
       Authorization: `Bearer ${lovableKey}`,
@@ -46,6 +52,6 @@ export async function guiEmail({ to, subject, text }: { to: string; subject: str
   });
   if (!res.ok) {
     const chiTiet = await res.text().catch(() => "");
-    throw new Error(`Gửi email thất bại (${res.status}) ${chiTiet.slice(0, 200)}`);
+    throw new Error(`Gửi email thất bại (${res.status}) ${chiTiet}`);
   }
 }
