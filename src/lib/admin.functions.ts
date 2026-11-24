@@ -421,3 +421,49 @@ export const tuChoiCapLaiMatKhau = createServerFn({ method: "POST" })
     if (!xong) throw new Error("Yêu cầu này đã được xử lý trước đó");
     return { ok: true as const };
   });
+
+/* ------------------------------ Quản trị viên đổi email đăng nhập ------------------------------ */
+
+/**
+ * Đổi email đăng nhập của chính Quản trị viên đang đăng nhập (mật khẩu hiện tại đã được
+ * kiểm tra ở trình duyệt). Cập nhật cả email đăng nhập lẫn cột EmailTruong để hai nơi luôn khớp.
+ */
+export const doiEmailAdmin = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z.object({ email: z.string().trim().toLowerCase().email("Email mới không hợp lệ").max(255) }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { data: isAdmin } = await context.supabase.rpc("la_quan_tri_vien", {
+      _ma_nguoi_dung: context.userId,
+    });
+    if (!isAdmin) throw new Error("Bạn không có quyền thực hiện thao tác này");
+    if (data.email.endsWith("@clb.baclubs.local")) throw new Error("Không dùng được email nội bộ của CLB");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const cu = await supabaseAdmin.auth.admin.getUserById(context.userId);
+    const emailCu = cu.data.user?.email ?? null;
+
+    const { error } = await supabaseAdmin.auth.admin.updateUserById(context.userId, {
+      email: data.email,
+      email_confirm: true,
+    });
+    if (error)
+      throw new Error(
+        /already|exists|registered/i.test(error.message)
+          ? "Email này đã được dùng cho tài khoản khác"
+          : "Đổi email thất bại: " + error.message,
+      );
+
+    const nd = await supabaseAdmin
+      .from("nguoi_dung")
+      .update({ EmailTruong: data.email })
+      .eq("MaNguoiDung", context.userId);
+    if (nd.error) {
+      // Trả lại email cũ để hai nơi không lệch nhau
+      if (emailCu)
+        await supabaseAdmin.auth.admin.updateUserById(context.userId, { email: emailCu, email_confirm: true });
+      throw new Error("Đổi email thất bại: " + nd.error.message);
+    }
+    return { ok: true as const };
+  });

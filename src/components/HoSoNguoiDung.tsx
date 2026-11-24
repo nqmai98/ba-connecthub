@@ -16,6 +16,8 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { useServerFn } from "@tanstack/react-start";
+import { doiEmailAdmin } from "@/lib/admin.functions";
 import { NHAN_VAI_TRO, homePath, useAuth } from "@/lib/auth";
 import { formatDateTime, useThongBao, useTheoDoi, useYeuThich } from "@/lib/data";
 import { CLUB_EMAIL_DOMAIN, emailToUsername } from "@/lib/club-account";
@@ -193,7 +195,8 @@ export function HoSoNguoiDung({ khu = "sinh-vien" }: { khu?: "sinh-vien" | "clb"
                 {laTaiKhoanCLB ? <UserRound className="h-4 w-4 shrink-0" /> : <Mail className="h-4 w-4 shrink-0" />}
                 <span className="truncate">{tenDangNhap}</span>
               </div>
-              {!laTaiKhoanCLB && (
+              {khu === "admin" && !laGoogle && !laTaiKhoanCLB && <DoiEmail emailHienTai={nguoiDung.EmailTruong} />}
+              {!laTaiKhoanCLB && khu !== "admin" && (
                 <p className="text-xs font-medium text-muted-foreground">
                   {laGoogle
                     ? "Email gắn với tài khoản Google của trường nên không thay đổi được."
@@ -385,6 +388,106 @@ function DoiMatKhau() {
 }
 
 /** Ô mật khẩu có nút hiện / ẩn. */
+/** Quản trị viên đổi email đăng nhập: nhập email mới + mật khẩu hiện tại để xác nhận. */
+function DoiEmail({ emailHienTai }: { emailHienTai: string }) {
+  const { refresh } = useAuth();
+  const doiEmail = useServerFn(doiEmailAdmin);
+  const [mo, setMo] = useState(false);
+  const [email, setEmail] = useState("");
+  const [mk, setMk] = useState("");
+  const [loi, setLoi] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  const dong = () => {
+    setMo(false);
+    setEmail("");
+    setMk("");
+    setLoi("");
+  };
+
+  const luu = async () => {
+    const moi = email.trim().toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(moi)) {
+      setLoi("Email mới không hợp lệ");
+      return;
+    }
+    if (moi === emailHienTai.toLowerCase()) {
+      setLoi("Email mới phải khác email hiện tại");
+      return;
+    }
+    if (!mk) {
+      setLoi("Vui lòng nhập mật khẩu hiện tại");
+      return;
+    }
+    setBusy(true);
+    const kiemTra = await supabase.auth.signInWithPassword({ email: emailHienTai, password: mk });
+    if (kiemTra.error) {
+      setBusy(false);
+      setLoi("Mật khẩu hiện tại không đúng");
+      return;
+    }
+    try {
+      await doiEmail({ data: { email: moi } });
+      await supabase.auth.refreshSession();
+      await refresh();
+      toast.success("Đã đổi email đăng nhập thành " + moi);
+      dong();
+    } catch (e) {
+      setLoi((e as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  if (!mo)
+    return (
+      <Button type="button" variant="outline" size="sm" className="font-bold" onClick={() => setMo(true)}>
+        <Mail className="h-4 w-4" /> Đổi email
+      </Button>
+    );
+  return (
+    <div className="space-y-3 rounded-xl border p-3">
+      <div className="space-y-1.5">
+        <Label htmlFor="email-moi" className="font-bold">
+          Email mới
+        </Label>
+        <Input
+          id="email-moi"
+          type="email"
+          autoCapitalize="none"
+          autoComplete="email"
+          maxLength={255}
+          value={email}
+          onChange={(e) => {
+            setEmail(e.target.value);
+            setLoi("");
+          }}
+          placeholder="email@vidu.com"
+        />
+      </div>
+      <O
+        id="mk-xac-nhan-email"
+        nhan="Mật khẩu hiện tại"
+        value={mk}
+        autoComplete="current-password"
+        onChange={(v) => {
+          setMk(v);
+          setLoi("");
+        }}
+      />
+      {loi && <p className="text-sm font-semibold text-destructive">{loi}</p>}
+      <div className="flex justify-end gap-2 pt-1">
+        <Button size="sm" variant="outline" onClick={dong}>
+          Hủy
+        </Button>
+        <Button size="sm" disabled={busy} className="bg-primary font-bold" onClick={luu}>
+          {busy ? "Đang lưu..." : "Lưu email"}
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 function O({
   id,
   nhan,
