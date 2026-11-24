@@ -24,7 +24,7 @@ import {
 } from "@/components/ui/dialog";
 import { useViecChoXuLy } from "@/components/admin/AdminLayout";
 import { NHAN_KHOI, useCauLacBo, type KhoiToChuc } from "@/lib/data";
-import { khoiCuaCLB, maNhomCuaCLB, useSoDoToChuc } from "@/lib/so-do-to-chuc";
+import { maNhomCuaCLB, useSoDoToChuc } from "@/lib/so-do-to-chuc";
 import { cn } from "@/lib/utils";
 import { danhSachNamHoc, khoangHocKi, namHocCua, NHAN_HOC_KI, type HocKi } from "@/lib/hoc-ki";
 import { BoLocHocKi } from "@/components/BoLocHocKi";
@@ -160,20 +160,7 @@ function Dashboard() {
       baiGanDay: cl.reduce((s, c) => s + tongTheoCLB(c.MaCLB), 0),
     };
   });
-  // CLB đã chọn Đoàn / Hội nhưng chưa xếp được vào ô xanh nào -> dòng "Đơn vị khác" của khối đó
-  (Object.keys(NHAN_KHOI) as KhoiToChuc[]).forEach((k, i) => {
-    const cl = clbKemNhom.filter((c) => c.MaNhom == null && khoiCuaCLB(c, dsNhom) === k);
-    if (cl.length)
-      donVi.push({
-        MaNhom: -1 - i,
-        Khoi: k,
-        TenNhom: "Đơn vị khác",
-        ThuTu: 99,
-        soCLB: cl.length,
-        baiGanDay: cl.reduce((s2, c) => s2 + tongTheoCLB(c.MaCLB), 0),
-      });
-  });
-  const chuaPhanLoai = clbKemNhom.filter((c) => c.MaNhom == null && khoiCuaCLB(c, dsNhom) == null);
+  const chuaPhanLoai = clbKemNhom.filter((c) => c.MaNhom == null);
   const maxBai = Math.max(1, ...donVi.map((x) => x.baiGanDay));
 
   // ---- Top CLB & CLB im lặng ----

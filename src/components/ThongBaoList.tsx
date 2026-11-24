@@ -1,4 +1,6 @@
 import { useNavigate } from "@tanstack/react-router";
+import { useState } from "react";
+import { CapLaiMatKhauDialog, HanhDongCapLai, yeuCauCapLai, type MoCapLai } from "@/components/admin/CapLaiMatKhau";
 import { Bell, BellRing, CalendarCheck, FileCheck2, Info } from "lucide-react";
 import {
   formatDateTime,
@@ -47,7 +49,9 @@ export function diemDenThongBao(duongDan: string) {
 export function phanTichThongBao(n: Pick<ThongBaoCuaToi, "TieuDe" | "NoiDung">) {
   const chuan = (x: string) => x.replace(/\s+/g, " ").trim().toLowerCase();
   const chinh = (n.NoiDung || n.TieuDe).trim();
-  const nhan = chuan(n.TieuDe) && !chuan(chinh).includes(chuan(n.TieuDe)) ? n.TieuDe : null;
+  // Trạng thái xử lý yêu cầu cấp lại mật khẩu đã hiện bằng nhãn riêng, không lặp trong tiêu đề
+  const tieuDe = n.TieuDe.replace(/ · Đã (duyệt|từ chối)$/, "");
+  const nhan = chuan(tieuDe) && !chuan(chinh).includes(chuan(tieuDe)) ? tieuDe : null;
   const m = trichTieuDe(chinh);
   return m
     ? { nhan, truoc: m.truoc.trim(), trich: m.tieuDe, sau: m.sau.trim().replace(/^[.,:]\s*/, "") }
@@ -157,8 +161,14 @@ export function ThongBaoList() {
   const anhThongBao = useAnhThongBao(data);
   const danhDau = useDanhDauDaDoc();
   const navigate = useNavigate();
+  const [capLai, setCapLai] = useState<MoCapLai | null>(null);
 
   const open = async (n: ThongBaoCuaToi) => {
+    // Yêu cầu cấp lại mật khẩu: xử lý bằng nút Duyệt / Từ chối ngay trên thông báo
+    if (yeuCauCapLai(n)) {
+      if (!n.DaDoc) await danhDau.mutateAsync(n.MaThongBao);
+      return;
+    }
     if (!n.DaDoc) await danhDau.mutateAsync(n.MaThongBao);
     if (n.DuongDan) navigate(diemDenThongBao(n.DuongDan) as never);
   };
@@ -180,14 +190,14 @@ export function ThongBaoList() {
         <div className="space-y-2">
           {data.map((n) => {
             return (
-              <button
+              <div
                 key={n.MaThongBao}
-                onClick={() => open(n)}
                 className={cn(
-                  "flex w-full items-center gap-4 rounded-xl border bg-card p-4 text-left transition hover:border-primary hover:shadow-sm",
+                  "rounded-xl border bg-card p-4 transition hover:border-primary hover:shadow-sm",
                   !n.DaDoc && "border-l-4 border-l-accent bg-accent/5",
                 )}
               >
+              <button onClick={() => open(n)} className="flex w-full items-center gap-4 text-left">
                 <AnhThuNho n={n} anh={anhThongBao.get(n.MaThongBao)} />
                 {!n.DaDoc && (
                   <span className="order-last mt-1.5 h-2.5 w-2.5 shrink-0 rounded-full bg-destructive" aria-label="Chưa đọc" />
@@ -199,12 +209,22 @@ export function ThongBaoList() {
                   </span>
                 </span>
               </button>
+              <HanhDongCapLai
+                n={n}
+                className="ml-[4.5rem] mt-3"
+                onDuyet={(mo) => {
+                  if (!n.DaDoc) danhDau.mutate(n.MaThongBao);
+                  setCapLai(mo);
+                }}
+              />
+              </div>
             );
           })}
         </div>
       ) : (
         <Empty text="Bạn chưa có thông báo nào" />
       )}
+      <CapLaiMatKhauDialog mo={capLai} onClose={() => setCapLai(null)} />
     </Page>
   );
 }

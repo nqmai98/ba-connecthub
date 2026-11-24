@@ -7,6 +7,7 @@ import {
   CheckCircle2,
   ClipboardList,
   ExternalLink,
+  Eye,
   FileText,
   Heart,
   Hourglass,
@@ -18,6 +19,7 @@ import {
 } from "lucide-react";
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { supabase } from "@/integrations/supabase/client";
+import { dbMoi } from "@/lib/db-moi";
 import { ClubLogo, Empty, GridSkeleton, Page, RoleGate } from "@/components/common";
 import { BoLocHocKi } from "@/components/BoLocHocKi";
 import { useAuth } from "@/lib/auth";
@@ -50,6 +52,15 @@ export const Route = createFileRoute("/clb/")({
 /** Cùng bảng màu 2 chuỗi với Dashboard Quản trị (đã kiểm tra tương phản & mù màu). */
 const MAU = { tinBai: "#4152b8", suKien: "#c98208" };
 
+/** Một dòng của hàm tuong_tac_clb: tương tác của một bài trong một ngày. */
+type TuongTacNgay = {
+  MaBaiDang: number;
+  Ngay: string;
+  LuotXem: number;
+  LuotBinhLuan: number;
+  LuotYeuThich: number;
+};
+
 type BaiTK = {
   MaBaiDang: number;
   TieuDe: string;
@@ -81,12 +92,7 @@ function Overview() {
     queryKey: ["tong-quan-clb", maCLB],
     enabled: !!maCLB,
     queryFn: async () => {
-      // Hàm luot_yeu_thich_clb (sql/0008) gọi không qua kiểu sinh sẵn để code vẫn chạy khi hàm chưa có
-      const goiRpc = supabase.rpc as unknown as (
-        fn: string,
-        args: Record<string, unknown>,
-      ) => Promise<{ data: { MaBaiDang: number; NgayYeuThich: string }[] | null; error: unknown }>;
-      const [theoDoi, baiDang, yeuCau, yeuThich] = await Promise.all([
+      const [theoDoi, baiDang, yeuCau, tuongTac] = await Promise.all([
         supabase.from("theo_doi_clb").select("NgayTheoDoi").eq("MaCLB", maCLB!),
         supabase
           .from("bai_dang")
@@ -95,14 +101,15 @@ function Overview() {
           )
           .eq("MaCLB", maCLB!),
         supabase.from("yeu_cau_cap_nhat").select("TrangThaiXuLy").eq("MaCLB", maCLB!),
-        goiRpc.call(supabase, "luot_yeu_thich_clb", { _ma_clb: maCLB! }),
+        // Lượt xem / yêu thích theo ngày (hàm tuong_tac_clb – migration 0009)
+        dbMoi.rpc("tuong_tac_clb", { _ma_clb: maCLB! }),
       ]);
       return {
         theoDoi: (theoDoi.data ?? []).map((t) => t.NgayTheoDoi),
         bai: (baiDang.data ?? []) as unknown as BaiTK[],
         yeuCauCho: (yeuCau.data ?? []).filter((x) => x.TrangThaiXuLy === "ChoDuyet").length,
-        // null = hàm đếm lượt yêu thích chưa được tạo trên CSDL
-        yeuThich: yeuThich.error ? null : (yeuThich.data ?? []),
+        // null = chưa đọc được số liệu tương tác (lỗi mạng / CSDL)
+        tuongTac: tuongTac.error ? null : ((tuongTac.data ?? []) as TuongTacNgay[]),
       };
     },
   });
@@ -125,7 +132,7 @@ function Overview() {
       </Page>
     );
 
-  const { theoDoi, bai, yeuCauCho, yeuThich } = q.data;
+  const { theoDoi, bai, yeuCauCho, tuongTac } = q.data;
   const now = Date.now();
   const [tu, den] = khoangHocKi(namHoc, hocKi);
   const tenKy = `${NHAN_HOC_KI[hocKi]} · ${namHoc}–${namHoc + 1}`;
@@ -141,14 +148,37 @@ function Overview() {
   const suKienKy = duyetKy.filter((b) => b.LoaiBaiDang === "SuKien");
   const theoDoiMoi = theoDoi.filter(trong).length;
 
-  // ---- Lượt yêu thích (sinh viên bấm ☆ Yêu thích sự kiện) ----
-  const yeuThichKy = yeuThich?.filter((y) => trong(y.NgayYeuThich)) ?? [];
-  const yeuThichTheoBai = new Map<number, number>();
-  (yeuThich ?? []).forEach((y) => yeuThichTheoBai.set(y.MaBaiDang, (yeuThichTheoBai.get(y.MaBaiDang) ?? 0) + 1));
+  // ---- Tương tác: lượt xem, yêu thích (đếm theo ngày phát sinh) ----
+  // "Ngay" là ngày theo giờ Việt Nam dạng YYYY-MM-DD; đặt 12:00 để không lệch ngày khi so khoảng.
+  const ttKy = (tuongTac ?? []).filter((r) => trong(`${r.Ngay}T12:00:00+07:00`));
+  const tong = (ds: typeof ttKy, k: "LuotXem" | "LuotYeuThich") =>
+    ds.reduce((a, r) => a + r[k], 0);
+  const xemKy = tong(ttKy, "LuotXem");
+  const yeuThichKy = tong(ttKy, "LuotYeuThich");
+  const yeuThichTong = tong(tuongTac ?? [], "LuotYeuThich");
+  const theoBai = new Map<number, { xem: number; yt: number }>();
+  (tuongTac ?? []).forEach((r) => {
+    const t = theoBai.get(r.MaBaiDang) ?? { xem: 0, yt: 0 };
+    theoBai.set(r.MaBaiDang, { xem: t.xem + r.LuotXem, yt: t.yt + r.LuotYeuThich });
+  });
+  const yeuThichTheoBai = new Map([...theoBai].map(([k, v]) => [k, v.yt]));
   const topYeuThich = bai
     .filter((b) => yeuThichTheoBai.get(b.MaBaiDang))
     .sort((a, b) => (yeuThichTheoBai.get(b.MaBaiDang) ?? 0) - (yeuThichTheoBai.get(a.MaBaiDang) ?? 0))
     .slice(0, 3);
+  // Bài được quan tâm nhất trong kỳ: lượt xem + 3 × yêu thích (giống banner trang chủ)
+  const diemKy = new Map<number, { xem: number; diem: number }>();
+  ttKy.forEach((r) => {
+    const t = diemKy.get(r.MaBaiDang) ?? { xem: 0, diem: 0 };
+    diemKy.set(r.MaBaiDang, {
+      xem: t.xem + r.LuotXem,
+      diem: t.diem + r.LuotXem + 3 * r.LuotYeuThich,
+    });
+  });
+  const topQuanTam = bai
+    .filter((b) => diemKy.get(b.MaBaiDang)?.diem)
+    .sort((a, b) => diemKy.get(b.MaBaiDang)!.diem - diemKy.get(a.MaBaiDang)!.diem)
+    .slice(0, 5);
 
   // ---- Kiểm duyệt ----
   const daXuLy = baiKy.filter((b) => b.TrangThaiKiemDuyet !== "ChoDuyet");
@@ -196,8 +226,7 @@ function Overview() {
         ["Ảnh bìa", !!clb.AnhBia],
         ["Giới thiệu ngắn", !!clb.GioiThieuNgan?.trim()],
         ["Giới thiệu chi tiết", !!clb.MoTa?.trim()],
-        ["Lĩnh vực", !!clb.MaLinhVuc],
-        ["Đơn vị trực thuộc", !!clb.DonViTrucThuoc?.trim()],
+        ["Đơn vị trực thuộc (sơ đồ Đoàn – Hội)", clb.MaDonVi != null],
         ["Năm thành lập", !!clb.NamThanhLap],
         ["Thông tin liên hệ", !!clb.ThongTinLienHe?.trim() || !!clb.Fanpage?.trim()],
       ]
@@ -218,7 +247,7 @@ function Overview() {
             <div className="min-w-0 flex-1">
               <h2 className="truncate text-xl sm:text-2xl">{clb.TenCLB}</h2>
               <p className="mt-1 text-sm font-semibold text-white/75">
-                {[clb.linh_vuc?.TenLinhVuc, clb.DonViTrucThuoc, NHAN_TRANG_THAI_HOAT_DONG[clb.TrangThaiHoatDong]]
+                {[clb.DonViTrucThuoc, NHAN_TRANG_THAI_HOAT_DONG[clb.TrangThaiHoatDong]]
                   .filter(Boolean)
                   .join(" · ")}
               </p>
@@ -240,16 +269,22 @@ function Overview() {
       )}
 
       {/* KPI */}
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
         <KPI icon={Users} nhan="Người theo dõi" so={theoDoi.length} phu={`+${theoDoiMoi} mới · ${NHAN_HOC_KI[hocKi]}`} />
         <KPI
+          icon={Eye}
+          nhan="Lượt xem bài"
+          so={tuongTac === null ? "—" : xemKy.toLocaleString("vi-VN")}
+          phu={tuongTac === null ? "Chưa tải được số liệu" : tenKy}
+        />
+        <KPI
           icon={Heart}
-          nhan="Lượt yêu thích"
-          so={yeuThich === null ? "—" : yeuThichKy.length}
+          nhan="Lượt yêu thích sự kiện"
+          so={tuongTac === null ? "—" : yeuThichKy.toLocaleString("vi-VN")}
           phu={
-            yeuThich === null
-              ? "Cần bật hàm đếm trên CSDL"
-              : `${NHAN_HOC_KI[hocKi]} · tổng ${yeuThich.length} lượt`
+            tuongTac === null
+              ? "Chưa tải được số liệu"
+              : `${NHAN_HOC_KI[hocKi]} · tổng ${yeuThichTong.toLocaleString("vi-VN")} lượt`
           }
         />
         <KPI icon={FileText} nhan="Tin bài được duyệt" so={tinBaiKy.length} phu={tenKy} />
@@ -286,6 +321,48 @@ function Overview() {
               ["Sự kiện", MAU.suKien],
             ]}
           />
+        </Khung>
+      </div>
+
+      {/* Bài được quan tâm nhất trong kỳ */}
+      <div className="mt-5">
+        <Khung tieuDe="Bài được quan tâm nhất" phu={`${tenKy} · xếp theo lượt xem và lượt yêu thích`}>
+          {tuongTac === null ? (
+            <p className="text-sm text-muted-foreground">Chưa tải được số liệu tương tác. Tải lại trang để thử lại.</p>
+          ) : topQuanTam.length ? (
+            <ol className="divide-y">
+              {topQuanTam.map((b, i) => {
+                const d = diemKy.get(b.MaBaiDang)!;
+                const yt = ttKy.filter((r) => r.MaBaiDang === b.MaBaiDang).reduce((a, r) => a + r.LuotYeuThich, 0);
+                return (
+                  <li key={b.MaBaiDang} className="flex flex-wrap items-center gap-x-3 gap-y-1 py-2.5">
+                    <span className="w-5 text-center text-sm font-extrabold text-muted-foreground">{i + 1}</span>
+                    <Link
+                      to="/bai-viet/$id"
+                      params={{ id: String(b.MaBaiDang) }}
+                      className="line-clamp-1 min-w-0 flex-1 text-sm font-bold hover:text-primary hover:underline"
+                    >
+                      {b.TieuDe}
+                    </Link>
+                    <span className="flex items-center gap-3 text-xs font-bold text-muted-foreground">
+                      <span className="inline-flex items-center gap-1" title="Lượt xem">
+                        <Eye className="h-3.5 w-3.5" /> {d.xem}
+                      </span>
+                      {b.LoaiBaiDang === "SuKien" && (
+                        <span className="inline-flex items-center gap-1" title="Lượt yêu thích">
+                          <Heart className="h-3.5 w-3.5" /> {yt}
+                        </span>
+                      )}
+                    </span>
+                  </li>
+                );
+              })}
+            </ol>
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              Chưa có lượt xem hay lượt yêu thích nào trong kỳ này. Số liệu sẽ xuất hiện khi sinh viên mở bài của CLB.
+            </p>
+          )}
         </Khung>
       </div>
 
@@ -349,7 +426,7 @@ function Overview() {
                     <span className="mt-1 flex items-center gap-1.5 text-xs font-semibold text-muted-foreground">
                       <CalendarDays className="h-3.5 w-3.5 text-primary" />
                       {formatKhoangThoiGian(b.su_kien!.ThoiGianBatDau, b.su_kien!.ThoiGianKetThuc)}
-                      {yeuThich !== null && (
+                      {tuongTac !== null && (
                         <span className="ml-auto inline-flex items-center gap-1 text-accent-foreground">
                           <Heart className="h-3.5 w-3.5 fill-accent text-accent" />
                           {yeuThichTheoBai.get(b.MaBaiDang) ?? 0}

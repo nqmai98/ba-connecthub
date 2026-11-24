@@ -5,6 +5,7 @@ import { formatDateTime, useDanhDauDaDoc, useThongBao, type ThongBaoCuaToi } fro
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { AnhThuNho, NoiDungThongBao, useAnhThongBao, diemDenThongBao } from "@/components/ThongBaoList";
+import { CapLaiMatKhauDialog, HanhDongCapLai, yeuCauCapLai, type MoCapLai } from "@/components/admin/CapLaiMatKhau";
 
 /**
  * Chuông thông báo thay cho mục "Thông báo" trên thanh điều hướng.
@@ -25,13 +26,21 @@ export function NotificationBell({
   const latest = (data ?? []).slice(0, 5);
   const anhThongBao = useAnhThongBao(latest);
 
+  const [capLai, setCapLai] = useState<MoCapLai | null>(null);
+
   const openItem = async (n: ThongBaoCuaToi) => {
+    // Yêu cầu cấp lại mật khẩu: xử lý bằng nút Duyệt / Từ chối ngay trong danh sách
+    if (yeuCauCapLai(n)) {
+      if (!n.DaDoc) await danhDau.mutateAsync(n.MaThongBao);
+      return;
+    }
     setOpen(false);
     if (!n.DaDoc) await danhDau.mutateAsync(n.MaThongBao);
     navigate((n.DuongDan ? diemDenThongBao(n.DuongDan) : { to: tatCa }) as never);
   };
 
   return (
+    <>
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <button
@@ -82,6 +91,15 @@ export function NotificationBell({
                   </span>
                   {!n.DaDoc && <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-destructive" aria-label="Chưa đọc" />}
                 </button>
+                <HanhDongCapLai
+                  n={n}
+                  className={cn("-mt-1 pb-3 pl-[4.5rem] pr-4", !n.DaDoc && "bg-accent/10")}
+                  onDuyet={(mo) => {
+                    if (!n.DaDoc) danhDau.mutate(n.MaThongBao);
+                    setOpen(false);
+                    setCapLai(mo);
+                  }}
+                />
               </li>
             ))}
           </ul>
@@ -99,5 +117,7 @@ export function NotificationBell({
         </Link>
       </PopoverContent>
     </Popover>
+    <CapLaiMatKhauDialog mo={capLai} onClose={() => setCapLai(null)} />
+    </>
   );
 }

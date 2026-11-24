@@ -32,7 +32,6 @@ import { useViecChoXuLy } from "@/components/admin/AdminLayout";
 import {
   formatDateTime,
   formatKhoangThoiGian,
-  useLinhVuc,
   type BaiDang,
   type LuotKiemDuyet,
   type TrangThaiKiemDuyet,
@@ -401,7 +400,6 @@ type YeuCauKemCLB = Omit<YeuCauCapNhat, "cau_lac_bo"> & {
 
 function DuyetThongTin({ trangThai }: { trangThai: TrangThaiKiemDuyet }) {
   const qc = useQueryClient();
-  const { data: linhVuc } = useLinhVuc();
   const [duyet, setDuyet] = useState<YeuCauKemCLB | null>(null);
   const [tuChoi, setTuChoi] = useState<YeuCauKemCLB | null>(null);
   const [lyDo, setLyDo] = useState("");
@@ -463,7 +461,7 @@ function DuyetThongTin({ trangThai }: { trangThai: TrangThaiKiemDuyet }) {
               <div className="mt-3">
                 <BangThayDoi
                   noiDung={yc.NoiDungThayDoi}
-                  linhVuc={linhVuc}
+                 
                   hienTai={trangThai === "ChoDuyet" ? yc.cau_lac_bo : null}
                 />
               </div>

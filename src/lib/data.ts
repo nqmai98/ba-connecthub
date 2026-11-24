@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { dbMoi } from "@/lib/db-moi";
 import { useAuth } from "./auth";
 
 /* ------------------------------------------------------------------ */
@@ -57,13 +58,13 @@ export const NHAN_TRANG_THAI_XU_LY: Record<TrangThaiXuLy, string> = {
 /* Kiểu dữ liệu ứng dụng                                               */
 /* ------------------------------------------------------------------ */
 
-export type LinhVuc = { MaLinhVuc: number; TenLinhVuc: string; MoTa: string | null };
-
 export type CauLacBo = {
   MaCLB: number;
   TenCLB: string;
   NamThanhLap: number | null;
-  MaLinhVuc: number;
+  /** Đơn vị trong sơ đồ tổ chức Đoàn – Hội (bảng don_vi_to_chuc); null = khác / chưa phân loại. */
+  MaDonVi: number | null;
+  /** Nhãn "Khối – Đơn vị", CSDL tự sinh từ MaDonVi. */
   DonViTrucThuoc: string | null;
   MoTa: string | null;
   LogoCLB: string | null;
@@ -77,7 +78,7 @@ export type CauLacBo = {
   ThanhTich: string | null;
   AnhBia: string | null;
   NoiBat: boolean;
-  linh_vuc?: { TenLinhVuc: string } | null;
+  don_vi_to_chuc?: { MaDonVi: number; Khoi: KhoiToChuc; TenDonVi: string } | null;
 };
 
 /** Cấp 1 của sơ đồ tổ chức: Đoàn Thanh niên hoặc Hội Sinh viên. */
@@ -89,7 +90,13 @@ export const NHAN_KHOI: Record<KhoiToChuc, string> = {
 };
 
 /** Cấp 2: các ô xanh trong sơ đồ tổ chức (Liên chi hội, CLB cụm Học thuật, ...). */
-export type NhomToChuc = { MaNhom: number; Khoi: KhoiToChuc; TenNhom: string; ThuTu: number };
+export type NhomToChuc = {
+  MaNhom: number;
+  Khoi: KhoiToChuc;
+  TenNhom: string;
+  ThuTu: number;
+  MoTa: string | null;
+};
 
 /** Khoá ngoại của CLB trong bài đăng, dùng để hiển thị tên và logo đơn vị tổ chức. */
 export type CLBTomTat = { MaCLB: number; TenCLB: string; LogoCLB: string | null };
@@ -168,8 +175,7 @@ export type NhatKy = {
 export const TRUONG_CLB_CO_THE_SUA = [
   "TenCLB",
   "NamThanhLap",
-  "MaLinhVuc",
-  "DonViTrucThuoc",
+  "MaDonVi",
   "MoTa",
   "LogoCLB",
   "ThongTinLienHe",
@@ -184,8 +190,7 @@ export type TruongCLBCoTheSua = (typeof TRUONG_CLB_CO_THE_SUA)[number];
 export const NHAN_TRUONG_CLB: Record<TruongCLBCoTheSua, string> = {
   TenCLB: "Tên CLB",
   NamThanhLap: "Năm thành lập",
-  MaLinhVuc: "Lĩnh vực",
-  DonViTrucThuoc: "Đơn vị trực thuộc",
+  MaDonVi: "Đơn vị trực thuộc",
   MoTa: "Giới thiệu chi tiết",
   LogoCLB: "Logo CLB",
   ThongTinLienHe: "Thông tin liên hệ",
@@ -197,35 +202,35 @@ export const NHAN_TRUONG_CLB: Record<TruongCLBCoTheSua, string> = {
 };
 
 const CHON_CLB_TOM_TAT = "cau_lac_bo(MaCLB, TenCLB, LogoCLB)";
+/** Đơn vị trong sơ đồ tổ chức, nhúng kèm khi đọc cau_lac_bo. */
+export const CHON_DON_VI = "don_vi_to_chuc(MaDonVi, Khoi, TenDonVi)";
 
-/* ------------------------------------------------------------------ */
-/* Lĩnh vực + Câu lạc bộ                                               */
-/* ------------------------------------------------------------------ */
-
-export function useLinhVuc() {
-  return useQuery({
-    queryKey: ["linh_vuc"],
-    staleTime: 5 * 60_000,
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("linh_vuc")
-        .select("MaLinhVuc, TenLinhVuc, MoTa")
-        .order("TenLinhVuc");
-      if (error) throw error;
-      return data as LinhVuc[];
-    },
-  });
+/**
+ * Đọc cau_lac_bo kèm đơn vị trong sơ đồ tổ chức. Nếu CSDL chưa chạy migration 0009
+ * (chưa có bảng don_vi_to_chuc) thì đọc lại không kèm đơn vị, để trang vẫn hoạt động
+ * – CLB khi đó tạm hiện là "Khác" cho tới khi migration được áp dụng.
+ */
+export async function docCLBKemDonVi<T>(
+  truyVan: (cot: string) => PromiseLike<{ data: T | null; error: { message: string } | null }>,
+) {
+  const r = await truyVan(`*, ${CHON_DON_VI}`);
+  if (!r.error) return r;
+  const duPhong = await truyVan("*");
+  return duPhong.error ? r : duPhong;
 }
+
+/* ------------------------------------------------------------------ */
+/* Câu lạc bộ                                                         */
+/* ------------------------------------------------------------------ */
 
 export function useCauLacBo() {
   return useQuery({
     queryKey: ["cau_lac_bo"],
     staleTime: 60_000,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("cau_lac_bo")
-        .select("*, linh_vuc(TenLinhVuc)")
-        .order("TenCLB");
+      const { data, error } = await docCLBKemDonVi((cot) =>
+        supabase.from("cau_lac_bo").select(cot).order("TenCLB"),
+      );
       if (error) throw error;
       return data as unknown as CauLacBo[];
     },
@@ -271,45 +276,108 @@ export function useSuKien(opts: { sapDienRa?: boolean; maCLB?: number } = {}) {
   });
 }
 
-/** Sự kiện kèm thông tin xếp hạng độ "hot" dùng cho banner trang chủ. */
-export type SuKienNoiBat = SuKien & { LuotYeuThich: number; DiemNoiBat: number; Hang: number };
+/* ------------------------------------------------------------------ */
+/* Tương tác: lượt xem, lượt yêu thích                                  */
+/* ------------------------------------------------------------------ */
+
+export type TuongTac = { LuotXem: number; LuotBinhLuan: number; LuotYeuThich: number };
+
+/** Bài viết kèm số liệu tương tác, dùng cho banner nổi bật trang chủ. */
+export type BaiVietNoiBat = BaiDang & TuongTac & { DiemNoiBat: number; Hang: number };
 
 /**
- * 5–7 sự kiện nổi bật cho banner trang chủ Sinh viên, được chọn TỰ ĐỘNG theo độ hot
- * (lượt yêu thích, lượt yêu thích gần đây, số người theo dõi CLB tổ chức) – không chọn tay.
- * Xếp hạng do hàm CSDL su_kien_noi_bat tính (xem sql/0006_su_kien_noi_bat.sql).
- * Nếu hàm chưa được tạo trên CSDL, tạm xếp theo sự kiện sắp diễn ra gần nhất để banner vẫn chạy.
+ * 5–7 bài viết nổi bật cho banner trang chủ, chọn TỰ ĐỘNG theo tương tác trong 30 ngày gần nhất:
+ *   điểm = lượt xem + 3 × lượt yêu thích
+ * (giao diện không có bình luận nên phần điểm bình luận trong hàm CSDL luôn bằng 0)
+ * (hàm CSDL bai_viet_noi_bat – migration 0009). Gồm cả tin bài và sự kiện chưa kết thúc;
+ * khi chưa có tương tác thì bài mới đăng đứng trước.
  */
-export function useSuKienNoiBat(gioiHan = 7) {
-  const { data: suKien, isLoading } = useSuKien({ sapDienRa: true });
-  const xepHang = useQuery({
-    queryKey: ["su_kien_noi_bat", gioiHan],
-    staleTime: 5 * 60_000,
-    retry: false,
-    queryFn: async () => {
-      const { data, error } = await supabase.rpc("su_kien_noi_bat", { _gioi_han: gioiHan });
-      if (error) return null; // hàm chưa có trên CSDL -> dùng thứ tự dự phòng
-      return data ?? [];
+export function useBaiVietNoiBat(gioiHan = 7) {
+  return useQuery({
+    queryKey: ["bai_viet_noi_bat", gioiHan],
+    staleTime: 2 * 60_000,
+    queryFn: async (): Promise<BaiVietNoiBat[]> => {
+      await supabase.rpc("lam_moi_trang_thai_su_kien");
+      const xh = await dbMoi.rpc("bai_viet_noi_bat", { _gioi_han: gioiHan });
+      // CSDL chưa có hàm xếp hạng (chưa chạy migration 0009): tạm lấy các bài mới đăng nhất
+      const ds: XepHangBai[] = xh.error
+        ? await baiMoiNhat(gioiHan)
+        : ((xh.data ?? []) as XepHangBai[]);
+      if (!ds.length) return [];
+      const { data, error } = await supabase
+        .from("bai_dang")
+        .select(`*, ${CHON_CLB_TOM_TAT}, su_kien(*)`)
+        .in(
+          "MaBaiDang",
+          ds.map((r) => r.MaBaiDang),
+        );
+      if (error) throw error;
+      const theoMa = new Map((data as unknown as BaiDang[]).map((b) => [b.MaBaiDang, b]));
+      return ds
+        .map((r) => {
+          const b = theoMa.get(r.MaBaiDang);
+          return b ? { ...b, ...r } : null;
+        })
+        .filter((b): b is Omit<BaiVietNoiBat, "Hang"> => !!b)
+        .map((b, i) => ({ ...b, Hang: i + 1 }));
     },
   });
+}
 
-  const list: SuKienNoiBat[] = (() => {
-    const ds = suKien ?? [];
-    if (xepHang.data) {
-      const theoMa = new Map(ds.map((e) => [e.MaBaiDang, e]));
-      return xepHang.data
-        .map((r, i) => {
-          const e = theoMa.get(r.MaBaiDang);
-          return e ? { ...e, LuotYeuThich: r.LuotYeuThich, DiemNoiBat: r.DiemNoiBat, Hang: i + 1 } : null;
-        })
-        .filter((e): e is SuKienNoiBat => !!e);
-    }
-    return ds
-      .slice(0, gioiHan)
-      .map((e, i) => ({ ...e, LuotYeuThich: 0, DiemNoiBat: 0, Hang: i + 1 }));
-  })();
+/** Một dòng kết quả của hàm bai_viet_noi_bat. */
+type XepHangBai = TuongTac & { MaBaiDang: number; DiemNoiBat: number };
 
-  return { data: list, isLoading: isLoading || xepHang.isLoading };
+/** Dự phòng cho banner khi CSDL chưa có hàm bai_viet_noi_bat. */
+async function baiMoiNhat(gioiHan: number): Promise<XepHangBai[]> {
+  const { data } = await supabase
+    .from("bai_dang")
+    .select("MaBaiDang")
+    .eq("TrangThaiKiemDuyet", "DaDuyet")
+    .order("NgayDang", { ascending: false })
+    .limit(gioiHan);
+  return (data ?? []).map((b) => ({
+    MaBaiDang: b.MaBaiDang,
+    LuotXem: 0,
+    LuotBinhLuan: 0,
+    LuotYeuThich: 0,
+    DiemNoiBat: 0,
+  }));
+}
+
+/** Tổng lượt xem / yêu thích của một hoặc nhiều bài (hàm dem_tuong_tac). */
+export function useTuongTac(dsMaBaiDang: number[]) {
+  const ds = [...new Set(dsMaBaiDang)].sort((a, b) => a - b);
+  return useQuery({
+    queryKey: ["tuong_tac", ds],
+    enabled: ds.length > 0,
+    staleTime: 60_000,
+    queryFn: async () => {
+      const { data, error } = await dbMoi.rpc("dem_tuong_tac", { _ds_bai_dang: ds });
+      if (error) throw error;
+      return new Map(
+        ((data ?? []) as (TuongTac & { MaBaiDang: number })[]).map((r) => [
+          r.MaBaiDang,
+          { LuotXem: r.LuotXem, LuotBinhLuan: r.LuotBinhLuan, LuotYeuThich: r.LuotYeuThich } as TuongTac,
+        ]),
+      );
+    },
+  });
+}
+
+/**
+ * Ghi một lượt xem khi mở trang bài viết. Trình duyệt chỉ gửi 1 lần / bài / phiên;
+ * CSDL tự bỏ qua lượt xem lặp lại của cùng tài khoản trong 30 phút và bài chưa duyệt.
+ */
+export async function ghiLuotXem(maBaiDang: number) {
+  const khoa = `bav-da-xem-${maBaiDang}`;
+  try {
+    if (sessionStorage.getItem(khoa)) return false;
+    sessionStorage.setItem(khoa, "1");
+  } catch {
+    /* trình duyệt chặn sessionStorage: vẫn ghi, CSDL tự chống lặp với tài khoản đã đăng nhập */
+  }
+  const { error } = await dbMoi.rpc("ghi_luot_xem", { _ma_bai_dang: maBaiDang });
+  return !error;
 }
 
 /** Toàn bộ bài đăng đã duyệt của một CLB (gồm cả sự kiện), cho trang chi tiết CLB. */
