@@ -157,8 +157,14 @@ export function CapLaiMatKhauDialog({ mo, onClose }: { mo: MoCapLai | null; onCl
 
   const submit = async () => {
     if (!mo) return;
-    if (matKhau.length < 8) return toast.error("Mật khẩu tối thiểu 8 ký tự");
-    if (!emailHopLe) return toast.error("Email nhận không hợp lệ");
+    if (matKhau.length < 8) {
+      toast.error("Mật khẩu tối thiểu 8 ký tự");
+      return;
+    }
+    if (!emailHopLe) {
+      toast.error("Email nhận không hợp lệ");
+      return;
+    }
     setBusy(true);
     try {
       const r = await capLai({
